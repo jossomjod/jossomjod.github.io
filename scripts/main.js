@@ -1,6 +1,6 @@
 
 const canvas = document.querySelector("#canvas");
-const gl     = canvas.getContext("webgl");
+const gl     = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 
 if (gl === null) {
 	console.log("WebGL doesn't seem to work... Bummer.");
@@ -12,14 +12,20 @@ let bounds = new Vector2(WIDTH, HEIGHT);
 
 gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
+
+// SHADER PROGRAMS
 const shaderPrograms = [
 	initShaderProgram(gl, vsSource, wereLight),
 	initShaderProgram(gl, vsSource, fsSource),
 	initShaderProgram(gl, vsSource, boi),
-	initShaderProgram(gl, vsSource, quatro)
+	initShaderProgram(gl, vsSource, quatro),
+	initShaderProgram(gl, vsFive, fsFive)
 ];
-const startIndex = 2;
 
+const startIndex = 0;
+
+
+// PROGRAM INFO
 const programInfo = {
 	program: shaderPrograms[startIndex],
 	attribLocations: {
@@ -28,15 +34,23 @@ const programInfo = {
 	uniformLocations: {
 		TIME: gl.getUniformLocation(shaderPrograms[startIndex], 'TIME'),
 		bounds: gl.getUniformLocation(shaderPrograms[startIndex], 'bounds'),
+		mPos: null,
 	},
 };
 
+
+let currentProgramIndex = startIndex;
+
 function changeProgram(index) {
+	currentProgramIndex = index;
+	
 	programInfo.program = shaderPrograms[index];
 	programInfo.attribLocations.vertexPosition =
 		gl.getAttribLocation(shaderPrograms[index], 'aVertexPosition');
 	programInfo.uniformLocations.TIME = gl.getUniformLocation(shaderPrograms[index], 'TIME');
 	programInfo.uniformLocations.bounds = gl.getUniformLocation(shaderPrograms[index], 'bounds');
+	programInfo.uniformLocations.mPos =
+		index === 4 ? gl.getUniformLocation(shaderPrograms[index], 'mPos') : null;
 }
 
 
@@ -44,7 +58,10 @@ const buffers = initBuffers(gl);
 
 
 
+
+
 let mPos = new Vector2();
+let mVel = new Vector2();
 let leftMouseDown = false;
 
 let testOn = false;
@@ -129,11 +146,31 @@ function drawScene(gl, programInfo, buffers, time, dt) {
 	}
 	
 	
+	
+	/*
+	{
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+		gl.vertexAttribPointer(
+			programInfo.attribLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0
+		);
+		gl.enableVertexAttribArray(
+			programInfo.attribLocations.vertexPosition
+		);
+	}
+	*/
+	
+	
+	
+	
 	gl.useProgram(programInfo.program);
 	
 	
 	gl.uniform1f(programInfo.uniformLocations.TIME, time);
 	gl.uniform2f(programInfo.uniformLocations.bounds, WIDTH, HEIGHT);
+	
+	if (currentProgramIndex === 4) {
+		gl.uniform2f(programInfo.uniformLocations.mPos, mPos.x, HEIGHT - mPos.y);
+	}
 	
 	{
 		const offset = 0;
@@ -216,6 +253,9 @@ document.body.onkeydown = function(e) {
 			break;
 		case 52: // 4
 			changeProgram(3);
+			break;
+		case 53: // 5
+			changeProgram(4);
 			break;
 		default:
 			toggleKeys(e.which, true);

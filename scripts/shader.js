@@ -5,7 +5,7 @@ const vsSource = `
 
 attribute vec4 aVertexPosition;
 uniform mediump vec2 bounds;
-uniform highp float TIME;
+uniform mediump float TIME;
 
 void main() {
 	gl_Position = vec4(aVertexPosition.xy, 0.0, 1.0);
@@ -18,7 +18,7 @@ void main() {
 // A rotating cone of light.
 const fsSource = `
 
-uniform highp float TIME;
+uniform mediump float TIME;
 uniform mediump vec2 bounds;
 
 void main() {
@@ -35,8 +35,8 @@ void main() {
 	dir.x = cos(angle + TIME);
 	dir.y = sin(angle + TIME);
 	
-	dir.x += cos(3.141528);
-	dir.y += sin(3.141528);
+	dir.x += cos(3.14159265);
+	dir.y += sin(3.14159265);
 	
 	mediump float val = value * (dir.x + dir.y);
 	
@@ -56,7 +56,7 @@ void main() {
 
 const boi = `
 
-uniform highp float TIME;
+uniform mediump float TIME;
 uniform mediump vec2 bounds;
 
 
@@ -85,12 +85,12 @@ void main() {
 		mediump float part = i * 0.05;
 	
 		pos.x = part * bounds.x + bounds.x * onePart * 0.5 * sin(TIME * 2.0);
-		pos.y = abs(sin(part * 3.141528 + TIME * 4.0)) * bounds.y * 0.2 + center.y;
-		posz = 2.0 + sin(part * 3.141528 + TIME * 1.0) * 1.0;
+		pos.y = abs(sin(part * 3.14159265 + TIME * 4.0)) * bounds.y * 0.2 + center.y;
+		posz = 2.0 + sin(part * 3.14159265 + TIME * 1.0) * 1.0;
 		vecTo = pos - gl_FragCoord.xy;
 		ball += getWaveAmplitude(vecTo, posz);
 		
-		vecTo.y -= abs(sin(part * 3.141528 + TIME * 4.0)) * bounds.y * 0.4;
+		vecTo.y -= abs(sin(part * 3.14159265 + TIME * 4.0)) * bounds.y * 0.4;
 		shadow += getWaveAmplitude(vecTo, posz);
 	}
 	
@@ -115,12 +115,12 @@ void main() {
 // A spinning ring of lights surrounding a pulsating colorful circle.
 const quatro = `
 
-uniform highp float TIME;
+uniform mediump float TIME;
 uniform mediump vec2 bounds;
 
 
 
-mediump float getWaveAmplitude(vec2 vecTo, float mult) {
+highp float getWaveAmplitude(vec2 vecTo, float mult) {
 	
 	mediump float distSq = vecTo.x * vecTo.x + vecTo.y * vecTo.y;
 	return (sqrt(distSq) * mult) / distSq;
@@ -148,7 +148,7 @@ void main() {
 	
 	for (mediump float i = 0.0; i < 20.0; i++) {
 	
-		radian = i / 20.0 * 3.141528 * 2.0 + sin(TIME) * 10.0;
+		radian = i / 20.0 * 3.14159265 * 2.0 + sin(TIME) * 10.0;
 		dir.x = cos(radian);
 		dir.y = sin(radian);
 		pos = center + dir * len;
@@ -172,7 +172,9 @@ void main() {
 // Four pulsating colorful circles of light moving around pseudo-randomly, forming a blob.
 const wereLight = `
 
-uniform highp float TIME;
+precision mediump float;
+
+uniform mediump float TIME;
 uniform mediump vec2 bounds;
 
 
@@ -194,7 +196,7 @@ void main() {
 	//gl_FragColor = vec4(red, green, blue, 1.0);
 	gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 	
-	lowp int max_origins = 3;
+	mediump int max_origins = 3;
 	mediump float radius = 24.0 + sin(TIME * 5.0) * 0.1;
 	
 	mediump float posx = bounds.x * 0.5;
@@ -204,7 +206,7 @@ void main() {
 	mediump float g = 0.5 + sin(TIME * 0.7);
 	mediump float b = 0.8 + sin(TIME * 1.5);
 	
-	for (lowp int i = 0; i < 4; i++) {
+	for (mediump int i = 0; i < 4; i++) {
 		
 		if (i > 0) {
 			radius *= 0.5 + sin(TIME) * 0.1 * sin(TIME * 0.1);
@@ -229,3 +231,56 @@ void main() {
 	}
 }
 `;
+
+
+
+
+//-----------------------------------------------------------------------------
+
+
+
+// Vertex shader source
+
+const vsFive = `
+
+attribute vec4 aVertexPosition;
+
+uniform mediump vec2 mPos;
+uniform mediump vec2 bounds;
+uniform mediump float TIME;
+
+void main() {
+	gl_Position = vec4(aVertexPosition.xy, 0.0, 1.0);
+}
+`;
+
+
+// Fragment Shader Source
+
+const fsFive = `
+
+uniform mediump vec2 mPos;
+uniform mediump float TIME;
+uniform mediump vec2 bounds;
+
+void main() {
+	
+	mediump vec2 center = bounds * 0.5;
+	mediump vec2 vecTo = mPos - gl_FragCoord.xy;
+	mediump float distSq = vecTo.x * vecTo.x + vecTo.y * vecTo.y;
+	mediump float light = 1000.0 / distSq;
+	
+	mediump float red = mPos.x / bounds.x + sin(TIME * 4.2) * 0.5;
+	mediump float green = mPos.y / bounds.y + sin(TIME * 3.3) * 0.5;
+	mediump float blue = (mPos.x + mPos.y) / (bounds.x + bounds.y) + sin(TIME * 1.2) * 0.5;
+	
+	mediump vec4 col = vec4(light * red, light * green, light, 1.0);
+	
+	
+	gl_FragColor = col;
+}
+`;
+
+
+
+
