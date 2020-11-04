@@ -245,6 +245,7 @@ const vsFive = `
 
 attribute vec4 aVertexPosition;
 
+uniform mediump float LMB;
 uniform mediump vec2 mPos;
 uniform mediump vec2 bounds;
 uniform mediump float TIME;
@@ -259,6 +260,8 @@ void main() {
 
 const fsFive = `
 
+
+uniform mediump float LMB;
 uniform mediump vec2 mPos;
 uniform mediump float TIME;
 uniform mediump vec2 bounds;
@@ -285,7 +288,7 @@ void main() {
 	mediump float green = mPos.y / bounds.y + sin(TIME * 3.3) * 0.5;
 	mediump float blue = (mPos.x + mPos.y) / (bounds.x + bounds.y) + sin(TIME * 1.2) * 0.5;
 	
-	mediump vec4 col = vec4(light * red, light * green, light * blue, 1.0);
+	mediump vec4 col;// = vec4(light * red, light * green, light * blue, 1.0);
 	
 
 	mediump vec2 mNorm = 2.0 * mPos / bounds;
@@ -294,26 +297,29 @@ void main() {
 
 	
 	mediump vec2 pos;
+	mediump float radius = 70.0 + 100.0 * LMB;
 
 	for (mediump float i = 0.0; i < 20.0; i++) {
 
 		mediump float part = i * 0.05;
 		pos = mPos;
 
-		mediump float timMul = light * 300.0 * mNorm.x * mNorm.y * sin(TIME);
+		mediump float timMul = light * (300.0 + 500.0 * LMB) * mNorm.x * mNorm.y * sin(TIME);
 
-		pos.x += cos(part * 2.0 * 3.1415926535 * TIME + timMul + TIME) * 100.0;
-		pos.y += sin(part * 2.0 * 3.1415926535 * TIME + timMul + TIME) * 100.0;
+		pos.x += cos(
+			part * 2.0 * 3.1415926535 * TIME + timMul + TIME + mNorm.x
+		) * radius;
+		pos.y += sin(
+			part * 2.0 * 3.1415926535 * TIME + timMul + TIME + mNorm.y
+		) * radius;
 
-		//pos.x -= (mPos.x / bounds.x) * 100.0 - 50.0;
-		//pos.y -= (mPos.y / bounds.y) * 100.0 - 50.0;
 
 		vecTo = pos - gl_FragCoord.xy;
-		light = get_wave_amplitude(vecTo, 100.0);
+		light = get_wave_amplitude(vecTo, 100.0 + 300.0 * LMB);
 
-		col.x += light * green;
-		col.y += light * blue;
-		col.z += light * red;
+		col.x += light * red;
+		col.y += light * green;
+		col.z += light * blue;
 	}
 
 

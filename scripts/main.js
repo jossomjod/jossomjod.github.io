@@ -35,6 +35,7 @@ const programInfo = {
 		TIME: gl.getUniformLocation(shaderPrograms[startIndex], 'TIME'),
 		bounds: gl.getUniformLocation(shaderPrograms[startIndex], 'bounds'),
 		mPos: null,
+		LMB: null,
 	},
 };
 
@@ -51,6 +52,9 @@ function changeProgram(index) {
 	programInfo.uniformLocations.bounds = gl.getUniformLocation(shaderPrograms[index], 'bounds');
 	programInfo.uniformLocations.mPos =
 		index === 4 ? gl.getUniformLocation(shaderPrograms[index], 'mPos') : null;
+	
+	programInfo.uniformLocations.LMB =
+		index === 4 ? gl.getUniformLocation(shaderPrograms[index], 'LMB') : null;
 }
 
 
@@ -63,6 +67,7 @@ const buffers = initBuffers(gl);
 let mPos = new Vector2();
 let mVel = new Vector2();
 let leftMouseDown = false;
+let LMBDown = 0.0;
 
 let testOn = false;
 
@@ -87,7 +92,6 @@ gl.clear(gl.COLOR_BUFFER_BIT);
 
 
 
-
 // CANVAS UPDATE LOOP
 
 let dt    = 1.0;
@@ -99,6 +103,22 @@ function mainLoop(time) {
 	now = +new Date;
 	dt  = (now - then) / 16.7;
 	
+
+
+	if (leftMouseDown) {
+		if (LMBDown < 1.0) {
+			LMBDown += dt * 0.06;
+		} else {
+			LMBDown = 1.0;
+		}
+	} else if (LMBDown > 0.0) {
+		LMBDown -= dt * 0.06;
+	} else {
+		LMBDown = 0.0;
+	}
+
+
+
 	
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 	gl.clearDepth(1.0);                 // Clear everything
@@ -170,6 +190,7 @@ function drawScene(gl, programInfo, buffers, time, dt) {
 	
 	if (currentProgramIndex === 4) {
 		gl.uniform2f(programInfo.uniformLocations.mPos, mPos.x, HEIGHT - mPos.y);
+		gl.uniform1f(programInfo.uniformLocations.LMB, smoothStartStop(LMBDown));
 	}
 	
 	{
@@ -205,6 +226,7 @@ document.body.onmousedown = function(e) {
 	e.preventDefault();
 	
 	leftMouseDown = true;
+	//LMBDown = 1.0;
 	
 	getTrueCanvasPos(e);
 };
@@ -212,6 +234,7 @@ document.body.onmousedown = function(e) {
 
 document.body.onmouseup = function(e) {
 	leftMouseDown = false;
+	//LMBDown = 0.0;
 	
 	getTrueCanvasPos(e);
 };
