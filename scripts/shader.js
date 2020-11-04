@@ -80,9 +80,9 @@ void main() {
 	mediump float posz = 0.0;
 	mediump float onePart = 0.05;
 	
-	for (mediump float i = 0.0; i < 20.0; i++) {
+	for (mediump float i = 0.5; i < 20.5; i++) {
 		
-		mediump float part = i * 0.05;
+		mediump float part = i * onePart;
 	
 		pos.x = part * bounds.x + bounds.x * onePart * 0.5 * sin(TIME * 2.0);
 		pos.y = abs(sin(part * 3.14159265 + TIME * 4.0)) * bounds.y * 0.2 + center.y;
