@@ -288,7 +288,8 @@ void main() {
 	mediump float green = mPos.y / bounds.y + sin(TIME * 3.3) * 0.5;
 	mediump float blue = (mPos.x + mPos.y) / (bounds.x + bounds.y) + sin(TIME * 1.2) * 0.5;
 	
-	mediump vec4 col;// = vec4(light * red, light * green, light * blue, 1.0);
+	mediump vec4 col = vec4(0.0, 0.0, 0.0, 1.0);
+	// = vec4(light * red, light * green, light * blue, 1.0);
 	
 
 	mediump vec2 mNorm = 2.0 * mPos / bounds;
@@ -307,10 +308,10 @@ void main() {
 		mediump float timMul = light * (300.0 + 500.0 * LMB) * mNorm.x * mNorm.y * sin(TIME);
 
 		pos.x += cos(
-			part * 2.0 * 3.1415926535 * TIME + timMul + TIME + mNorm.x
+			part * 2.0 * 3.14159265 * TIME + timMul + TIME + mNorm.x * LMB * 6.28
 		) * radius;
 		pos.y += sin(
-			part * 2.0 * 3.1415926535 * TIME + timMul + TIME + mNorm.y
+			part * 2.0 * 3.14159265 * TIME + timMul + TIME + mNorm.y * LMB * 6.28
 		) * radius;
 
 
