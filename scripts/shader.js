@@ -263,6 +263,17 @@ uniform mediump vec2 mPos;
 uniform mediump float TIME;
 uniform mediump vec2 bounds;
 
+
+
+
+mediump float get_wave_amplitude(vec2 vec_to, float mult) {
+	
+	mediump float dist = vec_to.x * vec_to.x + vec_to.y * vec_to.y;
+	return mult / dist;
+}
+
+
+
 void main() {
 	
 	mediump vec2 center = bounds * 0.5;
@@ -274,8 +285,39 @@ void main() {
 	mediump float green = mPos.y / bounds.y + sin(TIME * 3.3) * 0.5;
 	mediump float blue = (mPos.x + mPos.y) / (bounds.x + bounds.y) + sin(TIME * 1.2) * 0.5;
 	
-	mediump vec4 col = vec4(light * red, light * green, light, 1.0);
+	mediump vec4 col = vec4(light * red, light * green, light * blue, 1.0);
 	
+
+	mediump vec2 mNorm = 2.0 * mPos / bounds;
+	mNorm.x -= 1.0;
+	mNorm.y -= 1.0;
+
+	
+	mediump vec2 pos;
+
+	for (mediump float i = 0.0; i < 20.0; i++) {
+
+		mediump float part = i * 0.05;
+		pos = mPos;
+
+		mediump float timMul = light * 300.0 * mNorm.x * mNorm.y * sin(TIME);
+
+		pos.x += cos(part * 2.0 * 3.1415926535 * TIME + timMul + TIME) * 100.0;
+		pos.y += sin(part * 2.0 * 3.1415926535 * TIME + timMul + TIME) * 100.0;
+
+		//pos.x -= (mPos.x / bounds.x) * 100.0 - 50.0;
+		//pos.y -= (mPos.y / bounds.y) * 100.0 - 50.0;
+
+		vecTo = pos - gl_FragCoord.xy;
+		light = get_wave_amplitude(vecTo, 100.0);
+
+		col.x += light * green;
+		col.y += light * blue;
+		col.z += light * red;
+	}
+
+
+
 	
 	gl_FragColor = col;
 }
