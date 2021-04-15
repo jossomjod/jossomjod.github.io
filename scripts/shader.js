@@ -169,7 +169,7 @@ void main() {
 
 
 
-// Four pulsating colorful circles of light moving around pseudo-randomly, forming a blob.
+// Four pulsating colorful circles of light moving around.
 const wereLight = `
 
 precision mediump float;
@@ -181,7 +181,7 @@ uniform mediump vec2 bounds;
 mediump float get_wave_amplitude(vec2 vec_to, float mult) {
 	
 	mediump float dist = vec_to.x * vec_to.x + vec_to.y * vec_to.y;
-	return (sqrt(dist) * mult) / dist;
+	return mult / dist;
 }
 
 
