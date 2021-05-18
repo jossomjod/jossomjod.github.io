@@ -181,7 +181,7 @@ uniform mediump vec2 bounds;
 mediump float get_wave_amplitude(vec2 vec_to, float mult) {
 	
 	mediump float dist = vec_to.x * vec_to.x + vec_to.y * vec_to.y;
-	return mult / dist;
+	return mult / sqrt(dist);
 }
 
 
