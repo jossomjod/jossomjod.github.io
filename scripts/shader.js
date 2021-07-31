@@ -143,7 +143,7 @@ void main() {
 	
 	mediump float radian = 0.0;
 	mediump vec2 dir = vec2(0.0);
-	mediump float len = (1.0 + sin(TIME * 2.0)) * 100.0;
+	mediump float len = (1.0 + sin(TIME * 2.0)) * 50.0;
 	mediump vec2 pos = center;
 	
 	for (mediump float i = 0.0; i < 20.0; i++) {
@@ -153,9 +153,13 @@ void main() {
 		dir.y = sin(radian);
 		pos = center + dir * len;
 		
-		mediump vec2 oof = gl_FragCoord.xy + (dir.x * gl_FragCoord.x + dir.y * gl_FragCoord.y) * 0.1;
+		mediump vec2 fragDir = pos - gl_FragCoord.xy;
+		fragDir /= sqrt(fragDir.x * fragDir.x + fragDir.y * fragDir.y);
 		
-		value = getWaveAmplitude(pos - oof, 6.0);
+		mediump vec2 oof = gl_FragCoord.xy;
+		oof += (dir.x * fragDir.x + dir.y * fragDir.y) * 200.9;
+		
+		value = getWaveAmplitude(pos - oof, 60.0);
 		col += vec4(value, value, value, 1.0);
 	}
 	
