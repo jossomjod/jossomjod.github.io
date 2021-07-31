@@ -123,7 +123,7 @@ uniform mediump vec2 bounds;
 highp float getWaveAmplitude(vec2 vecTo, float mult) {
 	
 	mediump float distSq = vecTo.x * vecTo.x + vecTo.y * vecTo.y;
-	return (sqrt(distSq) * mult) / distSq;
+	return mult / distSq;
 }
 
 
@@ -133,7 +133,7 @@ void main() {
 	mediump vec2 vecTo = center - gl_FragCoord.xy;
 	mediump float distSq = vecTo.x * vecTo.x + vecTo.y * vecTo.y;
 	mediump float dist = sqrt(distSq);
-	mediump float value = getWaveAmplitude(vecTo, 10.0 * (sin(TIME) + 2.0));
+	mediump float value = getWaveAmplitude(vecTo, 160.0 * (sin(TIME) + 20.0));
 	
 	mediump float red = value * (sin(TIME * 0.7) + 1.0);
 	mediump float green = value * (sin(TIME * 1.2) + 1.0);
@@ -148,12 +148,14 @@ void main() {
 	
 	for (mediump float i = 0.0; i < 20.0; i++) {
 	
-		radian = i / 20.0 * 3.14159265 * 2.0 + sin(TIME) * 10.0;
+		radian = i / 20.0 * 3.14159265 * 2.0 + sin(TIME) * 2.0;
 		dir.x = cos(radian);
 		dir.y = sin(radian);
 		pos = center + dir * len;
 		
-		value = getWaveAmplitude(pos - gl_FragCoord.xy, 2.0);
+		mediump vec2 oof = gl_FragCoord.xy + (dir.x * gl_FragCoord.x + dir.y * gl_FragCoord.y) * 0.1;
+		
+		value = getWaveAmplitude(pos - oof, 6.0);
 		col += vec4(value, value, value, 1.0);
 	}
 	
