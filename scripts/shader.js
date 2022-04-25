@@ -18,7 +18,11 @@ void main() {
 // A rotating cone of light.
 const fsSource = `
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 
 uniform float TIME;
 uniform vec2 bounds;
@@ -58,7 +62,11 @@ void main() {
 
 const boi = `
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 
 uniform float TIME;
 uniform vec2 bounds;
@@ -119,7 +127,11 @@ void main() {
 // A spinning ring of lights surrounding a pulsating colorful circle.
 const quatro = `
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 
 uniform float TIME;
 uniform vec2 bounds;
@@ -184,7 +196,11 @@ void main() {
 // Four pulsating colorful circles of light moving around.
 const wereLight = `
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 
 uniform float TIME;
 uniform vec2 bounds;
@@ -272,7 +288,11 @@ void main() {
 
 const fsFive = `
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 
 uniform float LMB;
 uniform vec2 mPos;
