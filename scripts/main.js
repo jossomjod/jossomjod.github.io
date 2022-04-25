@@ -6,6 +6,20 @@ if (gl === null) {
 	console.log("WebGL doesn't seem to work... Bummer.");
 }
 
+
+var buttons = [
+	document.querySelector("#btn1"),
+	document.querySelector("#btn2"),
+	document.querySelector("#btn3"),
+	document.querySelector("#btn4"),
+	document.querySelector("#btn5")
+];
+
+for (let i = 0; i < buttons.length; i++) {
+	buttons[i].addEventListener("click", ()=>{changeProgram(i)})
+}
+
+
 var WIDTH  = canvas.width  = window.innerWidth;
 var HEIGHT = canvas.height = window.innerHeight;
 let bounds = new Vector2(WIDTH, HEIGHT);
