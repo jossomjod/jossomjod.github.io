@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,18 +9,18 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="stylesheets/style.css" />
   <link rel="icon"  type="image/png" href="images/favicon.png">
-  <script src="scripts/vector.js"></script>
-  <script src="scripts/gl-matrix.js"></script>
-  <script src="scripts/functions.js"></script>
-  <script src="scripts/shader.js"></script>
   <title>Shady Shaders</title>
 </head>
 <body>
   <div class="main-content">
-    <canvas id="canvas">Your browser does not support the canvas element.<br>
-    Please try again with a proper modern web browser. You old fart.<br>
-    Firefox or Chrome should work fine.</canvas>
-  </div>
-  <script src="scripts/main.js" defer></script>
+	<h1>Welcome to Whatever This Is</h1>
+	<p>Here is some stuff I have made:</p>
+	<div class="portfolio-element">
+		<p>#1: Some fancy shader art. Press the number keys from 1 to 5 (not on the keypad!) to switch between shaders.</p><p>DOES NOT WORK ON MOBILE! Because mobile phones don't like fragment shaders.</p>
+		<a href="shady_shaders.html">Shady Shaders</a>
+	</div>
+	<div class="portfolio-element">
+		<p>#2: There is no number two. Maybe later.</p>
+	</div>
 </body>
 </html>
