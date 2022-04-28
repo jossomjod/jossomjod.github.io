@@ -13,6 +13,12 @@ a {
 	display: inline-table;
 }
 
+h1 {
+	animation-duration: 1000ms;
+	animation-name: glowin;
+	text-shadow: #e0e5ff 0 0 14px;
+}
+
 .main-content {
 	display: block;
 }
@@ -24,6 +30,14 @@ a {
 	width: 90%;
 	color: #eaeae0;
 	background-color: #020518;
+}
+
+.portfolio-element:hover {
+	animation-duration: 250ms;
+	animation-name: glowin;
+
+	text-shadow: #e0e5ff 0 0 14px;
+	background-color: #020414;
 }
 
 
@@ -39,5 +53,24 @@ a {
 	
 	a {
 		display: block;
+	}
+}
+
+
+@keyframes glowin {
+	from {
+		text-shadow: none;
+	}
+
+	10% {
+		text-shadow: #fff 0 0 250px;
+	}
+
+	45% {
+		text-shadow: #eaefff 0 0 18px;
+	}
+
+	to {
+		text-shadow: #e0e5ff 0 0 14px;
 	}
 }
