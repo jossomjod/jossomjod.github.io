@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Shaders yay">
-  <meta name="keywords" content="Shader,Shaders,Shady,Amazing,Wow,So,Cool">
+  <meta name="description" content="jossomjod's portfolio and stuff">
+  <meta name="keywords" content="Portfolio,jossomjod,Amazing,Wow,Cool">
   <meta name="author" content="jossomjod">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -17,11 +17,44 @@
 	<h1>Welcome to Whatever This Is</h1>
 	<p>Here is some stuff I have made:</p>
 	<div class="portfolio-element">
-		<p>#1: Some fancy shader art. Press the number keys from 1 to 5 (not on the keypad!) to switch between shaders.</p><p>Might not work on some older hardware.</p>
-		<a href="shady_shaders.html">Shady Shaders</a>
+		<div class="description">
+			<h2>#1: Some fancy shader art.</h2>
+			<p>Might not work on some older hardware.</p>
+			<a href="shady_shaders.html">Shady Shaders</a>
+		</div>
 	</div>
 	<div class="portfolio-element">
-		<p>#2: There is no number two. Maybe later.</p>
+		<div class="description">
+			<h2>#2: A unique piano roll for making music.</h2>
+			<p>Instead of traditional notes there are pitch automation nodes connected by lines.<br>
+			Different nodes in the same note can be on different pitches.<br>
+			</p>
+			<p>NOTE: This is an old prototype. It lacks many common features, such as saving/loading, undo/redo, etc, and there are known bugs. This prototype has served its purpose and will not be further developed.</p>
+			<p><b>Instructions:</b></p>
+			<p>Left-click on empty space to place a note. Notes consist of two or more nodes (circles) connected by lines. Left-click on a line to add a new node.<br>
+			Left-click and drag to move a circle. The largest circle of a note moves the entire note.<br>
+			Right-click on a node to delete it. Deleting an end-node deletes the entire note.<br>
+			Press Space to play/stop.<br>
+			Press Ctrl+Space to play from wherever the mouse cursor is.<br>
+			Press 1 to switch to pitch automation mode (default)<br>
+			Press 2 to switch to volume automation mode.</p>
+			<a href="piano_roll/index.html">Piano Roll 2</a>
+			<a href="piano_roll/examples/pianoroll2test01.mp4">Example 1</a>
+			<a href="piano_roll/examples/pianoroll-test12.mp4">Example 2</a>
+			<a href="piano_roll/examples/pianoroll-test10.mp4">Example 3</a>
+			<a href="piano_roll/examples/pianoroll-test17.mp4">Example 4</a>
+			<a href="piano_roll/examples/pianoroll-test16.mp4">Example 5</a>
+			<a href="piano_roll/examples/pianoroll-test07.mp4">Example 6</a>
+			<a href="piano_roll/examples/pianoroll-test08.mp4">Example 7</a>
+			<a href="piano_roll/examples/pianoroll-test20.mp4">Example 8</a>
+			<a href="piano_roll/examples/pianoroll-test21.mp4">Example 9</a>
+		</div>
+		<div class="media">
+			<video width="500px" height="300px" controls>
+				<source src="piano_roll/examples/pianoroll-test07.mp4" type="video/mp4">
+				Your browser does not support the video tag :(
+			</video>
+		</div>
 	</div>
 </body>
 </html>

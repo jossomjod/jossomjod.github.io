@@ -3,26 +3,41 @@ html, body {
     padding: 0;
 	width: 98%;
 	height: 98%;
-	overflow: auto;
 	color: #ddc;
 	background-color: #010110;
 	font-family: Verdana, Sans-serif;
 	font-size: 1em;
 }
 
-h1 {
-	font-size: 2rem;
+a {
+	display: inline-table;
 }
 
-a {
-	color: #b0c8ff;
+.main-content {
+	display: block;
 }
 
 .portfolio-element {
+	display: block;
 	line-height: 1.5rem;
-	overflow: auto;
 	padding: 0.8em;
 	width: 90%;
 	color: #eaeae0;
 	background-color: #020518;
+}
+
+
+@media  screen and (min-width: 1000px) {
+	.description, .media {
+		width: 45%;
+		display: inline-block;
+	}
+}
+
+
+@media screen and (max-width: 900px) {
+	
+	a {
+		display: block;
+	}
 }

@@ -1,0 +1,162 @@
+
+NEW NEW PIANO ROLL IDEA:
+
+You click somewhere to place the note start.
+
+It's a draggable circle which determines at what time and pitch the note should start.
+
+A short line goes from the note start to the note end, which is marked by another circle.
+
+You can drag said circle to a different time, and also a different pitch.
+
+Clicking on the line adds another draggable circle for further manipulating the note before the end.
+
+The pitch follows the line.
+
+Right-clicking on the line shows a context menu where a function can be selected
+for making the line smoother.
+
+
+Later circles cannot be moved to an earlier time than the earlier ones.
+
+Moving an earlier circle past a later one will push the later circle to the same time.
+  OR: Any later circle will match the movements of the one you are dragging.
+  ^^ Tested; sucks.
+
+Right-clicking a circle will remove it.
+
+Removing the start or end circle will remove the entire note (every circle which is part of the note).
+
+If multiple circles are in the same place, ... GoOd LuCk.
+jk, just drag one out of the way.
+
+Scrolling will scroll. Yep. Or maybe zoom. Idk. MAYBE BOTH. wooooooooooooo.
+Actually, scrolling on the piano-roll will zoom everything.
+Scrolling on a rectangle will zoom only that one.
+
+
+Middle-click-and-drag will pan around the entire piano roll.
+
+You can select multiple notes and make changes to all of them at the same time.
+
+
+Idea: Make the circles change size based on how close the cursor is.
+      Bigger circles are easier to grab, smaller circles look better.
+
+
+
+
+There are different modes for the piano roll, showing different parameters in the y-axis.
+
+You can switch between modes at any time using number keys.
+
+In pitch mode, a circle's y-coordinate represents the pitch of that part of the note.
+
+In volume mode, a circle's y-coordinate represents the volume of that part of the note.
+
+In panner mode... Well, you get the idea.
+
+There's also an up/down panner mode, and a forward/backward panner mode, because why the fuck not?
+
+Or maybe all the panning can be done in one mode?
+Numbers? Multiple sliders near each circle?
+A large circle popping up around the one you last clicked on, with an extra draggable circle for panning?
+
+
+
+Or maybe...
+Instead of changing the entire pianoroll to another mode:
+
+Double-click on a circle to display a semi-transparent rectangle covering the entire note.
+Start and end circles with a line between them are shown in the rectangle.
+Adding, removing, and moving circles inside the rectangle works the same way as in the rest of the pianoroll.
+
+OR: Actually change the pianoroll mode, but leave the pitch mode visible (but faint, greyed out).
+    And do the rectangle idea, but show every rectangle.
+
+OR: Double-click on a circle to change automation values for that circle.
+	This would work well with panning. Maybe.
+
+
+
+
+
+Anyway, the idea is to make it easier and more fun to manually control every note.
+
+Because that's how you make good, unique music. I think.
+
+This is kind of like having a unique synth for every note, but all in one note editor.
+
+
+
+A saving system.
+
+Needs a way to change size of pianoroll. At least the width.
+
+I should keep prototyping the pianoroll.
+No point coming up with more ideas until I know more.
+
+
+
+FOR THE REST OF THE DAW----------------------------------------
+===============================================================
+
+
+There are instrument tracks which contain effects.
+
+In the tracks you can place note clips, which can be edited in the piano roll.
+
+The effects will affect any clips in their tracks. Duh.
+
+Clips consist of circles which can be added, removed, or dragged into other tracks.
+
+If a clip has a start circle in one track and ends in another, the sound will change smoothly.
+This is possible because different tracks still share the same kind of effects, even if the
+initial settings are different.
+
+The various parameters will change smoothly from those of one track to the other.
+
+
+Parts of multiple tracks can be selected simultaneously.
+
+If effect parameters of a track are edited while a part is selected, parameters will be automated
+to the chosen values only in the selected part.
+
+
+Instead, just like with the piano editor, the track thingy has modes.
+
+Switch to a different mode to see effect automation stuff on top of clips.
+You know, circles with lines between them.
+
+I guess some effects would need to have their parameters set in a dedicated ui.
+Then automation stuff could determine the strength of the effect. Maybe.
+
+
+
+
+
+
+
+
+
+======================================================================
+
+
+09.09.21
+
+NOTE COLORS:
+You have an active color.
+You can switch between active colors at any time by pressing the key you assigned to that color.
+Notes you place have the color that was active when you placed them.
+Only notes of the current active color can be edited.
+Notes of inactive colors are visible, but partly faded into the background.
+
+
+
+
+
+
+
+
+
+
