@@ -16,7 +16,7 @@ a {
 h1 {
 	animation-duration: 1000ms;
 	animation-name: glowin;
-	text-shadow: #e0e5ff 0 0 14px;
+	text-shadow: #e0e5ff 0 0 10px;
 }
 
 .main-content {
@@ -33,10 +33,6 @@ h1 {
 }
 
 .portfolio-element:hover {
-	animation-duration: 250ms;
-	animation-name: glowin;
-
-	text-shadow: #e0e5ff 0 0 14px;
 	background-color: #020414;
 }
 
@@ -62,15 +58,11 @@ h1 {
 		text-shadow: none;
 	}
 
-	10% {
-		text-shadow: #fff 0 0 250px;
-	}
-
-	45% {
-		text-shadow: #eaefff 0 0 18px;
+	75% {
+		text-shadow: #eaefff 0 0 5px;
 	}
 
 	to {
-		text-shadow: #e0e5ff 0 0 14px;
+		text-shadow: #e0e5ff 1px 0 10px;
 	}
 }
