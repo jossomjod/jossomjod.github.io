@@ -133,7 +133,7 @@ document.body.onkeyup = function(e) {
 };
 
 function toggleKeys(e, bool) {
-	keyboardKeys[e.code]?.down = bool;
+	if (keyboardKeys[e.code]) keyboardKeys[e.code].down = bool;
 
 	switch (e.which) {
 		case 37:
