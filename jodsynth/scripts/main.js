@@ -23,6 +23,25 @@ var keys = {
 	ctrl: false
 };
 
+var lowerKeys = [
+	'KeyZ', 'KeyS', 'KeyX', 'KeyD', 'KeyC', 'KeyV', 'KeyG', 'KeyB', 'KeyH', 'KeyN', 'KeyJ',
+	'KeyM', 'Comma', 'KeyL', 'Period', 'Semicolon', 'Slash', 'ShiftRight', 'Backslash',
+];
+var upperKeys = [
+	'KeyQ', 'Digit2', 'KeyW', 'Digit3', 'KeyE', 'KeyR', 'Digit5', 'KeyT', 'Digit6', 'KeyY', 'Digit7',
+	'KeyU', 'KeyI', 'Digit9', 'KeyO', 'Digit0', 'KeyP', 'BracketLeft', 'Equal', 'BracketRight',
+];
+
+
+var keyboardKeys = {};
+
+function generateKeyDict() {
+	lowerKeys.forEach((k, i) => keyboardKeys[k] = { down: false, index: i });
+	upperKeys.forEach((k, i) => keyboardKeys[k] = { down: false, index: i + 12 });
+}
+generateKeyDict();
+console.log(keyboardKeys);
+
 
 
 // MASTER Gain
@@ -101,7 +120,7 @@ document.body.onkeydown = function(e) {
 	
 	switch (e.which) {
 		default:
-			toggleKeys(e.which, true);
+			toggleKeys(e, true);
 	}
 	
 };
@@ -110,11 +129,13 @@ document.body.onkeydown = function(e) {
 document.body.onkeyup = function(e) {
 	e.preventDefault();
 	
-	toggleKeys(e.which, false);
+	toggleKeys(e, false);
 };
 
-function toggleKeys(key, bool) {
-	switch (key) {
+function toggleKeys(e, bool) {
+	keyboardKeys[e.code]?.down = bool;
+
+	switch (e.which) {
 		case 37:
 			keys.left = bool;
 			break;
@@ -128,10 +149,10 @@ function toggleKeys(key, bool) {
 			keys.down = bool;
 			break;
 		case 17:
-			keys.ctrl = bool;  // Ctrl
+			keys.ctrl = bool;
 			break;
 		default:
-			console.log(key);
+			console.log('Key event - physical:', e.code);
 			break;
 	}
 }

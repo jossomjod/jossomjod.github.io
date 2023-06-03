@@ -159,81 +159,6 @@ function randomColor() {
 }
 
 
-// Returns a random color similar to the one specified
-// (RED, GREEN, BLUE, RANGE)
-function shadeOfColor(r, g, b, i) {
-	
-	var r = Math.ceil(Math.random() + r - i);
-	var g = Math.ceil(Math.random() + g - i);
-	var b = Math.ceil(Math.random() + b - i);
-	
-	return 'rgb(' + r + ',' + g + ',' + b + ')';
-}
-
-
-// For use in loops. (color1[arr], color2[arr], max colors, current color)
-function gradient(col1, col2, max, cur) {
-	
-	var c1 = col1 || [50, 50, 50];
-	var c2 = col2 || [255, 255, 255];
-	var col = [];
-	
-	col[0] = Math.ceil((c2[0] - c1[0]) / max * cur) + c1[0];
-	col[1] = Math.ceil((c2[1] - c1[1]) / max * cur) + c1[1];
-	col[2] = Math.ceil((c2[2] - c1[2]) / max * cur) + c1[2];
-	
-	return 'rgb(' +
-			col[0] + ',' +
-			col[1] + ',' +
-			col[2] + ')';
-}
-
-
-
-
-
-
-function getActiveColor(ac) {
-	
-	let col = "#ff0";
-	
-	switch (ac) {
-		case 0:
-			col = "#f0f";
-			break;
-		case 1:
-			col = "#0ff";
-			break;
-		case 2:
-			col = "#fa0";
-			break;
-	}
-	
-	return col;
-}
-
-
-
-
-
-/*
-* Generates (amount) random vectors within (0, 0) and (bounds.x, bounds.y)
-*/
-function generateRandomVectors(amount, width, height) {
-	
-	let vecs = [];
-	
-	for (let i = 0; i < amount; i++) {
-		vecs[i] = new Vector2(Math.random() * width, Math.random() * height);
-	}
-	
-	return vecs;
-}
-
-
-
-
-
 function generateWhiteNoise(num) {
 	
 	let nois = [];
@@ -283,11 +208,7 @@ function getFreqFromNum(y, h, rng, offset) {
 // 440.0 hz = 27.5 * 2^(48 / 12)
 // 110.0 hz = 27.5 * 2^(24 / 12)
 
-// tone is the offset from A0 (27.5 hz).
-// Other base frequencies can be used.
-// 12 tones is one octave. Or is it semitones they call it?
-// I don't know music theory...
-// It's probably semitones. Anyway, I'll keep calling them tones.
+// tone is the offset from A0 (27.5 hz) in semitones.
 
 function toneToFreq(tone) {
 	return 27.5 * Math.pow(2, tone / 12);
@@ -318,45 +239,6 @@ function pixelsToTime(pixels, width, rng, bpm) {
 	
 	return t;
 }
-
-
-
-
-
-// Modes: 0 = no snap, 1 = snap to beat, 2 = snap to both, 3 = snap to tone
-
-function snapToGrid(pos, bounds, grid, m) {
-	
-	let mode = m || 0;
-	let result = pos;
-	
-	
-	let tone;
-	let beat;
-	
-	switch (mode) {
-		case 0:
-			break;
-		case 1:
-			beat = pos.x / bounds.x * grid.x;
-			result.x = Math.round(beat) / grid.x * bounds.x;
-			break;
-		case 2:
-			beat = pos.x / bounds.x * grid.x;
-			result.x = Math.round(beat) / grid.x * bounds.x;
-		case 3:
-			tone = (-pos.y / bounds.y + 1.0) * grid.y;
-			result.y = toneToPosition(Math.round(tone), grid.y, bounds.y);
-	}
-	
-	
-	return result;
-}
-
-
-
-
-
 
 
 
