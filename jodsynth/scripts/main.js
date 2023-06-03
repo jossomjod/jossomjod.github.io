@@ -1,19 +1,25 @@
-
-const canvas = document.querySelector("#canvas");
-const ctx    = canvas.getContext("2d");
-
-var WIDTH  = canvas.width  = window.innerWidth;
-var HEIGHT = canvas.height = window.innerHeight;
-let bounds = new Vector2(WIDTH, HEIGHT);
-
-
 const ac = new (window.AudioContext || window.webkitAudioContext);
 
 
-var mPos = new Vector2();
-var leftMouseDown = false;
+// MASTER Gain
 
-var testOn = false;
+const masterGain = ac.createGain();
+masterGain.connect(ac.destination);
+masterGain.gain.value = 0.2;
+
+const masterGainUI = document.querySelector('#masterGain');
+masterGainUI.value = masterGain.gain.value;
+masterGainUI.addEventListener('input', () => {
+	masterGain.gain.value = masterGainUI.value;
+});
+
+
+const oscillatorContainer = document.querySelector('.oscillator-container');
+const oscillatorTemplate = document.querySelector('#oscillator-template');
+const oscTemplateContent = oscillatorTemplate.content;
+oscillatorContainer.appendChild(oscTemplateContent);
+
+
 
 var keys = {
 	left: false,
@@ -36,79 +42,22 @@ var upperKeys = [
 var keyboardKeys = {};
 
 function generateKeyDict() {
-	lowerKeys.forEach((k, i) => keyboardKeys[k] = { down: false, index: i });
-	upperKeys.forEach((k, i) => keyboardKeys[k] = { down: false, index: i + 12 });
+	lowerKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, index: i });
+	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, index: i + 12 });
 }
 generateKeyDict();
 console.log(keyboardKeys);
 
 
 
-// MASTER Gain
-
-let masterGain = ac.createGain();
-masterGain.connect(ac.destination);
-masterGain.gain.value = 0.1;
-
-
-
-
-// CANVAS UPDATE LOOP
-
-let dt    = 1.0;
-let now   = 1.0;
-let then  = +new Date;
-let time  = 0.0;
-let beats = 0.0;
-
-let testValue = 0.0;
-
-function mainLoop() {
-	
-	now = +new Date;
-	dt  = (now - then) / 16.7;
-	
-	
-	// Debug info box:
-	ctx.fillStyle = "#444d";
-	ctx.fillRect(0, 0, 160, 110);
-	
-	
-	
-	then = now;
-	requestAnimationFrame(mainLoop);
-}
-
-//mainLoop();
-
 
 
 
 // EVENTS----------------------------------------------------------------------
 
-
-// Prevents context menu.
 window.oncontextmenu = (e) => {
   e.preventDefault();
 };
-
-
-// MOUSE STUFF
-
-document.body.onmousedown = function(e) {
-	e.preventDefault();
-	leftMouseDown = true;
-};
-
-
-document.body.onmouseup = function(e) {
-	leftMouseDown = false;
-};
-
-
-document.body.onmousemove = function(e) {
-
-}
 
 
 
@@ -116,24 +65,24 @@ document.body.onmousemove = function(e) {
 // KEY STUFF
 
 document.body.onkeydown = function(e) {
+	if (e.repeat) return;
 	e.preventDefault();
-	
-	switch (e.which) {
-		default:
-			toggleKeys(e, true);
-	}
-	
+	toggleKeys(e, true);
 };
 
 
 document.body.onkeyup = function(e) {
 	e.preventDefault();
-	
 	toggleKeys(e, false);
 };
 
 function toggleKeys(e, bool) {
-	if (keyboardKeys[e.code]) keyboardKeys[e.code].down = bool;
+	const key = keyboardKeys[e.code];
+	if (key) {
+		key.down = bool;
+		if (bool) key.synth.start(toneToFreq(key.index + 24));
+		else key.synth.stop();
+	}
 
 	switch (e.which) {
 		case 37:

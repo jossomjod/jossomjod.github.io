@@ -1,1 +1,15 @@
-/* nothing here :P */
+.main-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+}
+.synth-container {
+	flex-grow: 1;
+	margin: 20px;
+	background-color: #250206;
+}
+
+.oscillator-container {
+	background-color: #6422e4;
+}
