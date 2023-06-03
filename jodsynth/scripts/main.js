@@ -17,6 +17,7 @@ masterGainUI.addEventListener('input', () => {
 const oscillatorContainer = document.querySelector('.oscillator-container');
 const oscillatorTemplate = document.querySelector('#oscillator-template');
 const oscTemplateContent = oscillatorTemplate.content;
+
 oscillatorContainer.appendChild(oscTemplateContent);
 
 

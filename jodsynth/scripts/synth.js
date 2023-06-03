@@ -1,7 +1,5 @@
 
-
-
-
+/* 
 function Envelope(ac, att, dec, sus, rel, multiplier) {
     
 	this.attack  = att || new Vector2(0.01, 1.0);
@@ -44,7 +42,7 @@ function Envelope(ac, att, dec, sus, rel, multiplier) {
 				0, ac.currentTime + this.release
 		);
 	};
-}
+} */
 
 /**
 * points: { value: number, time: number }[]
@@ -106,9 +104,9 @@ function Oscillator(ac, type = 'square', detune = 0.0, gain = 1.0, gainEnvelope)
 
 function generateGainPoints() {
 	return [
-		{ value: 1.0, time: 0.1 },
-		{ value: 0.7, time: 0.2 },
-		{ value: 0.9, time: 2.3 },
+		{ value: 1.0, time: 0.001 },
+		{ value: 0.6, time: 0.2 },
+		{ value: 0.4, time: 2.3 },
 	];
 }
 
@@ -117,18 +115,13 @@ function Synth(ac, connectTo) {
 	this.gain = ac.createGain();
 	this.gain.gain.value = 0.2;
 	this.gain.connect(connectTo);
-	this.gainRelease = 0.6
+	this.gainRelease = 0.2
 	this.gainEnv = new ArrayEnvelope(ac, generateGainPoints(), this.gainRelease, this.gain.gain.value);
 
 	this.oscillators = [
 		new Oscillator(ac, 'sawtooth', 3.0, 1.0),
 		new Oscillator(ac, 'sawtooth', -3.0, 1.0),
-		new Oscillator(ac, 'sawtooth', -9.0, 0.8),
-		new Oscillator(ac, 'sawtooth', 9.0, 0.8),
-		new Oscillator(ac, 'sawtooth', -13.0, 0.9),
-		new Oscillator(ac, 'sawtooth', 13.0, 0.9),
-		new Oscillator(ac, 'sawtooth', -17.0, 0.7),
-		new Oscillator(ac, 'sawtooth', 17.0, 0.7),
+		new Oscillator(ac, 'sine', 0.0, 1.0),
 	];
 	this.oscillators.forEach(o => o.connect(this.gain));
 	
