@@ -13,13 +13,10 @@
 		<script src="../scripts/vector.js"></script>
 		<script src="scripts/functions.js"></script>
 		<script src="scripts/synth.js"></script>
+		<script src="scripts/ui.js"></script>
 		<title>JODSynth</title>
 	</head>
 	<body>
-		<template id="oscillator-template">
-			<p><slot name="testText">TEST default text</slot></p>
-		</template>
-
 		<div class="main-content">
 			<div class="top-bar">
 				<a href="../index.html">Home</a>
@@ -29,7 +26,11 @@
 					<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
 					<label for="masterGain">Master Gain</label>
 				</div>
-				<div class="oscillator-container"></div>
+				<div class="oscillator-container">
+					<p>Oscar</p>
+					<input type="range" id="oscarGain" name="oscarGain" min="0" max="1" step="0.01">
+					<label for="oscarGain">Gain</label>
+				</div>
 			</div>
 		</div>
 		<script src="scripts/main.js" defer></script>

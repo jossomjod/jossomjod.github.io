@@ -14,11 +14,12 @@ masterGainUI.addEventListener('input', () => {
 });
 
 
-const oscillatorContainer = document.querySelector('.oscillator-container');
-const oscillatorTemplate = document.querySelector('#oscillator-template');
+const oscarGain = document.querySelector('#oscarGain');
+oscarGain.value = 1;
+/* const oscillatorTemplate = document.querySelector('#oscillator-template');
 const oscTemplateContent = oscillatorTemplate.content;
 
-oscillatorContainer.appendChild(oscTemplateContent);
+oscillatorContainer.appendChild(oscTemplateContent); */
 
 
 
@@ -43,22 +44,22 @@ var upperKeys = [
 var keyboardKeys = {};
 
 function generateKeyDict() {
-	lowerKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, index: i });
-	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, index: i + 12 });
+	lowerKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i });
+	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i + 12 });
 }
 generateKeyDict();
 console.log(keyboardKeys);
 
 
-
+const synthHandler = new SynthHandler(ac, masterGain);
 
 
 
 // EVENTS----------------------------------------------------------------------
 
-window.oncontextmenu = (e) => {
+/* window.oncontextmenu = (e) => {
   e.preventDefault();
-};
+}; */
 
 
 
@@ -81,8 +82,8 @@ function toggleKeys(e, bool) {
 	const key = keyboardKeys[e.code];
 	if (key) {
 		key.down = bool;
-		if (bool) key.synth.start(toneToFreq(key.index + 24));
-		else key.synth.stop();
+		if (bool) key.id = synthHandler.start(toneToFreq(key.index + 24));
+		else synthHandler.stop(key.id);
 	}
 
 	switch (e.which) {

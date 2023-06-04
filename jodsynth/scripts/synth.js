@@ -73,30 +73,45 @@ function ArrayEnvelope(ac, points = [], release = 0.0, multiplier = 1.0) {
 }
 
 
+const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
+function Oscillator(ac, connectTo, type = 'square', detune = 0.0, gain = 1.0, gainEnvelope) {
+	this.osc; // TODO: Add auxilliary oscs for whatever
+	this.type = type;
+	this.detune = detune;
 
-function Oscillator(ac, type = 'square', detune = 0.0, gain = 1.0, gainEnvelope) {
-	this.osc;
 	this.gainNode = ac.createGain();
 	this.gainNode.gain.value = gain;
 	this.gainEnvelope = gainEnvelope;
 
+	this.fmod = null; // Oscillator | null
+	this.amod = null;
+	this.pmod = null;
+
+	if (connectTo) this.gainNode.connect(connectTo);
+
 	this.connect = (node) => {
 		this.gainNode.connect(node);
 	}
-	this.start = (freq) => {
-		this.osc = ac.createOscillator(); // You have to make a new osc every time
-		this.osc.type = type;
-		this.osc.detune = detune;
-		this.osc.frequency.value = freq;
+	this.start = (frequency) => {
+		// You have to make a new osc every time
+		this.osc = new OscillatorNode(ac, { type: this.type, detune: this.detune, frequency });
+
+		if (this.fmod) this.fmod.connect(this.osc.frequency);
+
+		this.osc.onended = () => console.log('the end');
 		this.osc.connect(this.gainNode);
 		this.osc.start();
 
 		if (this.gainEnvelope) this.gainEnvelope.start(this.gainNode.gain);
 	}
 	this.stop = (time) => {
-		this.osc.stop(time);
+		if (this.gainEnvelope) {
+			this.gainEnvelope.stop(this.gainNode.gain);
+			this.osc.stop(time + this.gainEnvelope.release);
+		}
+		else this.osc.stop(time);
 	}
 }
 
@@ -113,31 +128,56 @@ function generateGainPoints() {
 function Synth(ac, connectTo) {
 	this.playing = false;
 	this.gain = ac.createGain();
-	this.gain.gain.value = 0.2;
+	this.gain.gain.value = 0.4;
 	this.gain.connect(connectTo);
-	this.gainRelease = 0.2
-	this.gainEnv = new ArrayEnvelope(ac, generateGainPoints(), this.gainRelease, this.gain.gain.value);
+	this.gainEnv = new ArrayEnvelope(ac, generateGainPoints(), 0.1, this.gain.gain.value);
 
-	this.oscillators = [
-		new Oscillator(ac, 'sawtooth', 3.0, 1.0),
-		new Oscillator(ac, 'sawtooth', -3.0, 1.0),
-		new Oscillator(ac, 'sine', 0.0, 1.0),
-	];
-	this.oscillators.forEach(o => o.connect(this.gain));
-	
+
+	this.oscar = new Oscillator(ac, this.gain, 'sine', 0.0, 1.0);
+	this.osiris = new Oscillator(ac, null, 'sine', 10.0, 1000.0);
+
+	this.oscar.fmod = this.osiris;
+
 	
 	this.start = (freq) => {
 		if (this.playing) return;
 		this.playing = true;
 		this.gainEnv.start(this.gain.gain);
-		this.oscillators.forEach(o => o.start(freq));
+
+		this.oscar.start(freq);
+		this.osiris.start(freq);
 	};
 	
 	this.stop = () => {
 		if (!this.playing) return;
 		this.playing = false;
 		this.gainEnv.stop(this.gain.gain);
-		this.oscillators.forEach(o => o.stop(ac.currentTime + this.gainRelease));
+
+		this.oscar.stop(ac.currentTime + this.gainEnv.release);
+		this.osiris.stop(ac.currentTime + this.gainEnv.release);
 	};
 }
 
+
+function SynthHandler(ac, connectTo) {
+	this.synths = [];
+	for (let i = 0; i < 16; i++) {
+		this.synths.push(new Synth(ac, connectTo));
+	}
+
+	this.start = (freq) => {
+		let id = 0
+		const synth = this.synths.find((s, i) => {
+			id = i;
+			return !s.playing;
+		});
+		if (!synth) return null;
+		synth.start(freq);
+		return id;
+	}
+
+	this.stop = (id) => {
+		if (id === null) return;
+		this.synths[id].stop();
+	}
+}
