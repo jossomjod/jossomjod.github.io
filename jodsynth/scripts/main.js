@@ -40,6 +40,8 @@ var upperKeys = [
 	'KeyU', 'KeyI', 'Digit9', 'KeyO', 'Digit0', 'KeyP', 'BracketLeft', 'Equal', 'BracketRight',
 ];
 
+let octave = 2;
+
 
 var keyboardKeys = {};
 
@@ -69,7 +71,16 @@ const synthHandler = new SynthHandler(ac, masterGain);
 document.body.onkeydown = function(e) {
 	if (e.repeat) return;
 	e.preventDefault();
-	toggleKeys(e, true);
+	switch (e.which) {
+		case 33:
+			octave++;
+			break;
+		case 34:
+			octave--;
+			break;
+		default:
+			toggleKeys(e, true);
+	}
 };
 
 
@@ -82,7 +93,7 @@ function toggleKeys(e, bool) {
 	const key = keyboardKeys[e.code];
 	if (key) {
 		key.down = bool;
-		if (bool) key.id = synthHandler.start(toneToFreq(key.index + 24));
+		if (bool) key.id = synthHandler.start(toneToFreq(key.index + 12 * octave));
 		else synthHandler.stop(key.id);
 	}
 
@@ -103,7 +114,7 @@ function toggleKeys(e, bool) {
 			keys.ctrl = bool;
 			break;
 		default:
-			console.log('Key event - physical:', e.code);
+			console.log('Key event - physical:', e.code, 'which:', e.which);
 			break;
 	}
 }

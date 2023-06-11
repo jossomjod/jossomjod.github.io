@@ -117,24 +117,29 @@ function Oscillator(ac, connectTo, type = 'square', detune = 0.0, gain = 1.0, ga
 
 
 
-function generateGainPoints() {
-	return [
-		{ value: 1.0, time: 0.001 },
-		{ value: 0.6, time: 0.2 },
-		{ value: 0.4, time: 2.3 },
-	];
-}
+var gainEnvelopePoints = [
+	{ value: 1.0, time: 0.001 },
+	{ value: 0.6, time: 0.2 },
+	{ value: 0.4, time: 2.3 },
+];
+
+var osirisGainPoints = [
+	{ value: 0.9, time: 0.0 },
+	{ value: 0.3, time: 0.1 },
+	{ value: 0.1, time: 0.8 },
+];
+
 
 function Synth(ac, connectTo) {
 	this.playing = false;
 	this.gain = ac.createGain();
 	this.gain.gain.value = 0.4;
 	this.gain.connect(connectTo);
-	this.gainEnv = new ArrayEnvelope(ac, generateGainPoints(), 0.1, this.gain.gain.value);
+	this.gainEnv = new ArrayEnvelope(ac, gainEnvelopePoints, 0.1, this.gain.gain.value);
 
 
 	this.oscar = new Oscillator(ac, this.gain, 'sine', 0.0, 1.0);
-	this.osiris = new Oscillator(ac, null, 'sine', 10.0, 1000.0);
+	this.osiris = new Oscillator(ac, null, 'sawtooth', 10.0, 0.0, new ArrayEnvelope(ac, osirisGainPoints, 0.1, 1000.0));
 
 	this.oscar.fmod = this.osiris;
 
