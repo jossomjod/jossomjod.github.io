@@ -55,6 +55,7 @@ console.log(keyboardKeys);
 
 const synthHandler = new SynthHandler(ac, masterGain);
 
+const synth = new Synth(ac, masterGain);
 
 
 // EVENTS----------------------------------------------------------------------
@@ -93,8 +94,8 @@ function toggleKeys(e, bool) {
 	const key = keyboardKeys[e.code];
 	if (key) {
 		key.down = bool;
-		if (bool) key.id = synthHandler.start(toneToFreq(key.index + 12 * octave));
-		else synthHandler.stop(key.id);
+		if (bool) key.id = synth.start(toneToFreq(key.index + 12 * octave));
+		else synth.stop(key.id);
 	}
 
 	switch (e.which) {

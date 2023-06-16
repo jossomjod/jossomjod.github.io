@@ -68,6 +68,7 @@ function ArrayEnvelope(ac, points = [], release = 0.0, multiplier = 1.0) {
 	// Call this when ending a note. prop must be an AudioParam.
 	this.stop = (prop) => {
 		if (!prop) return;
+		prop.cancelScheduledValues(ac.currentTime);
 		prop.linearRampToValueAtTime(0, ac.currentTime + this.release);
 	}
 }
@@ -76,42 +77,35 @@ function ArrayEnvelope(ac, points = [], release = 0.0, multiplier = 1.0) {
 const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
-function Oscillator(ac, connectTo, type = 'square', detune = 0.0, gain = 1.0, gainEnvelope) {
+function Oscillator(ac, type = 'square', detune = 0.0, gain = 1.0, gainEnvelope) {
 	this.osc; // TODO: Add auxilliary oscs for whatever
 	this.type = type;
 	this.detune = detune;
 
-	this.gainNode = ac.createGain();
-	this.gainNode.gain.value = gain;
 	this.gainEnvelope = gainEnvelope;
 
 	this.fmod = null; // Oscillator | null
 	this.amod = null;
 	this.pmod = null;
 
-	if (connectTo) this.gainNode.connect(connectTo);
-
-	this.connect = (node) => {
-		this.gainNode.connect(node);
-	}
-	this.start = (frequency) => {
+	this.start = (frequency, gainNode) => {
 		// You have to make a new osc every time
-		this.osc = new OscillatorNode(ac, { type: this.type, detune: this.detune, frequency });
+		const osc = new OscillatorNode(ac, { type: this.type, detune: this.detune, frequency });
 
-		if (this.fmod) this.fmod.connect(this.osc.frequency);
+		//osc.onended = () => console.log('the end');
+		osc.connect(gainNode);
+		osc.start();
 
-		this.osc.onended = () => console.log('the end');
-		this.osc.connect(this.gainNode);
-		this.osc.start();
+		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain);
 
-		if (this.gainEnvelope) this.gainEnvelope.start(this.gainNode.gain);
+		return osc;
 	}
-	this.stop = (time) => {
+	this.stop = (time, osc, gainNode) => {
 		if (this.gainEnvelope) {
-			this.gainEnvelope.stop(this.gainNode.gain);
-			this.osc.stop(time + this.gainEnvelope.release);
+			this.gainEnvelope.stop(gainNode.gain);
+			osc.stop(time + this.gainEnvelope.release);
 		}
-		else this.osc.stop(time);
+		else osc.stop(time);
 	}
 }
 
@@ -124,9 +118,9 @@ var gainEnvelopePoints = [
 ];
 
 var osirisGainPoints = [
-	{ value: 0.9, time: 0.0 },
-	{ value: 0.3, time: 0.1 },
-	{ value: 0.1, time: 0.8 },
+	{ value: 1.0, time: 0.0 },
+	{ value: 0.5, time: 0.06 },
+	{ value: 0.3, time: 0.8 },
 ];
 
 
@@ -137,29 +131,31 @@ function Synth(ac, connectTo) {
 	this.gain.connect(connectTo);
 	this.gainEnv = new ArrayEnvelope(ac, gainEnvelopePoints, 0.1, this.gain.gain.value);
 
-
-	this.oscar = new Oscillator(ac, this.gain, 'sine', 0.0, 1.0);
-	this.osiris = new Oscillator(ac, null, 'sawtooth', -1205.0, 0.0, new ArrayEnvelope(ac, osirisGainPoints, 0.1, 2000.0));
-
-	this.oscar.fmod = this.osiris;
-
+	this.oscar = new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, gainEnvelopePoints, 0.1, 1.0));
+	this.osiris = new Oscillator(ac, 'sawtooth', -1205.0, 0.0, new ArrayEnvelope(ac, osirisGainPoints, 0.1, 1000.0));
 	
 	this.start = (freq) => {
-		if (this.playing) return;
 		this.playing = true;
 		this.gainEnv.start(this.gain.gain);
 
-		this.oscar.start(freq);
-		this.osiris.start(freq);
+		const oscarGain = ac.createGain();
+		const osirisGain = ac.createGain();
+		const oscar = this.oscar.start(freq, oscarGain);
+		const osiris = this.osiris.start(freq, osirisGain);
+
+		oscarGain.connect(this.gain);
+		osirisGain.connect(oscar.frequency);
+
+		return { oscar, osiris, oscarGain, osirisGain };
 	};
 	
-	this.stop = () => {
-		if (!this.playing) return;
+	this.stop = (oscs) => {
+		if (!oscs) return;
 		this.playing = false;
 		this.gainEnv.stop(this.gain.gain);
 
-		this.oscar.stop(ac.currentTime + this.gainEnv.release);
-		this.osiris.stop(ac.currentTime + this.gainEnv.release);
+		this.oscar.stop(ac.currentTime + this.gainEnv.release, oscs.oscar, oscs.oscarGain);
+		this.osiris.stop(ac.currentTime + this.gainEnv.release, oscs.osiris, oscs.osirisGain);
 	};
 }
 
