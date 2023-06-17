@@ -7,10 +7,6 @@ const masterGain = ac.createGain();
 masterGain.connect(ac.destination);
 masterGain.gain.value = 0.2;
 
-
-const synth = new Synth(ac, masterGain);
-
-
 const masterGainUI = document.querySelector('#masterGain');
 masterGainUI.value = masterGain.gain.value;
 masterGainUI.addEventListener('input', () => {
@@ -18,10 +14,20 @@ masterGainUI.addEventListener('input', () => {
 });
 
 
-const oscarGainUI = document.querySelector('#oscarGain');
-oscarGainUI.value = 1;
-oscarGainUI.addEventListener('input', () => {
-	synth.oscar.gain = oscarGainUI.value;
+const synth = new Synth(ac, masterGain);
+const synthUi = new SynthControlBindings(synth);
+
+
+const oscarWaveformUI = document.querySelector('#oscarWaveform');
+oscarWaveformUI.value = synth.oscar.type;
+oscarWaveformUI.addEventListener('input', () => {
+	synth.oscar.type = oscarWaveformUI.value;
+});
+
+const osirisWaveformUI = document.querySelector('#osirisWaveform');
+osirisWaveformUI.value = synth.osiris.type;
+osirisWaveformUI.addEventListener('input', () => {
+	synth.osiris.type = osirisWaveformUI.value;
 });
 
 const osirisGainUI = document.querySelector('#osirisGain');
@@ -29,11 +35,17 @@ osirisGainUI.value = 1;
 osirisGainUI.addEventListener('input', () => {
 	synth.osiris.gain = osirisGainUI.value;
 });
-// TODO: restructure awl dis shet
+
 const osirisMultiplierUI = document.querySelector('#osirisMultiplier');
 osirisMultiplierUI.value = 1000;
 osirisMultiplierUI.addEventListener('input', () => {
 	synth.osiris.multiplier = osirisMultiplierUI.value;
+});
+
+const osirisDetuneUI = document.querySelector('#osirisDetune');
+osirisDetuneUI.value = synth.osiris.detune;
+osirisDetuneUI.addEventListener('input', () => {
+	synth.osiris.detune = osirisDetuneUI.value;
 });
 /* const oscillatorTemplate = document.querySelector('#oscillator-template');
 const oscTemplateContent = oscillatorTemplate.content;
@@ -69,7 +81,6 @@ function generateKeyDict() {
 	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i + 12 });
 }
 generateKeyDict();
-console.log(keyboardKeys);
 
 
 // EVENTS----------------------------------------------------------------------
@@ -110,6 +121,7 @@ function toggleKeys(e, bool) {
 		key.down = bool;
 		if (bool) key.id = synth.start(toneToFreq(key.index + 12 * octave));
 		else synth.stop(key.id);
+		return;
 	}
 
 	switch (e.which) {

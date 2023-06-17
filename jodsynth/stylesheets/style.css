@@ -11,5 +11,24 @@
 }
 
 .oscillator-container {
+	padding: 20px;
 	background-color: #6422e4;
+}
+
+.envelope {
+	position: relative;
+	display: block;
+	width: 800px;
+	height: 150px;
+	margin: 20px 0;
+	background-color: #ef2af1;
+	border: 1px solid #111;
+}
+.envelope-node {
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	background-color: #1fa2fe;
+	border-radius: 20px;
+	border: 2px solid #fff;
 }
