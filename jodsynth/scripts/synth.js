@@ -93,7 +93,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 		osc.connect(gainNode);
 		osc.start();
 
-		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, this.multiplier);
+		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, this.multiplier * this.gain);
 
 		return osc;
 	}
