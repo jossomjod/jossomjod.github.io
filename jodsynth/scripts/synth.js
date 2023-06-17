@@ -77,26 +77,23 @@ function ArrayEnvelope(ac, points = [], release = 0.0, multiplier = 1.0) {
 const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
-function Oscillator(ac, type = 'square', detune = 0.0, gain = 1.0, gainEnvelope) {
-	this.osc; // TODO: Add auxilliary oscs for whatever
+function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope) {
 	this.type = type;
 	this.detune = detune;
-
+	this.gain = 1.0;
+	this.multiplier = gainMult;
 	this.gainEnvelope = gainEnvelope;
-
-	this.fmod = null; // Oscillator | null
-	this.amod = null;
-	this.pmod = null;
 
 	this.start = (frequency, gainNode) => {
 		// You have to make a new osc every time
 		const osc = new OscillatorNode(ac, { type: this.type, detune: this.detune, frequency });
 
 		//osc.onended = () => console.log('the end');
+		gainNode.gain.value = this.gain;
 		osc.connect(gainNode);
 		osc.start();
 
-		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain);
+		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, this.multiplier);
 
 		return osc;
 	}
@@ -110,11 +107,11 @@ function Oscillator(ac, type = 'square', detune = 0.0, gain = 1.0, gainEnvelope)
 }
 
 
-
-var gainEnvelopePoints = [
-	{ value: 0.9, time: 0.001 },
-	{ value: 0.6, time: 0.2 },
-	{ value: 0.4, time: 2.3 },
+// TODO: UI for changing these
+var oscarGainPoints = [
+	{ value: 1.0, time: 0.001 },
+	{ value: 0.8, time: 0.2 },
+	{ value: 0.5, time: 2.3 },
 ];
 
 var osirisGainPoints = [
@@ -127,17 +124,13 @@ var osirisGainPoints = [
 function Synth(ac, connectTo) {
 	this.playing = false;
 	this.gain = ac.createGain();
-	this.gain.gain.value = 0.4;
+	this.gain.gain.value = 1.0;
 	this.gain.connect(connectTo);
-	this.gainEnv = new ArrayEnvelope(ac, gainEnvelopePoints, 0.1, this.gain.gain.value);
 
-	this.oscar = new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, gainEnvelopePoints, 0.1, 1.0));
-	this.osiris = new Oscillator(ac, 'sawtooth', -1205.0, 0.0, new ArrayEnvelope(ac, osirisGainPoints, 0.1, 1000.0));
+	this.oscar = new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 0.5, 1.0));
+	this.osiris = new Oscillator(ac, 'sawtooth', 1205.0, 0.0, new ArrayEnvelope(ac, osirisGainPoints, 0.1, 1000.0));
 	
 	this.start = (freq) => {
-		this.playing = true;
-		this.gainEnv.start(this.gain.gain);
-
 		const oscarGain = ac.createGain();
 		const osirisGain = ac.createGain();
 		const oscar = this.oscar.start(freq, oscarGain);
@@ -150,12 +143,8 @@ function Synth(ac, connectTo) {
 	};
 	
 	this.stop = (oscs) => {
-		if (!oscs) return;
-		this.playing = false;
-		this.gainEnv.stop(this.gain.gain);
-
-		this.oscar.stop(ac.currentTime + this.gainEnv.release, oscs.oscar, oscs.oscarGain);
-		this.osiris.stop(ac.currentTime + this.gainEnv.release, oscs.osiris, oscs.osirisGain);
+		this.oscar.stop(ac.currentTime, oscs.oscar, oscs.oscarGain);
+		this.osiris.stop(ac.currentTime, oscs.osiris, oscs.osirisGain);
 	};
 }
 

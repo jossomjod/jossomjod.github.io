@@ -7,6 +7,10 @@ const masterGain = ac.createGain();
 masterGain.connect(ac.destination);
 masterGain.gain.value = 0.2;
 
+
+const synth = new Synth(ac, masterGain);
+
+
 const masterGainUI = document.querySelector('#masterGain');
 masterGainUI.value = masterGain.gain.value;
 masterGainUI.addEventListener('input', () => {
@@ -14,8 +18,23 @@ masterGainUI.addEventListener('input', () => {
 });
 
 
-const oscarGain = document.querySelector('#oscarGain');
-oscarGain.value = 1;
+const oscarGainUI = document.querySelector('#oscarGain');
+oscarGainUI.value = 1;
+oscarGainUI.addEventListener('input', () => {
+	synth.oscar.gain = oscarGainUI.value;
+});
+
+const osirisGainUI = document.querySelector('#osirisGain');
+osirisGainUI.value = 1;
+osirisGainUI.addEventListener('input', () => {
+	synth.osiris.gain = osirisGainUI.value;
+});
+// TODO: restructure awl dis shet
+const osirisMultiplierUI = document.querySelector('#osirisMultiplier');
+osirisMultiplierUI.value = 1000;
+osirisMultiplierUI.addEventListener('input', () => {
+	synth.osiris.multiplier = osirisMultiplierUI.value;
+});
 /* const oscillatorTemplate = document.querySelector('#oscillator-template');
 const oscTemplateContent = oscillatorTemplate.content;
 
@@ -51,11 +70,6 @@ function generateKeyDict() {
 }
 generateKeyDict();
 console.log(keyboardKeys);
-
-
-const synthHandler = new SynthHandler(ac, masterGain);
-
-const synth = new Synth(ac, masterGain);
 
 
 // EVENTS----------------------------------------------------------------------
