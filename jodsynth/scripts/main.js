@@ -22,31 +22,40 @@ const oscarWaveformUI = document.querySelector('#oscarWaveform');
 oscarWaveformUI.value = synth.oscar.type;
 oscarWaveformUI.addEventListener('input', () => {
 	synth.oscar.type = oscarWaveformUI.value;
+	document.activeElement.blur();
 });
 
 const osirisWaveformUI = document.querySelector('#osirisWaveform');
 osirisWaveformUI.value = synth.osiris.type;
 osirisWaveformUI.addEventListener('input', () => {
 	synth.osiris.type = osirisWaveformUI.value;
+	document.activeElement.blur();
 });
-
+/* 
 const osirisGainUI = document.querySelector('#osirisGain');
 osirisGainUI.value = 1;
 osirisGainUI.addEventListener('input', () => {
 	synth.osiris.gain = osirisGainUI.value;
-});
+}); */
 
 const osirisMultiplierUI = document.querySelector('#osirisMultiplier');
-osirisMultiplierUI.value = 1000;
+osirisMultiplierUI.value = synth.osiris.multiplier;
 osirisMultiplierUI.addEventListener('input', () => {
 	synth.osiris.multiplier = osirisMultiplierUI.value;
 });
 
+
 const osirisDetuneUI = document.querySelector('#osirisDetune');
-osirisDetuneUI.value = synth.osiris.detune;
-osirisDetuneUI.addEventListener('input', () => {
-	synth.osiris.detune = osirisDetuneUI.value;
-});
+const osirisCoarseUI = document.querySelector('#osirisCoarse');
+osirisCoarseUI.value = Math.round(synth.osiris.detune / 100);
+osirisDetuneUI.value = synth.osiris.detune - Math.round(synth.osiris.detune / 100);
+
+const osirisDetuneInput = () => {
+	synth.osiris.detune = +osirisCoarseUI.value * 100 + +osirisDetuneUI.value;
+	document.activeElement.blur();
+}
+osirisCoarseUI.addEventListener('input', osirisDetuneInput);
+osirisDetuneUI.addEventListener('input', osirisDetuneInput);
 /* const oscillatorTemplate = document.querySelector('#oscillator-template');
 const oscTemplateContent = oscillatorTemplate.content;
 
