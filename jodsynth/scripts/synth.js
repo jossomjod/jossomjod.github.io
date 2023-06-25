@@ -64,7 +64,6 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 }
 
 
-// TODO: UI for changing these
 var oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
 	{ value: 0.8, time: 0.2 },
@@ -87,7 +86,7 @@ function Synth(ac, connectTo) {
 	this.gain.connect(connectTo);
 
 	this.oscar = new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0));
-	this.osiris = new Oscillator(ac, 'sawtooth', 1205.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 1600.0));
+	this.osiris = new Oscillator(ac, 'sawtooth', 0.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 1600.0));
 	
 	this.start = (freq) => {
 		const oscarGain = ac.createGain();

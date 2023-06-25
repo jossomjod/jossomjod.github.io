@@ -1,4 +1,8 @@
-
+/**
+ * 
+ * @param {ArrayEnvelope} envelope
+ * @param {HTMLElement} container 
+ */
 function EnvelopeUI(envelope, container) {
 	this.envelope = envelope;
 	this.container = container;
@@ -15,7 +19,7 @@ function EnvelopeUI(envelope, container) {
 
 	this.pos2Point = (pos) => {
 		const time = this.maxTime * pos.x / this.rect.w;
-		const value = 1 + -pos.y / this.rect.h;
+		const value = 1 - pos.y / this.rect.h;
 		return { time, value };
 	};
 	this.point2Pos = (point) => {
@@ -35,14 +39,23 @@ function EnvelopeUI(envelope, container) {
 	this.container.addEventListener('click', (e) => {
 		console.log('Clicked envelope', e); // TODO: add new node
 	})
-	this.container.addEventListener('dragenter', (e) => {
-		e.preventDefault();
-	})
-	this.container.addEventListener('dragover', (e) => {
+	document.addEventListener('mousemove', (e) => {
+		if (!this.dragData) return;
 		e.preventDefault();
 		let left = e.clientX - this.dragData.offsetX;
 		let top = e.clientY - this.dragData.offsetY;
 		this.putNode(this.dragData.element, left, top);
+	});
+
+	document.addEventListener('mouseup', (e) => {
+		console.log('mouseup', e);
+		if (!this.dragData) return;
+		let left = e.clientX - this.dragData.offsetX;
+		let top = e.clientY - this.dragData.offsetY;
+		this.putNode(this.dragData.element, left, top);
+		this.envelope.points[this.dragData.index] = this.pos2Point({ x: left, y: top });
+
+		this.dragData = null;
 	});
 
 	this.generateNodes = (points) => {
@@ -50,26 +63,19 @@ function EnvelopeUI(envelope, container) {
 		return points.map((point, i) => {
 			const pos = this.point2Pos(point);
 			const element = document.createElement('div');
-			element.setAttribute('draggable', true);
 			element.classList.add('envelope-node');
 			element.style.left = `${pos.left}px`;
 			element.style.bottom = `${pos.bottom}px`;
 			this.container.appendChild(element);
 
-			element.addEventListener('dragstart', (e) => {
-				console.log('dragstart', e);
+			element.addEventListener('mousedown', (e) => {
+				console.log('mousedown', e);
 				this.dragData = {
 					element,
 					offsetX: e.clientX - element.offsetLeft,
 					offsetY: e.clientY - element.offsetTop,
+					index: i,
 				};
-			});
-			element.addEventListener('dragend', (e) => {
-				console.log('dragend', e);
-				let left = e.clientX - this.dragData.offsetX;
-				let top = e.clientY - this.dragData.offsetY;
-				this.putNode(element, left, top);
-				this.envelope.points[i] = this.pos2Point({ x: left, y: top });
 			});
 
 			return { element, point };

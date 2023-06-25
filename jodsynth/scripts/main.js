@@ -48,7 +48,7 @@ osirisMultiplierUI.addEventListener('input', () => {
 const osirisDetuneUI = document.querySelector('#osirisDetune');
 const osirisCoarseUI = document.querySelector('#osirisCoarse');
 osirisCoarseUI.value = Math.round(synth.osiris.detune / 100);
-osirisDetuneUI.value = synth.osiris.detune - Math.round(synth.osiris.detune / 100);
+osirisDetuneUI.value = 0.0;
 
 const osirisDetuneInput = () => {
 	synth.osiris.detune = +osirisCoarseUI.value * 100 + +osirisDetuneUI.value;
@@ -61,6 +61,8 @@ const oscTemplateContent = oscillatorTemplate.content;
 
 oscillatorContainer.appendChild(oscTemplateContent); */
 
+
+// TODO: Debug info element
 
 
 var keys = {
@@ -77,7 +79,7 @@ var lowerKeys = [
 ];
 var upperKeys = [
 	'KeyQ', 'Digit2', 'KeyW', 'Digit3', 'KeyE', 'KeyR', 'Digit5', 'KeyT', 'Digit6', 'KeyY', 'Digit7',
-	'KeyU', 'KeyI', 'Digit9', 'KeyO', 'Digit0', 'KeyP', 'BracketLeft', 'Equal', 'BracketRight',
+	'KeyU', 'KeyI', 'Digit9', 'KeyO', 'Digit0', 'KeyP', 'BracketLeft', 'Equal', 'BracketRight', 'Backspace', 'Enter'
 ];
 
 let octave = 2;
