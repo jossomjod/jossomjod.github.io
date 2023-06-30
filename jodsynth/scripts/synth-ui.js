@@ -103,17 +103,26 @@ function SynthControlBindings(synth) {
 	// Oscar
 
 	this.oscarGainControl = document.querySelector('#oscarGain');
-	this.oscarGainControlUI = new GainControlUI(this.synth.oscar, this.oscarGainControl);
+	this.oscarGainControlUI = new GainControlUI(this.synth.oscillators[0], this.oscarGainControl);
 
 	this.oscarGainEnvelope = document.querySelector('#oscarGainEnvelope');
-	this.oscarGainEnvelopeUI = new EnvelopeUI(this.synth.oscar.gainEnvelope, oscarGainEnvelope);
+	this.oscarGainEnvelopeUI = new EnvelopeUI(this.synth.oscillators[0].gainEnvelope, oscarGainEnvelope);
 
 
 	// Osiris
 
 	this.osirisGainControl = document.querySelector('#osirisGain');
-	this.osirisGainControlUI = new GainControlUI(this.synth.osiris, this.osirisGainControl);
+	this.osirisGainControlUI = new GainControlUI(this.synth.oscillators[1], this.osirisGainControl);
 
 	this.osirisGainEnvelope = document.querySelector('#osirisGainEnvelope');
-	this.osirisGainEnvelopeUI = new EnvelopeUI(this.synth.osiris.gainEnvelope, osirisGainEnvelope);
+	this.osirisGainEnvelopeUI = new EnvelopeUI(this.synth.oscillators[1].gainEnvelope, osirisGainEnvelope);
+
+
+	// Osman
+
+	this.osmanGainControl = document.querySelector('#osmanGain');
+	this.osmanGainControlUI = new GainControlUI(this.synth.oscillators[2], this.osmanGainControl);
+
+	this.osmanGainEnvelope = document.querySelector('#osmanGainEnvelope');
+	this.osmanGainEnvelopeUI = new EnvelopeUI(this.synth.oscillators[2].gainEnvelope, osmanGainEnvelope);
 }
