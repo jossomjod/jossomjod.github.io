@@ -34,13 +34,14 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
-function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, connectIndex) {
+
+function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod) {
 	this.type = type;
 	this.detune = detune;
 	this.gain = 1.0;
 	this.multiplier = gainMult;
 	this.gainEnvelope = gainEnvelope;
-	this.connectIndex = connectIndex;
+	this.mod = mod;
 
 	this.start = (frequency, gainNode) => {
 		// You have to make a new osc every time
@@ -86,6 +87,7 @@ var osmanGainPoints = [
 	{ value: 0.0, time: 1.0 },
 ];
 
+//TODO: Experiment with multiplying gain by 2^(12/tone)
 
 function Synth(ac, connectTo) {
 	this.playing = false;
@@ -95,44 +97,30 @@ function Synth(ac, connectTo) {
 
 	this.oscillators = [
 		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
-		new Oscillator(ac, 'sawtooth', 0.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 1600.0), 0),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1),
+		new Oscillator(ac, 'sawtooth', 0.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 0.0), 0),
+		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 0),
 	];
-/* 
-	this.oscar = new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0));
-	this.osiris = new Oscillator(ac, 'sawtooth', 0.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 1600.0));
-	this.osman = new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0)); */
 	
 	this.start = (freq) => {
-		/* const oscarGain = ac.createGain();
-		const osirisGain = ac.createGain();
-		const osmanGain = ac.createGain();
-		const oscar = this.oscar.start(freq, oscarGain);
-		const osiris = this.osiris.start(freq, osirisGain);
-		const osman = this.osman.start(freq, osmanGain);
-
-		oscarGain.connect(this.gain);
-		osirisGain.connect(oscar.frequency);
-		osmanGain.connect(osiris.frequency); */
-
-		prevOsc = null;
-		return this.oscillators.map((osc, i) => {
+		const thingy = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
 			const oscillator = osc.start(freq, gain);
-			if (prevOsc) gain.connect(prevOsc.frequency);
-			else gain.connect(this.gain);
-			prevOsc = oscillator;
 			return { gain, oscillator };
-		})
+		});
 
-		//return { oscar, osiris, osman, oscarGain, osirisGain, osmanGain };
+		thingy.forEach((t, i) => {
+			const mod = this.oscillators[i].mod;
+			if (mod !== null && typeof mod === 'number') {
+				t.gain.connect(thingy[mod].oscillator.frequency);
+			} else {
+				t.gain.connect(this.gain);
+			}
+		});
+
+		return thingy;
 	};
 	
 	this.stop = (oscs) => {
 		oscs.forEach((o, i) => this.oscillators[i].stop(ac.currentTime, o.oscillator, o.gain));
-/* 
-		this.oscar.stop(ac.currentTime, oscs.oscar, oscs.oscarGain);
-		this.osiris.stop(ac.currentTime, oscs.osiris, oscs.osirisGain);
-		this.osman.stop(ac.currentTime, oscs.osman, oscs.osmanGain); */
 	};
 }
