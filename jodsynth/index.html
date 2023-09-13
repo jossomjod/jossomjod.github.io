@@ -27,7 +27,7 @@
 					<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
 					<label for="masterGain">Master Gain</label>
 				</div>
-				<div class="oscillator-container oscar">
+				<!-- <div class="oscillator-container oscar">
 					<p>Oscar</p>
 					<select name="oscarWaveform" id="oscarWaveform">
 						<option value="square">Square</option>
@@ -39,8 +39,8 @@
 					<label for="oscarGain">Gain</label>
 
 					<div class="envelope" id="oscarGainEnvelope"></div>
-				</div>
-
+				</div> -->
+<!-- 
 				<div class="oscillator-container osiris">
 					<p>Osiris</p>
 					<select class="control" name="osirisWaveform" id="osirisWaveform">
@@ -91,9 +91,38 @@
 					</div>
 
 					<div class="envelope" id="osmanGainEnvelope"></div>
-				</div>
+				</div> -->
 			</div>
 		</div>
 		<script src="scripts/main.js" defer></script>
 	</body>
 </html>
+
+
+<template id="oscillator-template">
+	<div class="oscillator-container">
+		<p id="ocillator-name" class="ocillator-name">Oscillator</p>
+		<select class="control" name="oscWaveform" id="oscWaveform">
+			<option value="square">Square</option>
+			<option value="sine">Sine</option>
+			<option value="sawtooth">Sawtooth</option>
+			<option value="triangle">Triangle</option>
+		</select>
+		<div class="control">
+			<input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.01">
+			<label for="oscGain">Gain</label>
+		</div>
+		<div class="control">
+			<input type="range" id="oscMultiplier" name="oscMultiplier" min="0" max="1000000" step="1000">
+			<label for="oscMultiplier">Multiplier</label>
+		</div>
+		<div class="control">
+			<label for="oscCoarse">Coarse</label>
+			<input class="detune" type="number" id="oscCoarse" name="oscCoarse" min="-1200" max="1200" step="1.0">
+			<label for="oscDetune">Detune</label>
+			<input class="detune" type="number" id="oscDetune" name="oscDetune" min="-100" max="100" step="1.0">
+		</div>
+
+		<div class="envelope" id="oscGainEnvelope"></div>
+	</div>
+</template>

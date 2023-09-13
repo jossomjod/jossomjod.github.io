@@ -126,3 +126,41 @@ function SynthControlBindings(synth) {
 	this.osmanGainEnvelope = document.querySelector('#osmanGainEnvelope');
 	this.osmanGainEnvelopeUI = new EnvelopeUI(this.synth.oscillators[2].gainEnvelope, osmanGainEnvelope);
 }
+
+
+function OscillatorUi(oscillator, container, name) {
+	this.oscillator = oscillator;
+	this.container = container;
+	this.template = document.querySelector('#oscillator-template');
+	this.oscUi = this.template.content.cloneNode(true);
+	console.log('oscUi', this.oscUi);
+
+	this.name = name;
+	this.nameElement = this.oscUi.querySelector('#oscillator-name');
+	if (this.nameElement) this.nameElement.textContent = this.name;
+	console.log('OAUIETHoui', this.nameElement);
+
+	
+	this.oscWaveformUI = this.oscUi.querySelector('#oscWaveform');
+
+	this.oscWaveformUI.value = this.oscillator.type;
+	this.oscWaveformUI.addEventListener('input', () => {
+		this.oscillator.type = this.oscWaveformUI.value;
+		document.activeElement.blur();
+	});
+
+	this.container.appendChild(this.oscUi);
+}
+
+
+function SynthUi(synth) {
+	this.synth = synth;
+	this.container = document.querySelector('.synth-container');
+	this.template = document.querySelector('#oscillator-template');
+
+	console.log('template', this.template);
+
+	this.oscillators = this.synth.oscillators.map((osc) => {
+		return new OscillatorUi(osc, this.container, 'Nam iet');
+	});
+}

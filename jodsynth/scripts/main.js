@@ -15,9 +15,9 @@ masterGainUI.addEventListener('input', () => {
 
 
 const synth = new Synth(ac, masterGain);
-const synthUi = new SynthControlBindings(synth);
+//const synthUi = new SynthControlBindings(synth);
 
-
+/* 
 const oscarWaveformUI = document.querySelector('#oscarWaveform');
 oscarWaveformUI.value = synth.oscillators[0].type;
 oscarWaveformUI.addEventListener('input', () => {
@@ -38,12 +38,6 @@ osmanWaveformUI.addEventListener('input', () => {
 	synth.oscillators[2].type = osmanWaveformUI.value;
 	document.activeElement.blur();
 });
-/* 
-const osirisGainUI = document.querySelector('#osirisGain');
-osirisGainUI.value = 1;
-osirisGainUI.addEventListener('input', () => {
-	synth.osiris.gain = osirisGainUI.value;
-}); */
 
 const osirisMultiplierUI = document.querySelector('#osirisMultiplier');
 osirisMultiplierUI.value = synth.oscillators[1].multiplier;
@@ -81,12 +75,12 @@ const osmanDetuneInput = () => {
 }
 osmanCoarseUI.addEventListener('input', osmanDetuneInput);
 osmanDetuneUI.addEventListener('input', osmanDetuneInput);
+ */
 
 
 
 
-
-
+const synthUiStuff = new SynthUi(synth);
 
 
 
