@@ -96,6 +96,26 @@ function GainControlUI(oscillator, control) {
 	});
 }
 
+function MultiplierControlUI(oscillator, control) {
+	this.oscillator = oscillator;
+	this.control = control;
+
+	this.control.value = this.oscillator.multiplier;
+	this.control.addEventListener('input', () => {
+		this.oscillator.multiplier = this.control.value;
+	});
+}
+
+function ControlUI(param, control) {
+	this.param = param;
+	this.control = control;
+
+	this.control.value = this.param;
+	this.control.addEventListener('input', () => {
+		this.param = this.control.value;
+	});
+}
+
 
 function SynthControlBindings(synth) {
 	this.synth = synth;
@@ -128,17 +148,16 @@ function SynthControlBindings(synth) {
 }
 
 
-function OscillatorUi(oscillator, container, name) {
+function OscillatorUi(oscillator, container, name, isCarrier = false) {
 	this.oscillator = oscillator;
 	this.container = container;
+	this.isCarrier = isCarrier;
 	this.template = document.querySelector('#oscillator-template');
 	this.oscUi = this.template.content.cloneNode(true);
-	console.log('oscUi', this.oscUi);
 
 	this.name = name;
 	this.nameElement = this.oscUi.querySelector('#oscillator-name');
 	if (this.nameElement) this.nameElement.textContent = this.name;
-	console.log('OAUIETHoui', this.nameElement);
 
 	
 	this.oscWaveformUI = this.oscUi.querySelector('#oscWaveform');
@@ -149,7 +168,40 @@ function OscillatorUi(oscillator, container, name) {
 		document.activeElement.blur();
 	});
 
+
+
+	this.oscGainControl = this.oscUi.querySelector('#oscGain');
+	this.oscGainControlUI = new GainControlUI(this.oscillator, this.oscGainControl);
+	
+	this.oscMultiplier;
+	if (!isCarrier) { // DANGER! DO NOT LET THE CARRIER HAVE A MULTIPLIER! SERIOUS HEARING DAMAGE MAY OCCUR!
+		this.oscMultiplier = this.oscUi.querySelector('#oscMultiplier');
+		oscMultiplierUI = new MultiplierControlUI(this.oscillator, this.oscMultiplier);
+	}
+
+
+
+
+	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune');
+	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
+	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
+	this.oscDetuneUI.value = 0.0;
+	
+	this.oscDetuneInput = () => {
+		this.oscillator.detune = +this.oscCoarseUI.value * 100 + +this.oscDetuneUI.value;
+		document.activeElement.blur();
+	}
+	this.oscCoarseUI.addEventListener('input', this.oscDetuneInput);
+	this.oscDetuneUI.addEventListener('input', this.oscDetuneInput);
+
+
+
+	this.oscGainEnvelope = this.oscUi.querySelector('#oscGainEnvelope');
+	
+	
 	this.container.appendChild(this.oscUi);
+	
+	this.oscGainEnvelopeUI = new EnvelopeUI(this.oscillator.gainEnvelope, this.oscGainEnvelope);
 }
 
 
@@ -160,7 +212,8 @@ function SynthUi(synth) {
 
 	console.log('template', this.template);
 
-	this.oscillators = this.synth.oscillators.map((osc) => {
-		return new OscillatorUi(osc, this.container, 'Nam iet');
+	this.oscillators = this.synth.oscillators.map((osc, i) => {
+		const isCarrier = i === 0;
+		return new OscillatorUi(osc, this.container, 'Oscillator name yay', isCarrier);
 	});
 }
