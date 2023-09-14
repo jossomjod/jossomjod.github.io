@@ -42,6 +42,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 	this.multiplier = gainMult;
 	this.gainEnvelope = gainEnvelope;
 	this.mod = mod;
+	this.isCarrier = !mod;
 
 	this.start = (frequency, gainNode) => {
 		// You have to make a new osc every time

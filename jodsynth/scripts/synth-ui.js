@@ -6,8 +6,9 @@
 function EnvelopeUI(envelope, container) {
 	this.envelope = envelope;
 	this.container = container;
+	this.canvas = this.container.querySelector('#oscEnvCanvas');
+	this.ctx = this.canvas.getContext('2d');
 	this.dragData = null;
-	this.nodeHalfRadius = 9;
 	this.rect = {
 		x: this.container.offsetLeft,
 		y: this.container.offsetTop,
@@ -15,25 +16,36 @@ function EnvelopeUI(envelope, container) {
 		h: this.container.clientHeight,
 	};
 	this.maxTime = 10.0;
+	this.radius = 10.0;
+
+	this.canvas.width = this.rect.w;
+	this.canvas.height = this.rect.h;
 
 
 	this.pos2Point = (pos) => {
-		const time = this.maxTime * pos.x / this.rect.w;
-		const value = 1 - pos.y / this.rect.h;
+		const r = this.radius;
+		const time = this.maxTime * (pos.x + r) / this.rect.w;
+		const value = 1 - (pos.y + r) / this.rect.h;
 		return { time, value };
 	};
 	this.point2Pos = (point) => {
-		const left = this.rect.w * point.time / this.maxTime;
-		const bottom = this.rect.h * point.value;
+		const r = this.radius;
+		const left = (this.rect.w * point.time / this.maxTime) - r;
+		const bottom = (this.rect.h * point.value) + r;
 		return { left, bottom };
 	};
-	this.putNode = (element, left, top) => {
-		if (left < 0) left = 0;
-		else if (left > this.rect.w) left = this.rect.w;
-		if (top < 0) top = 0;
-		else if (top > this.rect.h) top = this.rect.h;
+	this.putNode = (left, top) => {
+		const element = this.dragData.element
+		const r = this.radius;
+		if (left < -r) left = -r;
+		else if (left > this.rect.w - r) left = this.rect.w - r;
+		if (top < -r) top = -r;
+		else if (top > this.rect.h - r) top = this.rect.h - r;
 		element.style.left = left + 'px';
 		element.style.top = top + 'px';
+
+		this.envelope.points[this.dragData.index] = this.pos2Point({ x: left, y: top });
+		this.drawLines();
 	}
 
 	this.container.addEventListener('click', (e) => {
@@ -42,9 +54,9 @@ function EnvelopeUI(envelope, container) {
 	document.addEventListener('mousemove', (e) => {
 		if (!this.dragData) return;
 		e.preventDefault();
-		let left = e.clientX - this.dragData.offsetX;
+		let left = (e.clientX - this.dragData.offsetX);
 		let top = e.clientY - this.dragData.offsetY;
-		this.putNode(this.dragData.element, left, top);
+		this.putNode(left, top);
 	});
 
 	document.addEventListener('mouseup', (e) => {
@@ -52,20 +64,19 @@ function EnvelopeUI(envelope, container) {
 		if (!this.dragData) return;
 		let left = e.clientX - this.dragData.offsetX;
 		let top = e.clientY - this.dragData.offsetY;
-		this.putNode(this.dragData.element, left, top);
-		this.envelope.points[this.dragData.index] = this.pos2Point({ x: left, y: top });
-
+		this.putNode(left, top);
+		
 		this.dragData = null;
 	});
 
 	this.generateNodes = (points) => {
 		console.log('generating nodes', points);
-		return points.map((point, i) => {
+		points.forEach((point, i) => {
 			const pos = this.point2Pos(point);
 			const element = document.createElement('div');
 			element.classList.add('envelope-node');
 			element.style.left = `${pos.left}px`;
-			element.style.bottom = `${pos.bottom}px`;
+			element.style.bottom = `${pos.bottom - this.radius * 2}px`;
 			this.container.appendChild(element);
 
 			element.addEventListener('mousedown', (e) => {
@@ -77,11 +88,34 @@ function EnvelopeUI(envelope, container) {
 					index: i,
 				};
 			});
-
-			return { element, point };
 		});
 	};
-	this.nodes = this.generateNodes(this.envelope.points);
+	this.generateNodes(this.envelope.points);
+
+	this.drawLines = () => {
+		const ctx = this.ctx;
+
+		ctx.fillStyle = '#010a1d';
+		ctx.fillRect(0, 0, this.rect.w, this.rect.h);
+		ctx.lineWidth = 4;
+		ctx.strokeStyle = '#3279ff';
+		ctx.beginPath();
+
+		this.envelope.points.forEach((p, i) => {
+			const pos = this.point2Pos(p);
+			const top = (this.rect.h - pos.bottom) + this.radius;
+			const left = pos.left + this.radius;
+
+			if (!i) {
+				ctx.moveTo(left, top);
+			} else {
+				ctx.lineTo(left, top);
+			}
+		});
+
+		ctx.stroke();
+	}
+	this.drawLines();
 }
 
 
@@ -114,37 +148,6 @@ function ControlUI(param, control) {
 	this.control.addEventListener('input', () => {
 		this.param = this.control.value;
 	});
-}
-
-
-function SynthControlBindings(synth) {
-	this.synth = synth;
-
-	// Oscar
-
-	this.oscarGainControl = document.querySelector('#oscarGain');
-	this.oscarGainControlUI = new GainControlUI(this.synth.oscillators[0], this.oscarGainControl);
-
-	this.oscarGainEnvelope = document.querySelector('#oscarGainEnvelope');
-	this.oscarGainEnvelopeUI = new EnvelopeUI(this.synth.oscillators[0].gainEnvelope, oscarGainEnvelope);
-
-
-	// Osiris
-
-	this.osirisGainControl = document.querySelector('#osirisGain');
-	this.osirisGainControlUI = new GainControlUI(this.synth.oscillators[1], this.osirisGainControl);
-
-	this.osirisGainEnvelope = document.querySelector('#osirisGainEnvelope');
-	this.osirisGainEnvelopeUI = new EnvelopeUI(this.synth.oscillators[1].gainEnvelope, osirisGainEnvelope);
-
-
-	// Osman
-
-	this.osmanGainControl = document.querySelector('#osmanGain');
-	this.osmanGainControlUI = new GainControlUI(this.synth.oscillators[2], this.osmanGainControl);
-
-	this.osmanGainEnvelope = document.querySelector('#osmanGainEnvelope');
-	this.osmanGainEnvelopeUI = new EnvelopeUI(this.synth.oscillators[2].gainEnvelope, osmanGainEnvelope);
 }
 
 

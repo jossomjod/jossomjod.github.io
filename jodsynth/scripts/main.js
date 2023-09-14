@@ -15,72 +15,7 @@ masterGainUI.addEventListener('input', () => {
 
 
 const synth = new Synth(ac, masterGain);
-//const synthUi = new SynthControlBindings(synth);
-
-/* 
-const oscarWaveformUI = document.querySelector('#oscarWaveform');
-oscarWaveformUI.value = synth.oscillators[0].type;
-oscarWaveformUI.addEventListener('input', () => {
-	synth.oscillators[0].type = oscarWaveformUI.value;
-	document.activeElement.blur();
-});
-
-const osirisWaveformUI = document.querySelector('#osirisWaveform');
-osirisWaveformUI.value = synth.oscillators[1].type;
-osirisWaveformUI.addEventListener('input', () => {
-	synth.oscillators[1].type = osirisWaveformUI.value;
-	document.activeElement.blur();
-});
-
-const osmanWaveformUI = document.querySelector('#osmanWaveform');
-osmanWaveformUI.value = synth.oscillators[2].type;
-osmanWaveformUI.addEventListener('input', () => {
-	synth.oscillators[2].type = osmanWaveformUI.value;
-	document.activeElement.blur();
-});
-
-const osirisMultiplierUI = document.querySelector('#osirisMultiplier');
-osirisMultiplierUI.value = synth.oscillators[1].multiplier;
-osirisMultiplierUI.addEventListener('input', () => {
-	synth.oscillators[1].multiplier = osirisMultiplierUI.value;
-});
-
-const osmanMultiplierUI = document.querySelector('#osmanMultiplier');
-osmanMultiplierUI.value = synth.oscillators[2].multiplier;
-osmanMultiplierUI.addEventListener('input', () => {
-	synth.oscillators[2].multiplier = osmanMultiplierUI.value;
-});
-
-
-const osirisDetuneUI = document.querySelector('#osirisDetune');
-const osirisCoarseUI = document.querySelector('#osirisCoarse');
-osirisCoarseUI.value = Math.round(synth.oscillators[1].detune / 100);
-osirisDetuneUI.value = 0.0;
-
-const osirisDetuneInput = () => {
-	synth.oscillators[1].detune = +osirisCoarseUI.value * 100 + +osirisDetuneUI.value;
-	document.activeElement.blur();
-}
-osirisCoarseUI.addEventListener('input', osirisDetuneInput);
-osirisDetuneUI.addEventListener('input', osirisDetuneInput);
-
-const osmanDetuneUI = document.querySelector('#osmanDetune');
-const osmanCoarseUI = document.querySelector('#osmanCoarse');
-osmanCoarseUI.value = Math.round(synth.oscillators[2].detune / 100);
-osmanDetuneUI.value = 0.0;
-
-const osmanDetuneInput = () => {
-	synth.oscillators[2].detune = +osmanCoarseUI.value * 100 + +osmanDetuneUI.value;
-	document.activeElement.blur();
-}
-osmanCoarseUI.addEventListener('input', osmanDetuneInput);
-osmanDetuneUI.addEventListener('input', osmanDetuneInput);
- */
-
-
-
-
-const synthUiStuff = new SynthUi(synth);
+const synthUi = new SynthUi(synth);
 
 
 
