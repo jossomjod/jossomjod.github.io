@@ -41,6 +41,10 @@ function EnvelopeUI(envelope, container) {
 		else if (left > this.rect.w - r) left = this.rect.w - r;
 		if (top < -r) top = -r;
 		else if (top > this.rect.h - r) top = this.rect.h - r;
+
+		const isRelease = this.envelope.points.length === this.dragData.index + 1;
+		if (isRelease) top = this.rect.h - r;
+
 		element.style.left = left + 'px';
 		element.style.top = top + 'px';
 
@@ -72,6 +76,12 @@ function EnvelopeUI(envelope, container) {
 	this.generateNodes = (points) => {
 		console.log('generating nodes', points);
 		points.forEach((point, i) => {
+			const prev = this.envelope.points[i-1];
+			if (i > 0) {
+				point.totalTime = (prev.totalTime ?? prev.time) + point.time;
+			} else {
+				point.totalTime = point.time;
+			}
 			const pos = this.point2Pos(point);
 			const element = document.createElement('div');
 			element.classList.add('envelope-node');
@@ -100,17 +110,13 @@ function EnvelopeUI(envelope, container) {
 		ctx.lineWidth = 4;
 		ctx.strokeStyle = '#3279ff';
 		ctx.beginPath();
+		ctx.moveTo(0, this.rect.h);
 
-		this.envelope.points.forEach((p, i) => {
+		this.envelope.points.forEach((p) => {
 			const pos = this.point2Pos(p);
 			const top = (this.rect.h - pos.bottom) + this.radius;
 			const left = pos.left + this.radius;
-
-			if (!i) {
-				ctx.moveTo(left, top);
-			} else {
-				ctx.lineTo(left, top);
-			}
+			ctx.lineTo(left, top);
 		});
 
 		ctx.stroke();

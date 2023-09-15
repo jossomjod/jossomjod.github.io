@@ -17,3 +17,9 @@ TODO: tooltip for envelope
 TODO: ui improvements
 TODO: moving an envelope node horizontally should also move all nodes after it
 TODO: actually do the todos
+
+
+
+env:
+- release should always be at the bottom
+- 

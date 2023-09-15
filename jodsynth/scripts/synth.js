@@ -1,8 +1,15 @@
+function EnvelopePoint(value, time) {
+	this.value = value;
+	this.time = time;
+	this.totalTime;
+}
+
+
 /**
 * points: { value: number, time: number }[]
 */
 function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
-	this.points = points;
+	this.points = points.slice();
 	this.multiplier = multiplier;
 
 	this.getRelease = () => this.points.at(-1).time - this.points.at(-2).time;
@@ -19,7 +26,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 			acc += p.time;
 			prop.linearRampToValueAtTime(p.value * mult, acc);
 		});
-	}
+	};
 
 	// Call this when ending a note. prop must be an AudioParam.
 	this.stop = (prop) => {
@@ -27,7 +34,22 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		const release = this.getRelease();
 		prop.cancelScheduledValues(ac.currentTime);
 		prop.linearRampToValueAtTime(0, ac.currentTime + release);
-	}
+	};
+
+	this.getTimeAt = (idx) => {
+		const point = this.points[idx];
+		let acc = 0;
+		for (let i = 0; i < idx; i++) {
+			acc += this.points[i].time;
+		}
+	};
+
+	this.movePoint = (idx, time, value) => {
+		const point = this.points[idx];
+		const timeDiff = time - point.time;
+		point.time = time;
+		point.value = value;
+	};
 }
 
 
@@ -69,23 +91,23 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 
 var oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
-	{ value: 0.8, time: 0.2 },
-	{ value: 0.5, time: 2.3 },
-	{ value: 0.0, time: 2.7 },
+	{ value: 1.0, time: 0.3 },
+	{ value: 1.0, time: 0.3 },
+	{ value: 0.0, time: 1.5 },
 ];
 
 var osirisGainPoints = [
 	{ value: 1.0, time: 0.0 },
 	{ value: 0.3, time: 0.2 },
 	{ value: 0.2, time: 0.8 },
-	{ value: 0.0, time: 1.0 },
+	{ value: 0.0, time: 1.4 },
 ];
 
 var osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
-	{ value: 0.6, time: 0.3 },
-	{ value: 0.2, time: 0.9 },
-	{ value: 0.0, time: 1.0 },
+	{ value: 1.0, time: 0.3 },
+	{ value: 1.0, time: 0.9 },
+	{ value: 0.0, time: 1.7 },
 ];
 
 //TODO: Experiment with multiplying gain by 2^(12/tone)
