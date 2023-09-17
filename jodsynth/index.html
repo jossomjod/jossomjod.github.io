@@ -27,71 +27,9 @@
 					<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
 					<label for="masterGain">Master Gain</label>
 				</div>
-				<!-- <div class="oscillator-container oscar">
-					<p>Oscar</p>
-					<select name="oscarWaveform" id="oscarWaveform">
-						<option value="square">Square</option>
-						<option value="sine">Sine</option>
-						<option value="sawtooth">Sawtooth</option>
-						<option value="triangle">Triangle</option>
-					</select>
-					<input type="range" id="oscarGain" name="oscarGain" min="0" max="1" step="0.01">
-					<label for="oscarGain">Gain</label>
-
-					<div class="envelope" id="oscarGainEnvelope"></div>
-				</div> -->
-<!-- 
-				<div class="oscillator-container osiris">
-					<p>Osiris</p>
-					<select class="control" name="osirisWaveform" id="osirisWaveform">
-						<option value="square">Square</option>
-						<option value="sine">Sine</option>
-						<option value="sawtooth">Sawtooth</option>
-						<option value="triangle">Triangle</option>
-					</select>
-					<div class="control">
-						<input type="range" id="osirisGain" name="osirisGain" min="0" max="1" step="0.01">
-						<label for="osirisGain">Gain</label>
-					</div>
-					<div class="control">
-						<input type="range" id="osirisMultiplier" name="osirisMultiplier" min="0" max="1000000" step="1000">
-						<label for="osirisMultiplier">Multiplier</label>
-					</div>
-					<div class="control">
-						<label for="osirisCoarse">Coarse</label>
-						<input class="detune" type="number" id="osirisCoarse" name="osirisCoarse" min="-1200" max="1200" step="1.0">
-						<label for="osirisDetune">Detune</label>
-						<input class="detune" type="number" id="osirisDetune" name="osirisDetune" min="-100" max="100" step="1.0">
-					</div>
-
-					<div class="envelope" id="osirisGainEnvelope"></div>
-				</div>
-
-				<div class="oscillator-container osman">
-					<p>Osman</p>
-					<select class="control" name="osmanWaveform" id="osmanWaveform">
-						<option value="square">Square</option>
-						<option value="sine">Sine</option>
-						<option value="sawtooth">Sawtooth</option>
-						<option value="triangle">Triangle</option>
-					</select>
-					<div class="control">
-						<input type="range" id="osmanGain" name="osmanGain" min="0" max="1" step="0.01">
-						<label for="osmanGain">Gain</label>
-					</div>
-					<div class="control">
-						<input type="range" id="osmanMultiplier" name="osmanMultiplier" min="0" max="1000000" step="1000">
-						<label for="osmanMultiplier">Multiplier</label>
-					</div>
-					<div class="control">
-						<label for="osmanCoarse">Coarse</label>
-						<input class="detune" type="number" id="osmanCoarse" name="osmanCoarse" min="-1200" max="1200" step="1.0">
-						<label for="osmanDetune">Detune</label>
-						<input class="detune" type="number" id="osmanDetune" name="osmanDetune" min="-100" max="100" step="1.0">
-					</div>
-
-					<div class="envelope" id="osmanGainEnvelope"></div>
-				</div> -->
+			</div>
+			<div class="button-container">
+				<button id="addOscBtn">+ Add oscillator</button>
 			</div>
 		</div>
 		<script src="scripts/main.js" defer></script>
@@ -109,7 +47,7 @@
 			<option value="triangle">Triangle</option>
 		</select>
 		<div class="control">
-			<input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.01">
+			<input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.001">
 			<label for="oscGain">Gain</label>
 		</div>
 		<div class="control">
@@ -121,6 +59,12 @@
 			<input class="detune" type="number" id="oscCoarse" name="oscCoarse" min="-1200" max="1200" step="1.0">
 			<label for="oscDetune">Detune</label>
 			<input class="detune" type="number" id="oscDetune" name="oscDetune" min="-100" max="100" step="1.0">
+		</div>
+		<div class="control">
+			<label for="oscLFOFreq">LFO Frequency</label>
+			<input class="detune" type="number" id="oscLFOFreq" name="oscLFOFreq" min="-44100" max="44100" step="0.01">
+			<input class="checkbox" type="checkbox" id="oscLFOToggle" name="oscLFOToggle" min="-44100" max="44100" step="0.01">
+			<label for="oscLFOToggle">LFO</label>
 		</div>
 
 		<div class="envelope" id="oscGainEnvelope">

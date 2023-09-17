@@ -35,21 +35,6 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		prop.cancelScheduledValues(ac.currentTime);
 		prop.linearRampToValueAtTime(0, ac.currentTime + release);
 	};
-
-	this.getTimeAt = (idx) => {
-		const point = this.points[idx];
-		let acc = 0;
-		for (let i = 0; i < idx; i++) {
-			acc += this.points[i].time;
-		}
-	};
-
-	this.movePoint = (idx, time, value) => {
-		const point = this.points[idx];
-		const timeDiff = time - point.time;
-		point.time = time;
-		point.value = value;
-	};
 }
 
 
@@ -57,7 +42,8 @@ const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
 
-function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod) {
+//function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
+function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
 	this.type = type;
 	this.detune = detune;
 	this.gain = 1.0;
@@ -65,10 +51,14 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 	this.gainEnvelope = gainEnvelope;
 	this.mod = mod;
 	this.isCarrier = !mod;
+	this.isLFO = isLFO;
+	this.fixedFreq = 1.0;
+	this.name = '';
 
 	this.start = (frequency, gainNode) => {
+		const freq = this.isLFO ? this.fixedFreq : frequency;
 		// You have to make a new osc every time
-		const osc = new OscillatorNode(ac, { type: this.type, detune: this.detune, frequency });
+		const osc = new OscillatorNode(ac, { type: this.type, detune: this.detune, frequency: freq });
 
 		//osc.onended = () => console.log('the end');
 		gainNode.gain.value = this.gain;
@@ -121,29 +111,37 @@ function Synth(ac, connectTo) {
 	this.oscillators = [
 		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
 		new Oscillator(ac, 'sawtooth', 0.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 0.0), 0),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1),
+		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1, true),
+		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 2),
 	];
 	
 	this.start = (freq) => {
-		const thingy = this.oscillators.map((osc) => {
+		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
 			const oscillator = osc.start(freq, gain);
 			return { gain, oscillator };
 		});
 
-		thingy.forEach((t, i) => {
+		oscs.forEach((t, i) => {
 			const mod = this.oscillators[i].mod;
 			if (mod !== null && typeof mod === 'number') {
-				t.gain.connect(thingy[mod].oscillator.frequency);
+				t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
 			}
 		});
 
-		return thingy;
+		return oscs;
 	};
 	
 	this.stop = (oscs) => {
 		oscs.forEach((o, i) => this.oscillators[i].stop(ac.currentTime, o.oscillator, o.gain));
 	};
+
+	this.addOsc = () => {
+		console.log('[synth.js Synth] Adding oscillator');
+		const i = this.oscillators.length-2;
+		const modIdx = i < 0 ? 0 : i;
+		return this.oscillators.push(new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), modIdx));
+	}
 }

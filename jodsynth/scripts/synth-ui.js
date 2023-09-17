@@ -190,7 +190,7 @@ function OscillatorUi(oscillator, container, name, isCarrier = false) {
 
 
 
-
+	// DETUNE
 	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune');
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
 	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
@@ -204,12 +204,26 @@ function OscillatorUi(oscillator, container, name, isCarrier = false) {
 	this.oscDetuneUI.addEventListener('input', this.oscDetuneInput);
 
 
+	// LFO
+	this.oscLFOFreqUI = this.oscUi.querySelector('#oscLFOFreq');
+	this.oscLFOFreqUI.value = this.oscillator.fixedFreq;
+	this.oscLFOFreqUI.addEventListener('input', () => {
+		this.oscillator.fixedFreq = +this.oscLFOFreqUI.value;
+		document.activeElement.blur();
+	});
+	this.oscLFOToggleUI = this.oscUi.querySelector('#oscLFOToggle');
+	this.oscLFOToggleUI.value = !!this.oscillator.isLFO;
+	this.oscLFOToggleUI.addEventListener('change', (r) => {
+		this.oscillator.isLFO = this.oscLFOToggleUI.checked;
+		console.log('LFOToggle', this.oscillator.isLFO, this.oscLFOToggleUI.checked, r);
+	});
+
 
 	this.oscGainEnvelope = this.oscUi.querySelector('#oscGainEnvelope');
 	
-	
 	this.container.appendChild(this.oscUi);
-	
+
+	// GAIN ENVELOPE
 	this.oscGainEnvelopeUI = new EnvelopeUI(this.oscillator.gainEnvelope, this.oscGainEnvelope);
 }
 
@@ -223,6 +237,13 @@ function SynthUi(synth) {
 
 	this.oscillators = this.synth.oscillators.map((osc, i) => {
 		const isCarrier = i === 0;
-		return new OscillatorUi(osc, this.container, 'Oscillator name yay', isCarrier);
+		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`, isCarrier);
 	});
+
+	this.addOsc = () => {
+		console.log('[synth-ui.js SynthUi] Adding oscillator UI');
+		const len = this.synth.addOsc();
+		const osc = this.synth.oscillators[len-1];
+		this.oscillators.push(new OscillatorUi(osc, this.container, `Oscillator ${len}`, len === 0));
+	}
 }

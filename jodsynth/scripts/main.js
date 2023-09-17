@@ -17,6 +17,8 @@ masterGainUI.addEventListener('input', () => {
 const synth = new Synth(ac, masterGain);
 const synthUi = new SynthUi(synth);
 
+const addOscBtn = document.querySelector('#addOscBtn');
+addOscBtn.onclick = () => synthUi.addOsc();
 
 
 
