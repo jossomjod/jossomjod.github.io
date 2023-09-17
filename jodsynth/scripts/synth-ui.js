@@ -52,9 +52,6 @@ function EnvelopeUI(envelope, container) {
 		this.drawLines();
 	}
 
-	this.container.addEventListener('click', (e) => {
-		console.log('Clicked envelope', e); // TODO: add new node
-	})
 	document.addEventListener('mousemove', (e) => {
 		if (!this.dragData) return;
 		e.preventDefault();
@@ -64,7 +61,7 @@ function EnvelopeUI(envelope, container) {
 	});
 
 	document.addEventListener('mouseup', (e) => {
-		console.log('mouseup', e);
+		//console.log('mouseup', e);
 		if (!this.dragData) return;
 		let left = e.clientX - this.dragData.offsetX;
 		let top = e.clientY - this.dragData.offsetY;
@@ -72,6 +69,34 @@ function EnvelopeUI(envelope, container) {
 		
 		this.dragData = null;
 	});
+
+	this.container.addEventListener('mousedown', (e) => {
+		if (this.dragData) return;
+		let left = e.clientX - this.dragData.offsetX;
+		let top = e.clientY - this.dragData.offsetY;
+		this.addNode(left, top);
+		
+		this.dragData = null;
+	});
+
+	this.addNode = (x, y) => { // TODO
+		const pos = this.point2Pos(point);
+		const element = document.createElement('div');
+		element.classList.add('envelope-node');
+		element.style.left = `${pos.left}px`;
+		element.style.bottom = `${pos.bottom - this.radius * 2}px`;
+		this.container.appendChild(element);
+
+		element.addEventListener('mousedown', (e) => {
+			//console.log('mousedown', e);
+			this.dragData = {
+				element,
+				offsetX: e.clientX - element.offsetLeft,
+				offsetY: e.clientY - element.offsetTop,
+				index: i,
+			};
+		});
+	};
 
 	this.generateNodes = (points) => {
 		console.log('generating nodes', points);
@@ -90,7 +115,7 @@ function EnvelopeUI(envelope, container) {
 			this.container.appendChild(element);
 
 			element.addEventListener('mousedown', (e) => {
-				console.log('mousedown', e);
+				//console.log('mousedown', e);
 				this.dragData = {
 					element,
 					offsetX: e.clientX - element.offsetLeft,
@@ -207,9 +232,8 @@ function OscillatorUi(oscillator, container, name, isCarrier = false) {
 	// LFO
 	this.oscLFOFreqUI = this.oscUi.querySelector('#oscLFOFreq');
 	this.oscLFOFreqUI.value = this.oscillator.fixedFreq;
-	this.oscLFOFreqUI.addEventListener('input', () => {
+	this.oscLFOFreqUI.addEventListener('changed', () => {
 		this.oscillator.fixedFreq = +this.oscLFOFreqUI.value;
-		document.activeElement.blur();
 	});
 	this.oscLFOToggleUI = this.oscUi.querySelector('#oscLFOToggle');
 	this.oscLFOToggleUI.value = !!this.oscillator.isLFO;

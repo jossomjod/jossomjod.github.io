@@ -23,7 +23,8 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 
 		this.points.forEach((p) => {
 			if (p === this.points.at(-1)) return;
-			acc += p.time;
+			//acc += p.time;
+			acc = p.time;
 			prop.linearRampToValueAtTime(p.value * mult, acc);
 		});
 	};
@@ -82,7 +83,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 var oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
 	{ value: 1.0, time: 0.3 },
-	{ value: 1.0, time: 0.3 },
+	{ value: 1.0, time: 0.8 },
 	{ value: 0.0, time: 1.5 },
 ];
 

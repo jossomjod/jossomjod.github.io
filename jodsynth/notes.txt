@@ -28,6 +28,8 @@ TODO:
 - web component: a number input you can drag to adjust
   - different rates of change depending on horizontal mouse pos maybe? Experiment.
 	- maybe drag the left side for BIG changes, right side for small, middle for medium?
+	- right/left/middle click and drag?
+	- modifier keys?
 
 
 WE NEED SMALLER VALUES
