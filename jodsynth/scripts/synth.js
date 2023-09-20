@@ -17,15 +17,13 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 	// Call this when starting a note. prop must be an AudioParam.
 	this.start = (prop, mult = this.multiplier) => {
 		if (!prop) return;
-		let acc = ac.currentTime;
+		const acc = ac.currentTime;
 		prop.cancelScheduledValues(acc);
 		prop.setValueAtTime(0, acc);
 
 		this.points.forEach((p) => {
 			if (p === this.points.at(-1)) return;
-			//acc += p.time;
-			acc = p.time;
-			prop.linearRampToValueAtTime(p.value * mult, acc);
+			prop.linearRampToValueAtTime(p.value * mult, ac.currentTime + p.time);
 		});
 	};
 

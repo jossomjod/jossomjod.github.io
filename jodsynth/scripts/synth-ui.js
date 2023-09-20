@@ -4,6 +4,7 @@
  * @param {HTMLElement} container 
  */
 function EnvelopeUI(envelope, container) {
+	this.nodes = [];
 	this.envelope = envelope;
 	this.container = container;
 	this.canvas = this.container.querySelector('#oscEnvCanvas');
@@ -21,6 +22,19 @@ function EnvelopeUI(envelope, container) {
 	this.canvas.width = this.rect.w;
 	this.canvas.height = this.rect.h;
 
+	
+	this.elements2Points = (elements) => {
+		return elements.map((el) => {
+			const pos = { x: el.offsetLeft, y: el.offsetTop };
+			return this.pos2Point(pos);
+		});
+	};
+	this.sortNodes = () => {
+		this.nodes.sort((a, b) => a.offsetLeft - b.offsetLeft);
+	}
+	this.isRelease = (node) => {
+		return !this.nodes.find((n) => n.offsetLeft > node.offsetLeft);
+	};
 
 	this.pos2Point = (pos) => {
 		const r = this.radius;
@@ -31,24 +45,24 @@ function EnvelopeUI(envelope, container) {
 	this.point2Pos = (point) => {
 		const r = this.radius;
 		const left = (this.rect.w * point.time / this.maxTime) - r;
-		const bottom = (this.rect.h * point.value) + r;
-		return { left, bottom };
+		const top = this.rect.h - (this.rect.h * point.value) + r;
+		return { left, top };
 	};
 	this.putNode = (left, top) => {
-		const element = this.dragData.element
+		const element = this.dragData.element;
 		const r = this.radius;
 		if (left < -r) left = -r;
 		else if (left > this.rect.w - r) left = this.rect.w - r;
 		if (top < -r) top = -r;
 		else if (top > this.rect.h - r) top = this.rect.h - r;
 
-		const isRelease = this.envelope.points.length === this.dragData.index + 1;
-		if (isRelease) top = this.rect.h - r;
+		if (this.isRelease(element)) top = this.rect.h - r;
 
 		element.style.left = left + 'px';
 		element.style.top = top + 'px';
 
-		this.envelope.points[this.dragData.index] = this.pos2Point({ x: left, y: top });
+		this.sortNodes();
+		this.envelope.points = this.elements2Points(this.nodes);
 		this.drawLines();
 	}
 
@@ -71,61 +85,67 @@ function EnvelopeUI(envelope, container) {
 	});
 
 	this.container.addEventListener('mousedown', (e) => {
-		if (this.dragData) return;
-		let left = e.clientX - this.dragData.offsetX;
-		let top = e.clientY - this.dragData.offsetY;
-		this.addNode(left, top);
-		
-		this.dragData = null;
+		if (!!this.dragData) return;
+		let left = e.pageX - this.rect.x;
+		let top = e.pageY - this.rect.y;
+		if (e.button === 0) this.addNode(left, top, e);
+		else e.preventDefault();
 	});
 
-	this.addNode = (x, y) => { // TODO
-		const pos = this.point2Pos(point);
+	this.addNode = (x, y, event) => {
 		const element = document.createElement('div');
 		element.classList.add('envelope-node');
-		element.style.left = `${pos.left}px`;
-		element.style.bottom = `${pos.bottom - this.radius * 2}px`;
+		element.style.left = `${x - this.radius}px`;
+		element.style.top = `${y - this.radius}px`;
 		this.container.appendChild(element);
 
+
 		element.addEventListener('mousedown', (e) => {
-			//console.log('mousedown', e);
-			this.dragData = {
-				element,
-				offsetX: e.clientX - element.offsetLeft,
-				offsetY: e.clientY - element.offsetTop,
-				index: i,
-			};
-		});
-	};
-
-	this.generateNodes = (points) => {
-		console.log('generating nodes', points);
-		points.forEach((point, i) => {
-			const prev = this.envelope.points[i-1];
-			if (i > 0) {
-				point.totalTime = (prev.totalTime ?? prev.time) + point.time;
-			} else {
-				point.totalTime = point.time;
-			}
-			const pos = this.point2Pos(point);
-			const element = document.createElement('div');
-			element.classList.add('envelope-node');
-			element.style.left = `${pos.left}px`;
-			element.style.bottom = `${pos.bottom - this.radius * 2}px`;
-			this.container.appendChild(element);
-
-			element.addEventListener('mousedown', (e) => {
-				//console.log('mousedown', e);
+			console.log('BUTTTONN', e.button);
+			if (e.button === 0) {
 				this.dragData = {
 					element,
 					offsetX: e.clientX - element.offsetLeft,
 					offsetY: e.clientY - element.offsetTop,
-					index: i,
 				};
-			});
+			} else {
+				e.preventDefault();
+				this.removeNode(element);
+				e.stopImmediatePropagation();
+			}
+		});
+
+		if (event) {
+			this.dragData = {
+				element,
+				offsetX: event.clientX - element.offsetLeft,
+				offsetY: event.clientY - element.offsetTop,
+			};
+		}
+
+		this.nodes.push(element);
+		this.sortNodes();
+		this.envelope.points = this.elements2Points(this.nodes);
+		this.drawLines();
+		return element;
+	};
+
+	this.removeNode = (node) => {
+		//node.removeEventListener('mousedown');
+		node.remove();
+		this.nodes.splice(this.nodes.indexOf(node), 1);
+		node = undefined;
+		this.envelope.points = this.elements2Points(this.nodes);
+		this.drawLines();
+	};
+
+	this.generateNodes = (points) => {
+		console.log('generating nodes', points);
+		this.nodes = points.map((point) => {
+			const pos = this.point2Pos(point);
+			return this.addNode(pos.left + this.radius, pos.top - this.radius);
 		});
 	};
-	this.generateNodes(this.envelope.points);
 
 	this.drawLines = () => {
 		const ctx = this.ctx;
@@ -137,15 +157,16 @@ function EnvelopeUI(envelope, container) {
 		ctx.beginPath();
 		ctx.moveTo(0, this.rect.h);
 
-		this.envelope.points.forEach((p) => {
-			const pos = this.point2Pos(p);
-			const top = (this.rect.h - pos.bottom) + this.radius;
+		this.nodes.forEach((n) => {
+			const pos = { left: n.offsetLeft, top: n.offsetTop };
+			const top = pos.top + this.radius;
 			const left = pos.left + this.radius;
 			ctx.lineTo(left, top);
 		});
 
 		ctx.stroke();
 	}
+	this.generateNodes(this.envelope.points);
 	this.drawLines();
 }
 
