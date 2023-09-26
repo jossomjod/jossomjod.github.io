@@ -48,12 +48,14 @@
 			<option value="triangle">Triangle</option>
 		</select>
 		<div class="control">
-			<input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.001">
+			<!-- <input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.001"> -->
 			<label for="oscGain">Gain</label>
+			<jod-numb  name="oscGain" id="oscGain" min="0" max="1"></jod-numb>
 		</div>
 		<div class="control">
-			<input type="range" id="oscMultiplier" name="oscMultiplier" min="0" max="1000000" step="1000">
+			<!-- <input type="range" id="oscMultiplier" name="oscMultiplier" min="0" max="1000000" step="1000"> -->
 			<label for="oscMultiplier">Multiplier</label>
+			<jod-numb  name="oscMultiplier" id="oscMultiplier" min="0" max="100000000" speed="100"></jod-numb>
 		</div>
 		<div class="control">
 			<label for="oscCoarse">Coarse</label>

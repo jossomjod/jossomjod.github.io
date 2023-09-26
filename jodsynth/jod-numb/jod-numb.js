@@ -7,6 +7,7 @@ class JodNumbElement extends HTMLElement {
 	offsetX = 0;
 	offsetY = 0;
 	wrapper = null;
+	speed = 1;
 
 	setValue = (value) => {
 		this.value = value;
@@ -51,7 +52,7 @@ class JodNumbElement extends HTMLElement {
 				const x = Math.abs(e.clientX - this.offsetX);
 				const y = e.clientY - this.offsetY;
 				let mod = e.shiftKey ? 100 : e.ctrlKey ? 0.001 : 1;
-				let mult = (1 + Math.floor(x / 100)) * 0.01;
+				let mult = (1 + Math.floor(x / 100)) * 0.01 * this.speed;
 				let value = this.lastValue + y * mult * -mod;
 				value = value < this.min ? this.min : value > this.max ? this.max : value;
 				this.setValue(value);
@@ -60,6 +61,7 @@ class JodNumbElement extends HTMLElement {
 
 		this.min = +(this.getAttribute('min') ?? 0);
 		this.max = +(this.getAttribute('max') ?? 1);
+		this.speed = +(this.getAttribute('speed') ?? 1);
 
 		const style = document.createElement("style");
 		style.textContent = `.wrapper {

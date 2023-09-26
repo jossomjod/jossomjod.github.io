@@ -177,8 +177,8 @@ function GainControlUI(oscillator, control) {
 	this.control = control;
 
 	this.control.value = this.oscillator.gain;
-	this.control.addEventListener('input', () => {
-		this.oscillator.gain = this.control.value;
+	this.control.addEventListener('changed', (e) => {
+		this.oscillator.gain = +this.control.value;
 	});
 }
 
@@ -187,8 +187,8 @@ function MultiplierControlUI(oscillator, control) {
 	this.control = control;
 
 	this.control.value = this.oscillator.multiplier;
-	this.control.addEventListener('input', () => {
-		this.oscillator.multiplier = this.control.value;
+	this.control.addEventListener('changed', () => {
+		this.oscillator.multiplier = +this.control.value;
 	});
 }
 
