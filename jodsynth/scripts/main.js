@@ -42,7 +42,7 @@ var keys = {
 };
 
 var lowerKeys = [
-	'KeyZ', 'KeyS', 'KeyX', 'KeyD', 'KeyC', 'KeyV', 'KeyG', 'KeyB', 'KeyH', 'KeyN', 'KeyJ',
+	'IntlBackslash', 'KeyZ', 'KeyS', 'KeyX', 'KeyD', 'KeyC', 'KeyV', 'KeyG', 'KeyB', 'KeyH', 'KeyN', 'KeyJ',
 	'KeyM', 'Comma', 'KeyL', 'Period', 'Semicolon', 'Slash', 'ShiftRight', 'Backslash',
 ];
 var upperKeys = [
@@ -51,13 +51,14 @@ var upperKeys = [
 ];
 
 let octave = 2;
+let noteOffset = 0;
 
 
 var keyboardKeys = {};
 
 function generateKeyDict() {
 	lowerKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i });
-	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i + 12 });
+	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i + 13 });
 }
 generateKeyDict();
 
@@ -83,6 +84,12 @@ document.body.onkeydown = function(e) {
 		case 34:
 			octave--;
 			break;
+		case 35:
+			noteOffset--;
+			break;
+		case 36:
+			noteOffset++;
+			break;
 		default:
 			toggleKeys(e, true);
 	}
@@ -98,7 +105,7 @@ function toggleKeys(e, bool) {
 	const key = keyboardKeys[e.code];
 	if (key) {
 		key.down = bool;
-		if (bool) key.id = synth.start(toneToFreq(key.index + 12 * octave));
+		if (bool) key.id = synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
 		else synth.stop(key.id);
 		return;
 	}
