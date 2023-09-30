@@ -228,10 +228,13 @@ function OscillatorUi(oscillator, container, name, isCarrier = false) {
 	this.oscGainControl = this.oscUi.querySelector('#oscGain');
 	this.oscGainControlUI = new GainControlUI(this.oscillator, this.oscGainControl);
 	
-	this.oscMultiplier;
+	this.oscMultiplier = this.oscUi.querySelector('#oscMultiplier');
 	if (!isCarrier) { // DANGER! DO NOT LET THE CARRIER HAVE A MULTIPLIER! SERIOUS HEARING DAMAGE MAY OCCUR!
-		this.oscMultiplier = this.oscUi.querySelector('#oscMultiplier');
 		oscMultiplierUI = new MultiplierControlUI(this.oscillator, this.oscMultiplier);
+	} else {
+		this.oscMultiplier.remove();
+		this.oscUi.querySelector('#oscMultiplierControl').remove();
+		delete this.oscMultiplier;
 	}
 
 
