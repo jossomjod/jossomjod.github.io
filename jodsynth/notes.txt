@@ -1,0 +1,49 @@
+HMMM YES
+NOTES INDEED
+
+
+------------------------------------------------------------------
+| osc1 | gain |	gainEnv |
+--------------------------------------
+| detune | detuneEnv |
+
+
+or something ig mb fr nc iirc omg roflmao wtf html
+
+my grand plan is limited by my ascii art skills smh
+
+
+TODO: tooltip for envelope
+TODO: ui improvements
+TODO: moving an envelope node horizontally should also move all nodes after it
+TODO: actually do the todos
+
+
+
+
+
+TODO:
+- modulate/carry input
+- pitch automation
+- web component: a number input you can drag to adjust
+  - different rates of change depending on horizontal mouse pos maybe? Experiment.
+	- maybe drag the left side for BIG changes, right side for small, middle for medium?
+	- right/left/middle click and drag?
+	- modifier keys?
+
+
+WE NEED SMALLER VALUES
+Tiny changes make a big difference with FM synthesis.
+
+
+TODODOODODODDO: REeeeeeeeverb
+
+
+and also
+hmmmmm
+i forgor
+
+ok, yeah
+we need to give better feedback on what the custom nuber input is doing
+and also fix it so it works better
+yep

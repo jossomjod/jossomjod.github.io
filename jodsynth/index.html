@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="description" content="The JOD Synth">
+		<meta name="keywords" content="Synth,Music,JOD">
+		<meta name="author" content="jossomjod">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+		<link rel="stylesheet" href="../stylesheets/global_style.css" />
+		<link rel="stylesheet" href="stylesheets/style.css" />
+		<link rel="icon"  type="image/png" href="../images/favicon.png">
+		<script src="../scripts/vector.js"></script>
+		<script src="scripts/functions.js"></script>
+		<script src="jod-numb/jod-numb.js"></script>
+		<script src="scripts/synth.js"></script>
+		<script src="scripts/synth-ui.js"></script>
+		<script src="scripts/ui.js"></script>
+		<title>JODSynth</title>
+	</head>
+	<body>
+		<div class="main-content">
+			<div class="top-bar">
+				<a href="../index.html">Home</a>
+			</div>
+			<div class="synth-container">
+				<div>
+					<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
+					<label for="masterGain">Master Gain</label>
+				</div>
+			</div>
+			<div class="button-container">
+				<button id="addOscBtn">+ Add oscillator</button>
+			</div>
+		</div>
+		<script src="scripts/main.js" defer></script>
+	</body>
+</html>
+
+
+<template id="oscillator-template">
+	<div class="oscillator-container">
+		<p id="oscillator-name" class="ocillator-name">Oscillator</p>
+		<select class="control" name="oscWaveform" id="oscWaveform">
+			<option value="square">Square</option>
+			<option value="sine">Sine</option>
+			<option value="sawtooth">Sawtooth</option>
+			<option value="triangle">Triangle</option>
+		</select>
+		<div class="control">
+			<!-- <input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.001"> -->
+			<label for="oscGain">Gain</label>
+			<jod-numb  name="oscGain" id="oscGain" min="0" max="1"></jod-numb>
+		</div>
+		<div class="control" id="oscMultiplierControl">
+			<!-- <input type="range" id="oscMultiplier" name="oscMultiplier" min="0" max="1000000" step="1000"> -->
+			<label for="oscMultiplier">Multiplier</label>
+			<jod-numb  name="oscMultiplier" id="oscMultiplier" min="0" max="100000000" speed="100"></jod-numb>
+		</div>
+		<div class="control">
+			<label for="oscCoarse">Coarse</label>
+			<input class="detune" type="number" id="oscCoarse" name="oscCoarse" min="-1200" max="1200" step="1.0">
+			<label for="oscDetune">Detune</label>
+			<input class="detune" type="number" id="oscDetune" name="oscDetune" min="-100" max="100" step="1.0">
+		</div>
+		<div class="control">
+			<label for="oscLFOFreq">LFO Frequency</label>
+			<!-- <input class="detune" type="number" id="oscLFOFreq" name="oscLFOFreq" min="-44100" max="44100" step="0.01"> -->
+			<jod-numb  name="oscLFOFreq" id="oscLFOFreq" min="-44100" max="44100"></jod-numb>
+			<input class="checkbox" type="checkbox" id="oscLFOToggle" name="oscLFOToggle">
+			<label for="oscLFOToggle">LFO</label>
+		</div>
+
+		<div class="envelope" id="oscGainEnvelope">
+			<canvas class="envelope-canvas" id="oscEnvCanvas">
+				Behold: The Great and Glorious canvas element! Except you can't really see it, can you?
+			</canvas>
+		</div>
+	</div>
+</template>

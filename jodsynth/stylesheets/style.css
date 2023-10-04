@@ -1,0 +1,42 @@
+.main-content {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+}
+.synth-container {
+	flex-grow: 1;
+	margin: 20px;
+	background-color: #010a1d;
+}
+
+.oscillator-container {
+	padding: 20px;
+	background-color: #04152e;
+}
+
+.envelope {
+	position: relative;
+	display: block;
+	width: 800px;
+	height: 150px;
+	margin: 20px 0;
+	background-color: #010a1d;
+	border: 1px solid #020307;
+}
+.envelope-node {
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	background-color: #2977af;
+	border-radius: 20px;
+	border: 2px solid #fff;
+}
+.envelope-canvas {
+	width: 100%;
+	height: 100%;
+}
+
+.detune {
+	width: 40px;
+}
