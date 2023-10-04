@@ -42,3 +42,8 @@ TODODOODODODDO: REeeeeeeeverb
 and also
 hmmmmm
 i forgor
+
+ok, yeah
+we need to give better feedback on what the custom nuber input is doing
+and also fix it so it works better
+yep
