@@ -1,7 +1,7 @@
 class JodNumbElement extends HTMLElement {
-	value = 0;
+	_value = 0;
 	lastValue = 0;
-	max = 1;
+	_max = 1;
 	min = 0;
 	dragging = 0;
 	offsetX = 0;
@@ -9,9 +9,31 @@ class JodNumbElement extends HTMLElement {
 	wrapper = null;
 	speed = 1;
 
+	get value() {
+		return this.getAttribute('value');
+	}
+	set value(v) {
+		this._value = v ?? 0.0;
+		this.setAttribute('value', v ?? 0.0);
+		this.wrapper.textContent = this._value.toFixed(5);
+		this.dispatchEvent(this.changed);
+	}
+
+	get max() {
+		return this.getAttribute('max');
+	}
+	set max(v) {
+		this._max = v ?? 1.0;
+		this.setAttribute('max', v ?? 1.0);
+	}
+
+	attributeChangedCallback(name, old, newVal) {
+		console.log('AUIOEWHIAUEH', name, old, newVal);
+	}
+
 	setValue = (value) => {
-		this.value = value;
-		this.wrapper.textContent = this.value.toFixed(5);
+		this._value = value;
+		this.wrapper.textContent = this._value.toFixed(5);
 		this.dispatchEvent(this.changed);
 	}
 	changed = new Event('changed');
@@ -23,7 +45,7 @@ class JodNumbElement extends HTMLElement {
 		const wrapper = document.createElement("div");
 		this.wrapper = wrapper;
 		wrapper.setAttribute("class", "wrapper");
-		wrapper.textContent = this.value;
+		wrapper.textContent = this._value;
 
 		wrapper.addEventListener('mousedown', (e) => {
 			console.log('MOUSEDOWN on JOD NUMB', e);
@@ -33,7 +55,7 @@ class JodNumbElement extends HTMLElement {
 				case 1:
 					this.offsetX = e.clientX;
 					this.offsetY = e.clientY;
-					this.lastValue = this.value;
+					this.lastValue = this._value;
 					this.dragging = e.buttons;
 					break;
 				case 4:
@@ -54,13 +76,13 @@ class JodNumbElement extends HTMLElement {
 				let mod = e.shiftKey ? 100 : e.ctrlKey ? 0.001 : 1;
 				let mult = (1 + Math.floor(x / 100)) * 0.01 * this.speed;
 				let value = this.lastValue + y * mult * -mod;
-				value = value < this.min ? this.min : value > this.max ? this.max : value;
+				value = value < this.min ? this.min : value > this._max ? this._max : value;
 				this.setValue(value);
 			}
 		});
 
 		this.min = +(this.getAttribute('min') ?? 0);
-		this.max = +(this.getAttribute('max') ?? 1);
+		this._max = +(this.getAttribute('max') ?? 1);
 		this.speed = +(this.getAttribute('speed') ?? 1);
 
 		const style = document.createElement("style");

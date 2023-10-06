@@ -41,6 +41,8 @@ const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
 
+
+
 //function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
 function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
 	this.type = type;
@@ -49,7 +51,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 	this.multiplier = gainMult;
 	this.gainEnvelope = gainEnvelope;
 	this.mod = mod;
-	this.isCarrier = !mod;
+	this.isCarrier = () => this.mod === null;
 	this.isLFO = isLFO;
 	this.fixedFreq = 1.0;
 	this.name = '';
@@ -109,8 +111,8 @@ function Synth(ac, connectTo) {
 
 	this.oscillators = [
 		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
-		new Oscillator(ac, 'sawtooth', 0.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 0.0), 0),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1, true),
+		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 0),
+		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), null),
 		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 2),
 	];
 	
@@ -139,8 +141,8 @@ function Synth(ac, connectTo) {
 
 	this.addOsc = () => {
 		console.log('[synth.js Synth] Adding oscillator');
-		const i = this.oscillators.length-2;
-		const modIdx = i < 0 ? 0 : i;
-		return this.oscillators.push(new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), modIdx));
+		/* const i = this.oscillators.length-2;
+		const modIdx = i < 0 ? 0 : i; */
+		return this.oscillators.push(new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), null));
 	}
 }

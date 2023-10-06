@@ -203,10 +203,9 @@ function ControlUI(param, control) {
 }
 
 
-function OscillatorUi(oscillator, container, name, isCarrier = false) {
+function OscillatorUi(oscillator, container, name) {
 	this.oscillator = oscillator;
 	this.container = container;
-	this.isCarrier = isCarrier;
 	this.template = document.querySelector('#oscillator-template');
 	this.oscUi = this.template.content.cloneNode(true);
 
@@ -223,18 +222,38 @@ function OscillatorUi(oscillator, container, name, isCarrier = false) {
 		document.activeElement.blur();
 	});
 
+	// MODULATE SELECT
+	this.oscModulateSelectUI = this.oscUi.querySelector('#oscModulateSelect');
+
+	this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
+	this.oscModulateSelectUI.addEventListener('input', () => {
+		const val = this.oscModulateSelectUI.value;
+		this.oscillator.mod = val === 'none' ? null : +val;
+
+		if (this.oscillator.mod === null) {
+			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
+			this.oscGainControl.setAttribute('max', '1.0');
+			this.oscGainControl.setAttribute('speed', '1.0');
+			this.oscillator.multiplier = 1.0;
+		} else {
+			this.oscGainControl.setAttribute('max', '1000000.0');
+			this.oscGainControl.setAttribute('speed', '100.0');
+		}
+		document.activeElement.blur();
+	});
+
 
 
 	this.oscGainControl = this.oscUi.querySelector('#oscGain');
 	this.oscGainControlUI = new GainControlUI(this.oscillator, this.oscGainControl);
 	
+	this.oscMultiplierControl = this.oscUi.querySelector('#oscMultiplierControl');
 	this.oscMultiplier = this.oscUi.querySelector('#oscMultiplier');
-	if (!isCarrier) { // DANGER! DO NOT LET THE CARRIER HAVE A MULTIPLIER! SERIOUS HEARING DAMAGE MAY OCCUR!
+	if (!this.oscillator.isCarrier()) { // DANGER! DO NOT LET THE CARRIER HAVE A MULTIPLIER! SERIOUS HEARING DAMAGE MAY OCCUR!
 		oscMultiplierUI = new MultiplierControlUI(this.oscillator, this.oscMultiplier);
 	} else {
 		this.oscMultiplier.remove();
-		this.oscUi.querySelector('#oscMultiplierControl').remove();
-		delete this.oscMultiplier;
+		this.oscMultiplierControl.remove();
 	}
 
 
@@ -285,13 +304,16 @@ function SynthUi(synth) {
 
 	this.oscillators = this.synth.oscillators.map((osc, i) => {
 		const isCarrier = i === 0;
-		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`, isCarrier);
+		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
 	});
 
 	this.addOsc = () => {
 		console.log('[synth-ui.js SynthUi] Adding oscillator UI');
 		const len = this.synth.addOsc();
 		const osc = this.synth.oscillators[len-1];
-		this.oscillators.push(new OscillatorUi(osc, this.container, `Oscillator ${len}`, len === 0));
+		const newOscUi = new OscillatorUi(osc, this.container, `Oscillator ${len}`);
+
+
+		this.oscillators.push(newOscUi);
 	}
 }
