@@ -84,7 +84,7 @@ var oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.8 },
-	{ value: 0.0, time: 1.5 },
+	{ value: 0.0, time: 1.0 },
 ];
 
 var osirisGainPoints = [
@@ -98,21 +98,22 @@ var osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.9 },
-	{ value: 0.0, time: 1.7 },
+	{ value: 0.0, time: 1.0 },
 ];
 
 //TODO: Experiment with multiplying gain by 2^(12/tone)
 
-function Synth(ac, connectTo) {
+function Synth(ac) {
 	this.playing = false;
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
-	this.gain.connect(connectTo);
+
+	this.connect = (audioNode) => this.gain.connect(audioNode);
 
 	this.oscillators = [
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
+		new Oscillator(ac, 'square', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
 		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 0),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), null),
+		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1),
 		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 2),
 	];
 	

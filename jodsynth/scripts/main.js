@@ -1,6 +1,27 @@
 const ac = new (window.AudioContext || window.webkitAudioContext);
 
 
+
+
+// REVERB EXPERIMENTS
+
+// Buffer
+const bufferSize = ac.sampleRate * 1.0;
+const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
+const bufL = buford.getChannelData(0);
+const bufR = buford.getChannelData(1);
+for (let i = 0; i < bufferSize; i++) {
+	bufL[i] = Math.random() * 2 - 1;
+	bufR[i] = Math.random() * 2 - 1;
+}
+
+const convolo = ac.createConvolver();
+convolo.buffer = buford;
+
+const reverbGain = new GainNode(ac, { value: 1.0 });
+
+
+
 // MASTER Gain
 
 const masterGain = ac.createGain();
@@ -13,8 +34,30 @@ masterGainUI.addEventListener('input', () => {
 	masterGain.gain.value = masterGainUI.value;
 });
 
+const synth = new Synth(ac);
 
-const synth = new Synth(ac, masterGain);
+const synthGain = ac.createGain();
+synthGain.gain.value = 1.0;
+
+synth.connect(masterGain);
+
+synth.connect(convolo).connect(reverbGain).connect(synthGain).connect(masterGain);
+
+
+const masterDelay = ac.createDelay(2);
+masterDelay.delayTime.value = 0.4;
+const masterDelayFeedback = ac.createGain();
+masterDelayFeedback.gain.value = 0.16;
+
+if (true) {
+synthGain
+	.connect(masterDelay)
+	.connect(masterDelayFeedback)
+	.connect(masterDelay)
+	.connect(masterGain);
+}
+
+
 const synthUi = new SynthUi(synth);
 
 const addOscBtn = document.querySelector('#addOscBtn');

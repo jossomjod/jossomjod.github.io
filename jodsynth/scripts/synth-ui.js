@@ -307,7 +307,6 @@ function SynthUi(synth) {
 	console.log('template', this.template);
 
 	this.oscillators = this.synth.oscillators.map((osc, i) => {
-		const isCarrier = i === 0;
 		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
 	});
 
@@ -316,7 +315,10 @@ function SynthUi(synth) {
 		const len = this.synth.addOsc();
 		const osc = this.synth.oscillators[len-1];
 		const newOscUi = new OscillatorUi(osc, this.container, `Oscillator ${len}`);
-
+		//TODO: handle hmmm... i forgor... grrrrr need sleep bnnnafaefsthdsr ae faef
+		// modulate options
+		// yes
+		// gotta update those
 
 		this.oscillators.push(newOscUi);
 	}

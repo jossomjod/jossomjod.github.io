@@ -1,5 +1,5 @@
 class JodNumbElement extends HTMLElement {
-	_value = 0;
+	#value = 0;
 	lastValue = 0;
 	_max = 1;
 	_min = 0;
@@ -13,13 +13,13 @@ class JodNumbElement extends HTMLElement {
 
 	get value() {
 		//return this._value;
-		return this.getAttribute('value') ?? this._value;
+		return this.getAttribute('value') ?? this.#value;
 	}
 	set value(v) { // this setter doesn't work because idk why
 		console.log('JODNUMB VALUE SETTER', value);
-		this._value = +v;
+		this.#value = +v;
 		this.setAttribute('value', v ?? 0.0);
-		this.wrapper.textContent = this._value.toFixed(5);
+		this.wrapper.textContent = this.#value.toFixed(5);
 		this.dispatchEvent(this.changed);
 	}
 
@@ -52,24 +52,24 @@ class JodNumbElement extends HTMLElement {
 	}
 
 	setValue = (value) => {
-		this._value = value;
-		this.wrapper.textContent = this._value.toFixed(5);
+		this.#value = value;
+		this.wrapper.textContent = this.#value.toFixed(5);
 		this.dispatchEvent(this.changed);
 	}
 
-	constructor(value) {
+	constructor() {
 		super();
 		this.attachShadow({ mode: 'open' });
 
 		this._min = +(this.getAttribute('min') ?? 0);
 		this._max = +(this.getAttribute('max') ?? 1);
 		this._speed = +(this.getAttribute('speed') ?? 1);
-		this._value = +(value ?? this.getAttribute('value') ?? 0.0);
+		this.#value = +(this.getAttribute('value') ?? 0.0);
 
 		const wrapper = document.createElement("div");
 		this.wrapper = wrapper;
 		wrapper.setAttribute("class", "wrapper");
-		wrapper.textContent = this._value;
+		wrapper.textContent = this.#value;
 
 		wrapper.addEventListener('mousedown', (e) => {
 			console.log('MOUSEDOWN on JOD NUMB', e);
@@ -79,7 +79,7 @@ class JodNumbElement extends HTMLElement {
 				case 1:
 					this.offsetX = e.clientX;
 					this.offsetY = e.clientY;
-					this.lastValue = this._value;
+					this.lastValue = this.#value;
 					this.dragging = e.buttons;
 					break;
 				case 4:
