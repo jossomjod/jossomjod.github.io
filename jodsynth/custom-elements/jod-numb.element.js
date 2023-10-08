@@ -2,29 +2,49 @@ class JodNumbElement extends HTMLElement {
 	_value = 0;
 	lastValue = 0;
 	_max = 1;
-	min = 0;
+	_min = 0;
 	dragging = 0;
 	offsetX = 0;
 	offsetY = 0;
 	wrapper = null;
-	speed = 1;
+	_speed = 1;
+
+	changed = new Event('changed');
 
 	get value() {
-		return this.getAttribute('value');
+		//return this._value;
+		return this.getAttribute('value') ?? this._value;
 	}
-	set value(v) {
-		this._value = v ?? 0.0;
+	set value(v) { // this setter doesn't work because idk why
+		console.log('JODNUMB VALUE SETTER', value);
+		this._value = +v;
 		this.setAttribute('value', v ?? 0.0);
 		this.wrapper.textContent = this._value.toFixed(5);
 		this.dispatchEvent(this.changed);
 	}
 
 	get max() {
-		return this.getAttribute('max');
+		return this.getAttribute('max') ?? this._max;
 	}
 	set max(v) {
 		this._max = v ?? 1.0;
 		this.setAttribute('max', v ?? 1.0);
+	}
+
+	get min() {
+		return this.getAttribute('min') ?? this._min;
+	}
+	set min(v) {
+		this._min = v ?? 1.0;
+		this.setAttribute('min', v ?? 1.0);
+	}
+
+	get speed() {
+		return this.getAttribute('speed') ?? this._speed;
+	}
+	set speed(v) {
+		this._speed = v ?? 1.0;
+		this.setAttribute('speed', v ?? 1.0);
 	}
 
 	attributeChangedCallback(name, old, newVal) {
@@ -36,11 +56,15 @@ class JodNumbElement extends HTMLElement {
 		this.wrapper.textContent = this._value.toFixed(5);
 		this.dispatchEvent(this.changed);
 	}
-	changed = new Event('changed');
 
-	constructor() {
+	constructor(value) {
 		super();
 		this.attachShadow({ mode: 'open' });
+
+		this._min = +(this.getAttribute('min') ?? 0);
+		this._max = +(this.getAttribute('max') ?? 1);
+		this._speed = +(this.getAttribute('speed') ?? 1);
+		this._value = +(value ?? this.getAttribute('value') ?? 0.0);
 
 		const wrapper = document.createElement("div");
 		this.wrapper = wrapper;
@@ -74,16 +98,14 @@ class JodNumbElement extends HTMLElement {
 				const x = Math.abs(e.clientX - this.offsetX);
 				const y = e.clientY - this.offsetY;
 				let mod = e.shiftKey ? 100 : e.ctrlKey ? 0.001 : 1;
-				let mult = (1 + Math.floor(x / 100)) * 0.01 * this.speed;
+				let mult = (1 + Math.floor(x / 100)) * 0.01 * this._speed;
 				let value = this.lastValue + y * mult * -mod;
-				value = value < this.min ? this.min : value > this._max ? this._max : value;
+				value = value < this._min ? this._min : value > this._max ? this._max : value;
 				this.setValue(value);
+				this.value = value;
+				console.log('oaeijfouaj', this.value);
 			}
 		});
-
-		this.min = +(this.getAttribute('min') ?? 0);
-		this._max = +(this.getAttribute('max') ?? 1);
-		this.speed = +(this.getAttribute('speed') ?? 1);
 
 		const style = document.createElement("style");
 		style.textContent = `.wrapper {

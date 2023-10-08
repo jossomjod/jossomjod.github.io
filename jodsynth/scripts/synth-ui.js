@@ -178,6 +178,7 @@ function GainControlUI(oscillator, control) {
 
 	this.control.value = this.oscillator.gain;
 	this.control.addEventListener('changed', (e) => {
+		console.log('GAIN VALUECHANGE', e);
 		this.oscillator.gain = +this.control.value;
 	});
 }
@@ -232,13 +233,16 @@ function OscillatorUi(oscillator, container, name) {
 
 		if (this.oscillator.mod === null) {
 			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
-			this.oscGainControl.setAttribute('max', '1.0');
-			this.oscGainControl.setAttribute('speed', '1.0');
+			this.oscGainControl.max = 1.0;
+			this.oscGainControl.speed = 1.0;
 			this.oscillator.multiplier = 1.0;
+			this.oscMultiplierControl.setAttribute('class', 'control hidden');
 		} else {
-			this.oscGainControl.setAttribute('max', '1000000.0');
-			this.oscGainControl.setAttribute('speed', '100.0');
+			this.oscGainControl.max = 1000000.0;
+			this.oscGainControl.speed = 100.0;
+			this.oscMultiplierControl.setAttribute('class', 'control');
 		}
+		console.log('oaehuah', this.oscillator.mod);
 		document.activeElement.blur();
 	});
 
