@@ -44,11 +44,10 @@ const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
 //function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
-function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
+function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, mod, isLFO = false) {
 	this.type = type;
 	this.detune = detune;
 	this.gain = 1.0;
-	this.multiplier = gainMult;
 	this.gainEnvelope = gainEnvelope;
 	this.mod = mod;
 	this.isCarrier = () => this.mod === null;
@@ -66,7 +65,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 		osc.connect(gainNode);
 		osc.start();
 
-		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, this.multiplier * this.gain);
+		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, this.gain);
 
 		return osc;
 	}
@@ -111,10 +110,10 @@ function Synth(ac) {
 	this.connect = (audioNode) => this.gain.connect(audioNode);
 
 	this.oscillators = [
-		new Oscillator(ac, 'square', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 0),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 2),
+		new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
+		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 0),
+		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1),
+		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 2),
 	];
 	
 	this.start = (freq) => {
@@ -144,6 +143,6 @@ function Synth(ac) {
 		console.log('[synth.js Synth] Adding oscillator');
 		/* const i = this.oscillators.length-2;
 		const modIdx = i < 0 ? 0 : i; */
-		return this.oscillators.push(new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), null));
+		return this.oscillators.push(new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), null));
 	}
 }

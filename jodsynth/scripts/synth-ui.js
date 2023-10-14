@@ -183,16 +183,6 @@ function GainControlUI(oscillator, control) {
 	});
 }
 
-function MultiplierControlUI(oscillator, control) {
-	this.oscillator = oscillator;
-	this.control = control;
-
-	this.control.value = this.oscillator.multiplier;
-	this.control.addEventListener('changed', () => {
-		this.oscillator.multiplier = +this.control.value;
-	});
-}
-
 function ControlUI(param, control) {
 	this.param = param;
 	this.control = control;
@@ -229,37 +219,16 @@ function OscillatorUi(oscillator, container, name) {
 	this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
 	this.oscModulateSelectUI.addEventListener('input', () => {
 		const val = this.oscModulateSelectUI.value;
-		this.oscillator.mod = val === 'none' ? null : +val;
+		this.setMod(val === 'none' ? null : +val);
 
-		if (this.oscillator.mod === null) {
-			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
-			this.oscGainControl.max = 1.0;
-			this.oscGainControl.speed = 1.0;
-			this.oscillator.multiplier = 1.0;
-			this.oscMultiplierControl.setAttribute('class', 'control hidden');
-		} else {
-			this.oscGainControl.max = 1000000.0;
-			this.oscGainControl.speed = 100.0;
-			this.oscMultiplierControl.setAttribute('class', 'control');
-		}
 		console.log('oaehuah', this.oscillator.mod);
 		document.activeElement.blur();
 	});
 
 
-
+	// GAIN
 	this.oscGainControl = this.oscUi.querySelector('#oscGain');
 	this.oscGainControlUI = new GainControlUI(this.oscillator, this.oscGainControl);
-	
-	this.oscMultiplierControl = this.oscUi.querySelector('#oscMultiplierControl');
-	this.oscMultiplier = this.oscUi.querySelector('#oscMultiplier');
-	if (!this.oscillator.isCarrier()) { // DANGER! DO NOT LET THE CARRIER HAVE A MULTIPLIER! SERIOUS HEARING DAMAGE MAY OCCUR!
-		oscMultiplierUI = new MultiplierControlUI(this.oscillator, this.oscMultiplier);
-	} else {
-		this.oscMultiplier.remove();
-		this.oscMultiplierControl.remove();
-	}
-
 
 
 	// DETUNE
@@ -296,6 +265,23 @@ function OscillatorUi(oscillator, container, name) {
 
 	// GAIN ENVELOPE
 	this.oscGainEnvelopeUI = new EnvelopeUI(this.oscillator.gainEnvelope, this.oscGainEnvelope);
+
+	
+	// INIT
+
+	this.setMod = (mod = null) => {
+		this.oscillator.mod = mod;
+		if (mod === null) {
+			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
+			this.oscGainControl.max = 1.0;
+			this.oscGainControl.speed = 1.0;
+		} else {
+			this.oscGainControl.max = 1000000.0;
+			this.oscGainControl.speed = 100.0;
+		}
+	};
+	
+	this.setMod(this.oscillator.mod);
 }
 
 
