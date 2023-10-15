@@ -15,6 +15,14 @@
 	background-color: #04152e;
 }
 
+.controls-container {
+	display: grid;
+	grid-template-columns: 300px 300px;
+}
+.control {
+	margin: 10px;
+}
+
 .envelope {
 	position: relative;
 	display: block;
@@ -39,4 +47,8 @@
 
 .detune {
 	width: 40px;
+}
+
+.hidden {
+	visibility: hidden;
 }

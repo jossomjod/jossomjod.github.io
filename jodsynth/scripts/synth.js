@@ -41,15 +41,16 @@ const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 
 
+
+
 //function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
-function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
+function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, mod, isLFO = false) {
 	this.type = type;
 	this.detune = detune;
 	this.gain = 1.0;
-	this.multiplier = gainMult;
 	this.gainEnvelope = gainEnvelope;
 	this.mod = mod;
-	this.isCarrier = !mod;
+	this.isCarrier = () => this.mod === null;
 	this.isLFO = isLFO;
 	this.fixedFreq = 1.0;
 	this.name = '';
@@ -64,7 +65,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvel
 		osc.connect(gainNode);
 		osc.start();
 
-		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, this.multiplier * this.gain);
+		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, this.gain);
 
 		return osc;
 	}
@@ -82,7 +83,7 @@ var oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.8 },
-	{ value: 0.0, time: 1.5 },
+	{ value: 0.0, time: 1.0 },
 ];
 
 var osirisGainPoints = [
@@ -96,22 +97,23 @@ var osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.9 },
-	{ value: 0.0, time: 1.7 },
+	{ value: 0.0, time: 1.0 },
 ];
 
 //TODO: Experiment with multiplying gain by 2^(12/tone)
 
-function Synth(ac, connectTo) {
+function Synth(ac) {
 	this.playing = false;
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
-	this.gain.connect(connectTo);
+
+	this.connect = (audioNode) => this.gain.connect(audioNode);
 
 	this.oscillators = [
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
-		new Oscillator(ac, 'sawtooth', 0.0, 1.0, new ArrayEnvelope(ac, osirisGainPoints, 0.0), 0),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1, true),
-		new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 2),
+		new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), null),
+		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 0),
+		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 1),
+		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), 2),
 	];
 	
 	this.start = (freq) => {
@@ -139,8 +141,8 @@ function Synth(ac, connectTo) {
 
 	this.addOsc = () => {
 		console.log('[synth.js Synth] Adding oscillator');
-		const i = this.oscillators.length-2;
-		const modIdx = i < 0 ? 0 : i;
-		return this.oscillators.push(new Oscillator(ac, 'sine', 0.0, 1.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), modIdx));
+		/* const i = this.oscillators.length-2;
+		const modIdx = i < 0 ? 0 : i; */
+		return this.oscillators.push(new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), null));
 	}
 }

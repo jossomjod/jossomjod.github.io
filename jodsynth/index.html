@@ -12,7 +12,7 @@
 		<link rel="icon"  type="image/png" href="../images/favicon.png">
 		<script src="../scripts/vector.js"></script>
 		<script src="scripts/functions.js"></script>
-		<script src="jod-numb/jod-numb.js"></script>
+		<script src="custom-elements/jod-numb.element.js"></script>
 		<script src="scripts/synth.js"></script>
 		<script src="scripts/synth-ui.js"></script>
 		<script src="scripts/ui.js"></script>
@@ -28,6 +28,10 @@
 					<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
 					<label for="masterGain">Master Gain</label>
 				</div>
+				<div>
+					<input type="range" id="reverbGain" name="reverbGain" min="0" max="1" step="0.01">
+					<label for="reverbGain">Reverb Gain</label>
+				</div>
 			</div>
 			<div class="button-container">
 				<button id="addOscBtn">+ Add oscillator</button>
@@ -41,34 +45,49 @@
 <template id="oscillator-template">
 	<div class="oscillator-container">
 		<p id="oscillator-name" class="ocillator-name">Oscillator</p>
-		<select class="control" name="oscWaveform" id="oscWaveform">
-			<option value="square">Square</option>
-			<option value="sine">Sine</option>
-			<option value="sawtooth">Sawtooth</option>
-			<option value="triangle">Triangle</option>
-		</select>
-		<div class="control">
-			<!-- <input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.001"> -->
-			<label for="oscGain">Gain</label>
-			<jod-numb  name="oscGain" id="oscGain" min="0" max="1"></jod-numb>
-		</div>
-		<div class="control" id="oscMultiplierControl">
-			<!-- <input type="range" id="oscMultiplier" name="oscMultiplier" min="0" max="1000000" step="1000"> -->
-			<label for="oscMultiplier">Multiplier</label>
-			<jod-numb  name="oscMultiplier" id="oscMultiplier" min="0" max="100000000" speed="100"></jod-numb>
-		</div>
-		<div class="control">
-			<label for="oscCoarse">Coarse</label>
-			<input class="detune" type="number" id="oscCoarse" name="oscCoarse" min="-1200" max="1200" step="1.0">
-			<label for="oscDetune">Detune</label>
-			<input class="detune" type="number" id="oscDetune" name="oscDetune" min="-100" max="100" step="1.0">
-		</div>
-		<div class="control">
-			<label for="oscLFOFreq">LFO Frequency</label>
-			<!-- <input class="detune" type="number" id="oscLFOFreq" name="oscLFOFreq" min="-44100" max="44100" step="0.01"> -->
-			<jod-numb  name="oscLFOFreq" id="oscLFOFreq" min="-44100" max="44100"></jod-numb>
-			<input class="checkbox" type="checkbox" id="oscLFOToggle" name="oscLFOToggle">
-			<label for="oscLFOToggle">LFO</label>
+		
+		<div class="controls-container">
+			<div class="control">
+				<label for="oscWaveform">Waveform</label>
+				<select class="control" name="oscWaveform" id="oscWaveform">
+					<option value="square">Square</option>
+					<option value="sine">Sine</option>
+					<option value="sawtooth">Sawtooth</option>
+					<option value="triangle">Triangle</option>
+				</select>
+			</div>
+
+			<div class="control">
+				<label for="oscModulateSelect">Modulate</label>
+				<select name="oscModulateSelect" id="oscModulateSelect">
+					<option value="none">None</option>
+					<option value="0">Oscillator 1</option>
+					<option value="1">Oscillator 2</option>
+					<option value="2">Oscillator 3</option>
+					<option value="3">Oscillator 4</option>
+				</select>
+			</div>
+
+			<div class="control">
+				<!-- <input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.001"> -->
+				<label for="oscGain">Gain</label>
+				<jod-numb  name="oscGain" id="oscGain" min="0" max="1" value="1"></jod-numb>
+			</div>
+
+			<div class="control">
+				<label for="oscCoarse">Coarse</label>
+				<input class="detune" type="number" id="oscCoarse" name="oscCoarse" min="-1200" max="1200" step="1.0">
+				<label for="oscDetune">Detune</label>
+				<input class="detune" type="number" id="oscDetune" name="oscDetune" min="-100" max="100" step="1.0">
+			</div>
+
+			<div class="control">
+				<label for="oscLFOFreq">LFO Frequency</label>
+				<!-- <input class="detune" type="number" id="oscLFOFreq" name="oscLFOFreq" min="-44100" max="44100" step="0.01"> -->
+				<jod-numb  name="oscLFOFreq" id="oscLFOFreq" min="-44100" max="44100"></jod-numb>
+				<input class="checkbox" type="checkbox" id="oscLFOToggle" name="oscLFOToggle">
+				<label for="oscLFOToggle">LFO</label>
+			</div>
 		</div>
 
 		<div class="envelope" id="oscGainEnvelope">

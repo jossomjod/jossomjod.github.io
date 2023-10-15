@@ -178,17 +178,8 @@ function GainControlUI(oscillator, control) {
 
 	this.control.value = this.oscillator.gain;
 	this.control.addEventListener('changed', (e) => {
+		console.log('GAIN VALUECHANGE', e);
 		this.oscillator.gain = +this.control.value;
-	});
-}
-
-function MultiplierControlUI(oscillator, control) {
-	this.oscillator = oscillator;
-	this.control = control;
-
-	this.control.value = this.oscillator.multiplier;
-	this.control.addEventListener('changed', () => {
-		this.oscillator.multiplier = +this.control.value;
 	});
 }
 
@@ -203,10 +194,9 @@ function ControlUI(param, control) {
 }
 
 
-function OscillatorUi(oscillator, container, name, isCarrier = false) {
+function OscillatorUi(oscillator, container, name) {
 	this.oscillator = oscillator;
 	this.container = container;
-	this.isCarrier = isCarrier;
 	this.template = document.querySelector('#oscillator-template');
 	this.oscUi = this.template.content.cloneNode(true);
 
@@ -223,20 +213,27 @@ function OscillatorUi(oscillator, container, name, isCarrier = false) {
 		document.activeElement.blur();
 	});
 
+	// MODULATE SELECT
+	this.oscModulateSelectUI = this.oscUi.querySelector('#oscModulateSelect');
+
+	this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
+	this.oscModulateSelectUI.addEventListener('input', () => {
+		const val = this.oscModulateSelectUI.value;
+		this.setMod(val === 'none' ? null : +val);
+
+		console.log('oaehuah', this.oscillator.mod);
+		document.activeElement.blur();
+	});
+
+	this.updateModulateOptions = (newOptions) => {
+		this.oscModulateSelectUI.replaceChildren(...newOptions);
+		this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
+	};
 
 
+	// GAIN
 	this.oscGainControl = this.oscUi.querySelector('#oscGain');
 	this.oscGainControlUI = new GainControlUI(this.oscillator, this.oscGainControl);
-	
-	this.oscMultiplier = this.oscUi.querySelector('#oscMultiplier');
-	if (!isCarrier) { // DANGER! DO NOT LET THE CARRIER HAVE A MULTIPLIER! SERIOUS HEARING DAMAGE MAY OCCUR!
-		oscMultiplierUI = new MultiplierControlUI(this.oscillator, this.oscMultiplier);
-	} else {
-		this.oscMultiplier.remove();
-		this.oscUi.querySelector('#oscMultiplierControl').remove();
-		delete this.oscMultiplier;
-	}
-
 
 
 	// DETUNE
@@ -273,6 +270,24 @@ function OscillatorUi(oscillator, container, name, isCarrier = false) {
 
 	// GAIN ENVELOPE
 	this.oscGainEnvelopeUI = new EnvelopeUI(this.oscillator.gainEnvelope, this.oscGainEnvelope);
+
+	
+
+	this.setMod = (mod = null) => {
+		this.oscillator.mod = mod;
+		if (mod === null) {
+			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
+			this.oscGainControl.max = 1.0;
+			this.oscGainControl.speed = 1.0;
+		} else {
+			this.oscGainControl.max = 1000000.0;
+			this.oscGainControl.speed = 100.0;
+		}
+	};
+
+	
+	// INIT
+	this.setMod(this.oscillator.mod);
 }
 
 
@@ -284,14 +299,33 @@ function SynthUi(synth) {
 	console.log('template', this.template);
 
 	this.oscillators = this.synth.oscillators.map((osc, i) => {
-		const isCarrier = i === 0;
-		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`, isCarrier);
+		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
 	});
 
 	this.addOsc = () => {
 		console.log('[synth-ui.js SynthUi] Adding oscillator UI');
 		const len = this.synth.addOsc();
 		const osc = this.synth.oscillators[len-1];
-		this.oscillators.push(new OscillatorUi(osc, this.container, `Oscillator ${len}`, len === 0));
+		const newOscUi = new OscillatorUi(osc, this.container, `Oscillator ${len}`);
+		
+		this.oscillators.push(newOscUi);
+		this.updateModulateOptions();
 	}
+
+	this.updateModulateOptions = () => {
+		this.oscillators.forEach((o, oi) => {
+			const none = document.createElement('option');
+			none.value = `none`;
+			none.innerHTML = `None`;
+
+			const options = this.oscillators.map((o, i) => {
+				const option = document.createElement('option');
+				option.value = `${i}`;
+				option.innerHTML = `${o.name}`;
+				if (oi !== i) return option;
+			});
+			o.updateModulateOptions([ none, ...options ]);
+		});
+	};
+	this.updateModulateOptions();
 }
