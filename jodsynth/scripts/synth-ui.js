@@ -225,6 +225,11 @@ function OscillatorUi(oscillator, container, name) {
 		document.activeElement.blur();
 	});
 
+	this.updateModulateOptions = (newOptions) => {
+		this.oscModulateSelectUI.replaceChildren(...newOptions);
+		this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
+	};
+
 
 	// GAIN
 	this.oscGainControl = this.oscUi.querySelector('#oscGain');
@@ -267,7 +272,6 @@ function OscillatorUi(oscillator, container, name) {
 	this.oscGainEnvelopeUI = new EnvelopeUI(this.oscillator.gainEnvelope, this.oscGainEnvelope);
 
 	
-	// INIT
 
 	this.setMod = (mod = null) => {
 		this.oscillator.mod = mod;
@@ -280,7 +284,9 @@ function OscillatorUi(oscillator, container, name) {
 			this.oscGainControl.speed = 100.0;
 		}
 	};
+
 	
+	// INIT
 	this.setMod(this.oscillator.mod);
 }
 
@@ -301,11 +307,25 @@ function SynthUi(synth) {
 		const len = this.synth.addOsc();
 		const osc = this.synth.oscillators[len-1];
 		const newOscUi = new OscillatorUi(osc, this.container, `Oscillator ${len}`);
-		//TODO: handle hmmm... i forgor... grrrrr need sleep bnnnafaefsthdsr ae faef
-		// modulate options
-		// yes
-		// gotta update those
-
+		
 		this.oscillators.push(newOscUi);
+		this.updateModulateOptions();
 	}
+
+	this.updateModulateOptions = () => {
+		this.oscillators.forEach((o, oi) => {
+			const none = document.createElement('option');
+			none.value = `none`;
+			none.innerHTML = `None`;
+
+			const options = this.oscillators.map((o, i) => {
+				const option = document.createElement('option');
+				option.value = `${i}`;
+				option.innerHTML = `${o.name}`;
+				if (oi !== i) return option;
+			});
+			o.updateModulateOptions([ none, ...options ]);
+		});
+	};
+	this.updateModulateOptions();
 }

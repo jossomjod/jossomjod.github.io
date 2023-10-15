@@ -21,6 +21,12 @@ convolo.buffer = buford;
 const reverbGain = new GainNode(ac, { value: 1.0 });
 
 
+const reverbGainUI = document.querySelector('#reverbGain');
+reverbGainUI.value = reverbGain.gain.value;
+reverbGainUI.addEventListener('input', () => {
+	reverbGain.gain.value = reverbGainUI.value;
+});
+
 
 // MASTER Gain
 
@@ -33,6 +39,7 @@ masterGainUI.value = masterGain.gain.value;
 masterGainUI.addEventListener('input', () => {
 	masterGain.gain.value = masterGainUI.value;
 });
+
 
 const synth = new Synth(ac);
 
@@ -49,7 +56,7 @@ masterDelay.delayTime.value = 0.4;
 const masterDelayFeedback = ac.createGain();
 masterDelayFeedback.gain.value = 0.16;
 
-if (true) {
+if (true) { // Delay
 synthGain
 	.connect(masterDelay)
 	.connect(masterDelayFeedback)
@@ -64,16 +71,6 @@ const addOscBtn = document.querySelector('#addOscBtn');
 addOscBtn.onclick = () => synthUi.addOsc();
 
 
-
-
-
-/* const oscillatorTemplate = document.querySelector('#oscillator-template');
-const oscTemplateContent = oscillatorTemplate.content;
-
-oscillatorContainer.appendChild(oscTemplateContent); */
-
-
-// TODO: Debug info element
 
 
 var keys = {
@@ -108,9 +105,9 @@ generateKeyDict();
 
 // EVENTS----------------------------------------------------------------------
 
-/* window.oncontextmenu = (e) => {
+window.oncontextmenu = (e) => {
   e.preventDefault();
-}; */
+};
 
 
 
