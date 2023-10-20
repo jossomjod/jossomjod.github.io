@@ -56,7 +56,7 @@ vec3 drawBox(vec2 uv, vec2 pos, vec2 size, float angle, vec3 color, float radius
 	vec2 vecTo = uv - pos;
 	vec2 rotatedUV = rotateVec2(vecTo, angle);
 	float distToBox = sdfSquare(rotatedUV, size - radius) - radius;
-	return color * exp(-intensity* abs(distToBox));
+	return color * exp(-intensity * abs(distToBox));
 }
 
 
@@ -65,7 +65,6 @@ void main() {
 	vec2 center = vec2(0.5 * aspectRatio, 0.5);
 	vec2 uv = gl_FragCoord.xy / bounds;
 	uv.x *= aspectRatio;
-	vec2 vecTo = center - uv;
 	vec2 _mPos = vec2(aspectRatio, 1.0) * mPos / bounds;
 
 	vec4 col = vec4(0.0, 0.0, 0.0, 1.0);
@@ -73,32 +72,52 @@ void main() {
 
 
 	// CIRCLE
-	float radius = 75.0 + sin(TIME * 0.6) * 25.0;
-	radius = sin(TIME * 0.6) * 0.1 + 0.1;
+	vec2 circlePos = center + vec2(-0.25, 0.0);
+	vec2 vecTo = circlePos - uv;
+	vecTo.x += sin(TIME * 2.3 + uv.y * 10.7) * 0.02;
+	vecTo.y += sin(TIME * 1.3 + vecTo.x * 4.7) * 0.3 * vecTo.y + sin(TIME * 6.4 + uv.y * 33.333) * 0.011;
+
+	float circleAngle = atan(vecTo.y, vecTo.x) + TIME * 2.0;
+	vec3 circleColor = vec3(
+		sin(circleAngle) * 1.5 + 4.0,
+		sin(circleAngle + 3.1415 * 0.4 + uv.y) * 0.7 + 1.5,
+		sin(circleAngle + 3.1415 * 0.9 + uv.x) * 0.5 + 1.1
+	);
+
+	float radius = 0.08;
+	radius += sin(TIME * 3.6 + vecTo.x * 40.0) * 0.04;
+
 	float distToCircle = sdfCircle(vecTo, radius);
-	color = vec3(1.3, 2.0, 8.0);
-	color *= (exp(-200.0 * abs(distToCircle))); // Outline
-	// TODO: get angle -> change color and stuff based on it
+	color = circleColor;// vec3(1.3, 2.0, 8.0);
+	color *= (exp(-100.0 * distToCircle));
+	//color *= (exp(-200.0 * abs(distToCircle))); // Outline
 
 
 	// BOX
 	vec2 boxPos = center + vec2(0.25, 0.0);
 	vec3 boxCol = vec3(1.1, 5.3, 1.4);
 	vec2 boxUv = uv;
+	float boxAngle = TIME * 0.4;
 
 	boxUv.x += (sin(TIME * 5.0 + boxUv.y * 20.0) * 2.0 - 1.0) * 0.01;
 	boxUv.y += (sin(TIME * 5.3 + boxUv.x * 21.2) * 2.0 - 1.0) * 0.009;
 
-	float mult = sin(TIME + boxUv.x * 20.0);
+	float mult = sin(TIME * 9.4 + boxUv.x * 20.0);
+	boxCol.r += mult * 2.4;
+	boxCol = vec3(
+		sin(boxAngle) * 0.5 + 1.1,
+		sin(boxAngle + 3.1415 * 0.4 + uv.y) * 2.5 + 5.5,
+		sin(boxAngle + 3.1415 * 0.9 + uv.x) * 0.5 + 1.1
+	);
 
 	color += drawBox(
 		boxUv,
 		boxPos,
 		vec2(0.1, 0.1),
-		TIME * 0.6,
-		vec3(1.1, 5.3 * -mult + 6.0, 1.4 * mult + 2.0),//boxCol,
+		boxAngle,
+		boxCol,
 		0.02,
-		200.0 + mult * 90.1
+		200.0 + mult * 50.1
 	);
 
 
