@@ -131,22 +131,25 @@ void main() {
 
 
 	// MPOS CIRCLE
-	circlePos = _mPos;
+	circlePos = vec2(0.38, 0.5); //_mPos;
 	circleUv = uv;
 	float kek = circleUv.x - circlePos.x;
-	circleUv.x += cos(TIME * 0.1 + 20.0 * circleUv.y) * 0.001;
-	circleUv.y += sin(TIME * 2.9 + 2100.3 * kek * kek * kek) * 0.1;
+	circleUv.x += cos(-TIME * 1.7 + 20.0 * circleUv.y) * 0.06 + cos(TIME * 2.54 + circleUv.y * 40.2) * 0.03;
+	circleUv.y += sin(-TIME * 2.9 + 21.3 * circleUv.x) * 0.1 + sin(TIME * 1.54 + circleUv.x * 34.2) * 0.03;
 	vecTo = circlePos - circleUv;
 	circleColor = vec3(2.1, 1.01, 0.7);
+	circleColor = vec3(1.07, 1.11, 3.7);
 	
+	//vecTo = rotateVec2(vecTo, TIME);
 
 
 
-	radius = 0.03;
-	radius += sin(TIME * 3.6 + vecTo.x * 200.0) * 0.02;
+	radius = 0.09;
+	radius += sin(TIME * 1.6 + vecTo.x * 8.5) * 0.1;
 
 	distToCircle = sdfCircle(vecTo, radius);
-	color += circleColor * (exp((-100.0 + LMB * 50.0) * abs(distToCircle)));
+	float expt = (exp((-50.0 + LMB * 30.0) * abs(distToCircle)));
+	color += circleColor * expt * expt;
 
 
 
