@@ -72,24 +72,28 @@ void main() {
 
 
 	// CIRCLE
+	vec2 circleUv = uv;
+	circleUv.x += cos(TIME * 3.3 + 20.0 * circleUv.y) * 0.02;
+	circleUv.y += sin(TIME * 2.9 + 21.3 * circleUv.x) * 0.1;
 	vec2 circlePos = center + vec2(-0.25, 0.0);
-	vec2 vecTo = circlePos - uv;
-	vecTo.x += sin(TIME * 2.3 + uv.y * 10.7) * 0.02;
-	vecTo.y += sin(TIME * 1.3 + vecTo.x * 4.7) * 0.3 * vecTo.y + sin(TIME * 6.4 + uv.y * 33.333) * 0.011;
+	vec2 vecTo = circlePos - circleUv;
+	vecTo.x += sin(TIME * 2.3 + circleUv.y * 10.7) * 0.02;
+	vecTo.y += sin(TIME * 1.3 + vecTo.x * 4.7) * 0.3 * vecTo.y + sin(TIME * 6.4 + circleUv.y * 33.333) * 0.011;
 
 	float circleAngle = atan(vecTo.y, vecTo.x) + TIME * 2.0;
 	vec3 circleColor = vec3(
-		sin(circleAngle) * 1.5 + 4.0,
-		sin(circleAngle + 3.1415 * 0.4 + uv.y) * 0.7 + 1.5,
-		sin(circleAngle + 3.1415 * 0.9 + uv.x) * 0.5 + 1.1
+		sin(circleAngle) * 1.5 + 3.1,
+		sin(circleAngle + 3.1415 * 0.4 + circleUv.y) * 0.8 + 0.9 * 1.1,
+		sin(circleAngle + 3.1415 * 0.9 + circleUv.x) * 0.4 + 0.8 * 1.1
 	);
+	circleColor = vec3(2.1, 1.01, 0.7);
 
 	float radius = 0.08;
 	radius += sin(TIME * 3.6 + vecTo.x * 40.0) * 0.04;
 
 	float distToCircle = sdfCircle(vecTo, radius);
 	color = circleColor;// vec3(1.3, 2.0, 8.0);
-	color *= (exp(-100.0 * distToCircle));
+	color *= (exp(-50.0 * distToCircle));
 	//color *= (exp(-200.0 * abs(distToCircle))); // Outline
 
 
@@ -119,6 +123,33 @@ void main() {
 		0.02,
 		200.0 + mult * 50.1
 	);
+
+
+
+
+
+
+
+	// MPOS CIRCLE
+	circlePos = _mPos;
+	circleUv = uv;
+	float kek = circleUv.x - circlePos.x;
+	circleUv.x += cos(TIME * 0.1 + 20.0 * circleUv.y) * 0.001;
+	circleUv.y += sin(TIME * 2.9 + 2100.3 * kek * kek * kek) * 0.1;
+	vecTo = circlePos - circleUv;
+	circleColor = vec3(2.1, 1.01, 0.7);
+	
+
+
+
+	radius = 0.03;
+	radius += sin(TIME * 3.6 + vecTo.x * 200.0) * 0.02;
+
+	distToCircle = sdfCircle(vecTo, radius);
+	color += circleColor * (exp((-100.0 + LMB * 50.0) * abs(distToCircle)));
+
+
+
 
 
 	col = vec4(color, 1.0);
