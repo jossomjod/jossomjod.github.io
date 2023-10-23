@@ -115,51 +115,32 @@ gl.clear(gl.COLOR_BUFFER_BIT);
 
 let dt    = 1.0;
 let now   = 1.0;
-let then  = +new Date;
+let then  = 0.0;
+let modTime = 1.0;
 
 function mainLoop(time) {
 	
-	now = +new Date;
-	dt  = (now - then) / 16.7;
-	
-
-
-	if (leftMouseDown) {
-		if (LMBDown < 1.0) {
-			LMBDown += dt * 0.06;
-		} else {
-			LMBDown = 1.0;
-		}
-	} else if (LMBDown > 0.0) {
-		LMBDown -= dt * 0.06;
-	} else {
-		LMBDown = 0.0;
-	}
-
-
-
+	now = time;
+	dt  = now - then;
+	LMBDown = lerp(LMBDown, +leftMouseDown, dt * 0.003);
+	modTime += dt + LMBDown * 5.0;
 	
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 	gl.clearDepth(1.0);                 // Clear everything
 	
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
-	
-	drawScene(gl, programInfo, buffers, time * 0.001, dt);
-	
+	drawScene(gl, programInfo, buffers, modTime * 0.001);
 	
 	then = now;
 	requestAnimationFrame(mainLoop);
 }
 
-mainLoop();
+mainLoop(0.0);
 
 
-function drawScene(gl, programInfo, buffers, time, dt) {
+function drawScene(gl, programInfo, buffers, time) {
 
-	
-	
-	
 	// Tell WebGL how to pull out the positions from the position
 	// buffer into the vertexPosition attribute.
 	{
@@ -183,22 +164,6 @@ function drawScene(gl, programInfo, buffers, time, dt) {
 			programInfo.attribLocations.vertexPosition
 		);
 	}
-	
-	
-	
-	/*
-	{
-		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-		gl.vertexAttribPointer(
-			programInfo.attribLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0
-		);
-		gl.enableVertexAttribArray(
-			programInfo.attribLocations.vertexPosition
-		);
-	}
-	*/
-	
-	
 	
 	
 	gl.useProgram(programInfo.program);
