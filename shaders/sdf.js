@@ -56,6 +56,7 @@ vec3 drawBox(vec2 uv, vec2 pos, vec2 size, float angle, vec3 color, float radius
 	vec2 vecTo = uv - pos;
 	vec2 rotatedUV = rotateVec2(vecTo, angle);
 	float distToBox = sdfSquare(rotatedUV, size - radius) - radius;
+	if (distToBox < 0.0) distToBox *= 0.4;
 	return color * exp(-intensity * abs(distToBox));
 }
 
@@ -92,9 +93,8 @@ void main() {
 	radius += sin(TIME * 3.6 + vecTo.x * 40.0) * 0.04;
 
 	float distToCircle = sdfCircle(vecTo, radius);
-	color = circleColor;// vec3(1.3, 2.0, 8.0);
+	color = circleColor;
 	color *= (exp(-50.0 * distToCircle));
-	//color *= (exp(-200.0 * abs(distToCircle))); // Outline
 
 
 	// BOX
@@ -120,8 +120,8 @@ void main() {
 		vec2(0.1, 0.1),
 		boxAngle,
 		boxCol,
-		0.02,
-		150.0 + mult * 50.1
+		0.01,
+		250.0 + mult * 50.1
 	);
 
 
