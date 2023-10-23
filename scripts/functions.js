@@ -108,6 +108,14 @@ function showText(ctx, txt, pos, color) {
 }
 
 
+
+// MATH UTILITIES
+
+function lerp(v, t, d) {
+	return (t - v) * d + v;
+}
+
+
 // EASING----------------------------------------------------------------------
 // See https://www.youtube.com/watch?v=mr5xkf6zSzk for details.
 
