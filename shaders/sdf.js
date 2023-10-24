@@ -133,7 +133,6 @@ void main() {
 	// BUBBLE
 	circlePos = center;
 	circleUv = uv;
-	float kek = circleUv.x - circlePos.x;
 	circleUv.x += cos(-TIME * 1.7 + 20.0 * circleUv.y) * 0.006 + cos(TIME * 2.54 + circleUv.y * 40.2) * 0.003;
 	circleUv.y += sin(-TIME * 2.9 + 21.3 * circleUv.x) * 0.01 + sin(TIME * 1.54 + circleUv.x * 34.2) * 0.003;
 	vecTo = circlePos - circleUv;
