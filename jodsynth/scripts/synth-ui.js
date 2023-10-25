@@ -3,10 +3,11 @@
  * @param {ArrayEnvelope} envelope
  * @param {HTMLElement} container 
  */
-function EnvelopeUI(envelope, container) {
+function EnvelopeUI(envelope, container, zeroCentered = false) {
 	this.nodes = [];
 	this.envelope = envelope;
 	this.container = container;
+	this.zeroCentered = zeroCentered;
 	this.canvas = this.container.querySelector('#oscEnvCanvas');
 	this.ctx = this.canvas.getContext('2d');
 	this.dragData = null;
@@ -39,16 +40,18 @@ function EnvelopeUI(envelope, container) {
 	this.pos2Point = (pos) => {
 		const r = this.radius;
 		const time = this.maxTime * (pos.x + r) / this.rect.w;
-		const value = 1 - (pos.y + r) / this.rect.h;
+		let value = 1 - (pos.y + r) / this.rect.h;
+		if (this.zeroCentered) value = value * 2.0 - 1.0;
 		return { time, value };
 	};
 	this.point2Pos = (point) => {
+		const value = this.zeroCentered ? point.value * 0.5 + 0.5 : point.value;
 		const r = this.radius;
 		const left = (this.rect.w * point.time / this.maxTime) - r;
-		const top = this.rect.h - (this.rect.h * point.value) + r;
+		const top = this.rect.h - (this.rect.h * value) + r;
 		return { left, top };
 	};
-	this.putNode = (left, top) => {
+	this.putNode = (left, top) => { // TODO: snap - PRIORITY UNO
 		const element = this.dragData.element;
 		const r = this.radius;
 		if (left < -r) left = -r;
@@ -56,7 +59,7 @@ function EnvelopeUI(envelope, container) {
 		if (top < -r) top = -r;
 		else if (top > this.rect.h - r) top = this.rect.h - r;
 
-		if (this.isRelease(element)) top = this.rect.h - r;
+		if (!this.zeroCentered && this.isRelease(element)) top = this.rect.h - r;
 
 		element.style.left = left + 'px';
 		element.style.top = top + 'px';
@@ -149,13 +152,14 @@ function EnvelopeUI(envelope, container) {
 
 	this.drawLines = () => {
 		const ctx = this.ctx;
+		const h = this.zeroCentered ? this.rect.h * 0.5 : this.rect.h;
 
 		ctx.fillStyle = '#010a1d';
 		ctx.fillRect(0, 0, this.rect.w, this.rect.h);
 		ctx.lineWidth = 4;
 		ctx.strokeStyle = '#3279ff';
 		ctx.beginPath();
-		ctx.moveTo(0, this.rect.h);
+		ctx.moveTo(0, h);
 
 		this.nodes.forEach((n) => {
 			const pos = { left: n.offsetLeft, top: n.offsetTop };
@@ -265,11 +269,13 @@ function OscillatorUi(oscillator, container, name) {
 
 
 	this.oscGainEnvelope = this.oscUi.querySelector('#oscGainEnvelope');
+	this.oscPitchEnvelope = this.oscUi.querySelector('#oscPitchEnvelope');
 	
 	this.container.appendChild(this.oscUi);
 
 	// GAIN ENVELOPE
 	this.oscGainEnvelopeUI = new EnvelopeUI(this.oscillator.gainEnvelope, this.oscGainEnvelope);
+	this.oscPitchEnvelopeUI = new EnvelopeUI(this.oscillator.pitchEnvelope, this.oscPitchEnvelope, true);
 
 	
 
