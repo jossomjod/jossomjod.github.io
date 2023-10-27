@@ -39,7 +39,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 
 const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
-function getPhaseShiftedSawWave(ac, phaseOffset = 0.0) { // ChatGPT is... hmmm...
+function getPhaseShiftedSawWave(ac, phaseOffset = 0.0) {
 	const numHarmonics = 30;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
@@ -49,6 +49,32 @@ function getPhaseShiftedSawWave(ac, phaseOffset = 0.0) { // ChatGPT is... hmmm..
 		real[i-1] = (phase % 2 === 0 ? -1 : 1) / i; // Inverse amplitude of even harmonics
 		imag[i-1] = 0;
 	}
+	return ac.createPeriodicWave(real, imag);
+}
+
+function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
+	const numHarmonics = 30;
+	const real = new Float32Array(numHarmonics);
+	const imag = new Float32Array(numHarmonics);
+
+	for (let i = 1; i <= numHarmonics; i++) {
+		const phase = i * phaseOffset;
+		real[i-1] = (Math.sin(phase + Math.PI*2 * i / numHarmonics) ? -1 : 1) / i; // Inverse amplitude of even harmonics
+		imag[i-1] = 0;
+	}
+	return ac.createPeriodicWave(real, imag);
+}
+
+function getPhaseShiftedSineWave(ac, phaseOffset = 0.0) {
+	const numHarmonics = 2;
+	const real = new Float32Array(numHarmonics);
+	const imag = new Float32Array(numHarmonics);
+
+	real[0] = 0 + phaseOffset;
+	imag[0] = 0;
+	real[1] = 1 - phaseOffset;
+	imag[1] = 0;
+
 	return ac.createPeriodicWave(real, imag);
 }
 
@@ -73,7 +99,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.fixedFreq = 1.0;
 	this.name = '';
 	this.phase = phase;
-	this.customeWave = getPhaseShiftedSawWave(ac, this.phase);
+	this.customeWave = getPhaseShiftedSquareWave(ac, this.phase);
 
 	this.start = (frequency, gainNode) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
@@ -136,11 +162,19 @@ function Synth(ac) {
 		new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.0),
 		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), 0, 0.0),
 	]; */
-	for (let i = -6; i < 6; i++) { // SUPERSAAAAAAW
-		const mul = i % 6;
+	for (let i = -5; i < 5; i++) { // SUPERSAAAAAAW
+		const mul = i % 5;
 		const detune = mul * mul;
 		const phase = mul * mul;
-		this.oscillators.push(new Oscillator(ac, 'sawtooth', detune, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, phase))
+		this.oscillators.push(new Oscillator(
+			ac,
+			'sawtooth',
+			detune,
+			new ArrayEnvelope(ac, oscarGainPoints, 0.0),
+			new ArrayEnvelope(ac, pitchPoints, 1200.0),
+			null,
+			phase
+		));
 	}
 	
 	this.start = (freq) => {
