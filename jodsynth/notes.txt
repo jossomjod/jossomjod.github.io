@@ -45,3 +45,12 @@ ok, yeah
 we need to give better feedback on what the custom number input is doing
 and also fix it so it works better
 yep
+
+
+
+
+
+Notes on PeriodicWave:
+
+https://webaudio.github.io/web-audio-api/#PeriodicWaveOptions
+https://webaudio.github.io/web-audio-api/#oscillator-coefficients
