@@ -48,6 +48,9 @@
 .detune {
 	width: 40px;
 }
+.phase {
+	width: 80px;
+}
 
 .hidden {
 	visibility: hidden;

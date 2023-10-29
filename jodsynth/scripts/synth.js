@@ -55,7 +55,7 @@ function getPhaseShiftedSawWave(ac, phaseOffset = 0.0) {
 }
 
 function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
-	const numHarmonics = 50;
+	const numHarmonics = 30;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
 
@@ -63,15 +63,14 @@ function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
 	imag[0] = 0.0;
 
 	for (let i = 1; i <= numHarmonics-1; i++) {
-		const phase = i * phaseOffset;
-		
 		imag[i] = (2 / ((i + phaseOffset) * Math.PI)) * (1 - (-1) ** i);
 	}
+	console.log(imag);
 	return ac.createPeriodicWave(real, imag);
 }
 
 function getPhaseShiftedTriangleWave(ac, phaseOffset = 0.0) {
-	const numHarmonics = 50;
+	const numHarmonics = 30;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
 
@@ -79,9 +78,8 @@ function getPhaseShiftedTriangleWave(ac, phaseOffset = 0.0) {
 	imag[0] = 0.0;
 
 	for (let i = 1; i <= numHarmonics-1; i++) {
-		const phase = i * phaseOffset;
-		
-		imag[i] = (8 * Math.sin(Math.PI * i / 2)) / (Math.PI * i) ** 2;
+		const pii = (i + phaseOffset) * Math.PI;
+		imag[i] = (8 * Math.sin(pii / 2)) / pii ** 2;
 	}
 	return ac.createPeriodicWave(real, imag);
 }
@@ -131,9 +129,13 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.setWave = (waveform) => {
 		this.type = waveform;
 		this.customeWave = getPeriodicWave(ac, waveform, this.phase);
-		
 	}
 	this.setWave(type);
+
+	this.setPhase = (phs) => {
+		this.phase = phs;
+		this.customeWave = getPeriodicWave(ac, this.type, this.phase);
+	}
 
 	this.start = (frequency, gainNode) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
@@ -199,7 +201,7 @@ function Synth(ac) {
 				break;
 			case 'phase_squares':
 				this.oscillators = [
-					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, -0.2),
+					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, -0.1),
 					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.2),
 				];
 				break;

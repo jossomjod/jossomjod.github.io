@@ -182,7 +182,6 @@ function GainControlUI(oscillator, control) {
 
 	this.control.value = this.oscillator.gain;
 	this.control.addEventListener('changed', (e) => {
-		console.log('GAIN VALUECHANGE', e);
 		this.oscillator.gain = +this.control.value;
 	});
 }
@@ -213,7 +212,7 @@ function OscillatorUi(oscillator, container, name) {
 
 	this.oscWaveformUI.value = this.oscillator.type;
 	this.oscWaveformUI.addEventListener('input', () => {
-		this.oscillator.type = this.oscWaveformUI.value;
+		this.oscillator.setWave(this.oscWaveformUI.value);
 		document.activeElement.blur();
 	});
 
@@ -224,8 +223,6 @@ function OscillatorUi(oscillator, container, name) {
 	this.oscModulateSelectUI.addEventListener('input', () => {
 		const val = this.oscModulateSelectUI.value;
 		this.setMod(val === 'none' ? null : +val);
-
-		console.log('oaehuah', this.oscillator.mod);
 		document.activeElement.blur();
 	});
 
@@ -241,7 +238,7 @@ function OscillatorUi(oscillator, container, name) {
 
 
 	// DETUNE
-	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune');
+	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune'); // TODO: Use jodnumb
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
 	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
 	this.oscDetuneUI.value = 0.0;
@@ -252,6 +249,15 @@ function OscillatorUi(oscillator, container, name) {
 	}
 	this.oscCoarseUI.addEventListener('input', this.oscDetuneInput);
 	this.oscDetuneUI.addEventListener('input', this.oscDetuneInput);
+
+
+	// PHASE
+	this.oscPhaseUI = this.oscUi.querySelector('#oscPhase');
+	this.oscPhaseUI.value = '' + this.oscillator.phase;
+	this.oscPhaseUI.addEventListener('input', () => {
+		this.oscillator.setPhase(+this.oscPhaseUI.value);
+		document.activeElement.blur();
+	});
 
 
 	// LFO
