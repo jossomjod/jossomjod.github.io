@@ -238,14 +238,14 @@ function Synth(ac) {
 	};
 
 	this.addOsc = () => {
-		console.log('[synth.js Synth] Adding oscillator');
 		return this.oscillators.push(new Oscillator(
 			ac,
 			'sine',
 			0.0,
 			new ArrayEnvelope(ac, osmanGainPoints, 0.0),
 			new ArrayEnvelope(ac, pitchPoints, 1200.0),
-			null
+			null,
+			0.0
 		));
 	}
 
