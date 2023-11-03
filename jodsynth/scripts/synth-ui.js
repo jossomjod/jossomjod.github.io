@@ -216,13 +216,15 @@ function OscillatorUi(oscillator, container, name) {
 		document.activeElement.blur();
 	});
 
+
 	// MODULATE SELECT
 	this.oscModulateSelectUI = this.oscUi.querySelector('#oscModulateSelect');
 
 	this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
 	this.oscModulateSelectUI.addEventListener('input', () => {
 		const val = this.oscModulateSelectUI.value;
-		this.setMod(val === 'none' ? null : +val);
+		this.oscillator.mod = val === 'none' ? null : +val;
+		this.setGainRange();
 		document.activeElement.blur();
 	});
 
@@ -230,6 +232,17 @@ function OscillatorUi(oscillator, container, name) {
 		this.oscModulateSelectUI.replaceChildren(...newOptions);
 		this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
 	};
+
+
+	// MODULATE MODE SELECT
+	this.oscModulateModeSelectUI = this.oscUi.querySelector('#oscModulateModeSelect');
+
+	this.oscModulateModeSelectUI.value = `${this.oscillator.modType ?? 0}`;
+	this.oscModulateModeSelectUI.addEventListener('input', () => {
+		this.oscillator.modType = +this.oscModulateModeSelectUI.value;
+		this.setGainRange();
+		document.activeElement.blur();
+	});
 
 
 	// GAIN
@@ -268,9 +281,8 @@ function OscillatorUi(oscillator, container, name) {
 	});
 	this.oscLFOToggleUI = this.oscUi.querySelector('#oscLFOToggle');
 	this.oscLFOToggleUI.value = !!this.oscillator.isLFO;
-	this.oscLFOToggleUI.addEventListener('change', (r) => {
+	this.oscLFOToggleUI.addEventListener('change', () => {
 		this.oscillator.isLFO = this.oscLFOToggleUI.checked;
-		console.log('LFOToggle', this.oscillator.isLFO, this.oscLFOToggleUI.checked, r);
 	});
 
 
@@ -285,9 +297,8 @@ function OscillatorUi(oscillator, container, name) {
 
 	
 
-	this.setMod = (mod = null) => {
-		this.oscillator.mod = mod;
-		if (mod === null) {
+	this.setGainRange = () => {
+		if (this.oscillator.mod === null || this.oscillator.modType > 0) {
 			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
 			this.oscGainControl.max = 1.0;
 			this.oscGainControl.speed = 1.0;
@@ -299,7 +310,7 @@ function OscillatorUi(oscillator, container, name) {
 
 	
 	// INIT
-	this.setMod(this.oscillator.mod);
+	this.setGainRange();
 }
 
 

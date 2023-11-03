@@ -113,18 +113,21 @@ function getPeriodicWave(ac, type = 'sawtooth', phase) {
 
 
 
+
 function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelope, mod, phase) {
 	this.type = type;
 	this.detune = detune;
 	this.gain = 1.0;
 	this.gainEnvelope = gainEnvelope;
 	this.pitchEnvelope = pitchEnvelope;
+	this.modType = 0; // 0: FM, 1: AM
 	this.mod = mod;
 	this.isCarrier = () => this.mod === null;
 	this.isLFO = false;
 	this.fixedFreq = 1.0;
 	this.name = '';
 	this.phase = phase;
+	this.customeWave;
 
 	this.setWave = (waveform) => {
 		this.type = waveform;
@@ -148,8 +151,8 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.connect(gainNode);
 		osc.start();
 
-		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, 0.0, this.gain);
-		if (this.pitchEnvelope) this.pitchEnvelope.start(osc.detune, this.detune, 1200.0);
+		this.gainEnvelope?.start(gainNode.gain, 0.0, this.gain);
+		this.pitchEnvelope?.start(osc.detune, this.detune, 1200.0);
 
 		return osc;
 	}
@@ -224,7 +227,9 @@ function Synth(ac) {
 		oscs.forEach((t, i) => {
 			const mod = this.oscillators[i].mod;
 			if (mod !== null && typeof mod === 'number') {
-				t.gain.connect(oscs[mod].oscillator.frequency);
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
 			}
