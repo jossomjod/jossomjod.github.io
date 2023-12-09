@@ -193,7 +193,7 @@ function Synth(ac) {
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
 	this.oscillators = [];
-	this.preset = 'phase_squares';// 'supersaw';
+	this.preset = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => this.gain.connect(audioNode);
 
@@ -202,10 +202,10 @@ function Synth(ac) {
 			case 'supersaw':
 				this.oscillators = this.generateSupersaw(5);
 				break;
-			case 'phase_squares':
+			case 'phase_saws':
 				this.oscillators = [
-					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, -0.1),
-					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.2),
+					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, -0.1),
+					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.2),
 				];
 				break;
 			default:

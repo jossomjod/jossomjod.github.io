@@ -27,15 +27,15 @@
 	position: relative;
 	display: block;
 	width: 800px;
-	height: 150px;
+	height: 100px;
 	margin: 20px 0;
 	background-color: #010a1d;
 	border: 1px solid #020307;
 }
 .envelope-node {
 	position: absolute;
-	width: 16px;
-	height: 16px;
+	width: 12px;
+	height: 12px;
 	background-color: #2977af;
 	border-radius: 20px;
 	border: 2px solid #fff;
@@ -43,6 +43,13 @@
 .envelope-canvas {
 	width: 100%;
 	height: 100%;
+}
+.tooltip {
+	position: absolute;
+	width: 110px;
+	height: 40px;
+	background-color: #35a;
+	z-index: 3;
 }
 
 .detune {
@@ -54,4 +61,7 @@
 
 .hidden {
 	visibility: hidden;
+}
+.invisible {
+	display: none;
 }

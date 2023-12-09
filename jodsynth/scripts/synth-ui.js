@@ -17,11 +17,32 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		w: this.container.clientWidth,
 		h: this.container.clientHeight,
 	};
-	this.maxTime = 10.0;
-	this.radius = 10.0;
+	this.maxTime = 6.0;
+	this.radius = 8.0;
 
 	this.canvas.width = this.rect.w;
 	this.canvas.height = this.rect.h;
+
+
+	this.tooltip = document.createElement('div');
+	this.tooltip.classList.add('tooltip', 'invisible');
+	this.container.appendChild(this.tooltip);
+	this.tooltip.insertAdjacentHTML('afterbegin', `<div id="timeDiv"></div><div id="valueDiv"></div>`);
+	this.timeDiv = this.tooltip.querySelector('#timeDiv');
+	this.valueDiv = this.tooltip.querySelector('#valueDiv');
+
+	this.setTooltipText = (params) => {
+		const time = `${params.time * 1000.0}`.slice(0, 7);
+		const value = `${params.value * 100.0}`.slice(0, 7);
+		this.timeDiv.textContent = `${time} ms`;
+		this.valueDiv.textContent = `${value} %`;
+	};
+	this.moveTooltipTo = (pos) => {
+		this.tooltip.style.left = `${pos.x + 30.0}px`;
+		this.tooltip.style.top = `${pos.y}px`;
+		this.setTooltipText(this.pos2Point(pos));
+	};
+	this.toggleTooltip = (hidden) => this.tooltip.classList.toggle('invisible', hidden);
 
 	
 	this.elements2Points = (elements) => {
@@ -75,10 +96,13 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		let left = (e.clientX - this.dragData.offsetX);
 		let top = e.clientY - this.dragData.offsetY;
 		this.putNode(left, top);
+		this.moveTooltipTo({ x: left, y: top });
 	});
 
 	document.addEventListener('mouseup', (e) => {
 		//console.log('mouseup', e);
+		this.toggleTooltip(true);
+
 		if (!this.dragData) return;
 		let left = e.clientX - this.dragData.offsetX;
 		let top = e.clientY - this.dragData.offsetY;
@@ -88,10 +112,13 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 	});
 
 	this.container.addEventListener('mousedown', (e) => {
-		if (!!this.dragData) return;
 		let left = e.pageX - this.rect.x;
 		let top = e.pageY - this.rect.y;
-		if (e.button === 0) this.addNode(left, top, e);
+		this.moveTooltipTo({ x: left, y: top });
+		if (e.button === 0) {
+			if (!this.dragData) this.addNode(left, top, e);
+			this.toggleTooltip(false);
+		}
 		else e.preventDefault();
 	});
 
