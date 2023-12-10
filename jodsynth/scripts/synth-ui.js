@@ -1,5 +1,4 @@
 /**
- * 
  * @param {ArrayEnvelope} envelope
  * @param {HTMLElement} container 
  */
@@ -85,6 +84,8 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		element.style.left = left + 'px';
 		element.style.top = top + 'px';
 
+		this.moveTooltipTo({ x: left, y: top });
+
 		this.sortNodes();
 		this.envelope.points = this.elements2Points(this.nodes);
 		this.drawLines();
@@ -96,11 +97,9 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		let left = (e.clientX - this.dragData.offsetX);
 		let top = e.clientY - this.dragData.offsetY;
 		this.putNode(left, top);
-		this.moveTooltipTo({ x: left, y: top });
 	});
 
 	document.addEventListener('mouseup', (e) => {
-		//console.log('mouseup', e);
 		this.toggleTooltip(true);
 
 		if (!this.dragData) return;
