@@ -30,6 +30,7 @@ TODO:
 	- maybe drag the left side for BIG changes, right side for small, middle for medium?
 	- right/left/middle click and drag?
 	- modifier keys?
+- LOW FUCKING PASS OILY JOSH
 
 
 WE NEED SMALLER VALUES
