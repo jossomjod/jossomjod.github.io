@@ -47,6 +47,10 @@ we need to give better feedback on what the custom number input is doing
 and also fix it so it works better
 yep
 
+In FL studio you modify the clicked digit when you click and drag.
+Just check the x coordinate onclick and do some math to account for font size maybe?
+mono-space
+
 
 
 

@@ -193,7 +193,7 @@ function Synth(ac) {
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
 	this.oscillators = [];
-	this.preset = 'phase_saws';// 'supersaw';
+	this.preset;// = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => this.gain.connect(audioNode);
 
