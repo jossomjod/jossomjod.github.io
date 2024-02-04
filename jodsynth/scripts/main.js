@@ -103,6 +103,22 @@ function generateKeyDict() {
 generateKeyDict();
 
 
+
+
+
+// NOTE MANAGER STUFF-----------------------------
+
+const noteManagerGain = ac.createGain();
+noteManagerGain.gain.value = 1.0;
+noteManagerGain.connect(masterGain);
+
+var noteManager = new NoteManager(ac, noteManagerGain);
+
+
+
+
+
+
 // EVENTS----------------------------------------------------------------------
 
 window.oncontextmenu = (e) => {
@@ -118,6 +134,9 @@ document.body.onkeydown = function(e) {
 	if (e.repeat) return;
 	e.preventDefault();
 	switch (e.which) {
+		case 32:
+			noteManager.play();
+			break;
 		case 33:
 			octave++;
 			break;
