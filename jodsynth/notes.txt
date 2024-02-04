@@ -1,20 +1,6 @@
-HMMM YES
-NOTES INDEED
 
-
-------------------------------------------------------------------
-| osc1 | gain |	gainEnv |
---------------------------------------
-| detune | detuneEnv |
-
-
-or something ig mb fr nc iirc omg roflmao wtf html
-
-my grand plan is limited by my ascii art skills smh
-
-
-TODO: tooltip for envelope
-TODO: ui improvements
+TODO: tooltip for envelope   DONE
+TODO: ui improvements     THIS WILL ALWAYS BE A TODO LMAO
 TODO: moving an envelope node horizontally should also move all nodes after it
 TODO: actually do the todos
 
@@ -53,6 +39,10 @@ mono-space
 
 
 
+note manager TODOs:
+- render notes
+- edit notes
+- automation
 
 
 Notes on PeriodicWave:
