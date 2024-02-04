@@ -1,5 +1,4 @@
 /**
- * 
  * @param {ArrayEnvelope} envelope
  * @param {HTMLElement} container 
  */
@@ -17,11 +16,32 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		w: this.container.clientWidth,
 		h: this.container.clientHeight,
 	};
-	this.maxTime = 10.0;
-	this.radius = 10.0;
+	this.maxTime = 6.0;
+	this.radius = 8.0;
 
 	this.canvas.width = this.rect.w;
 	this.canvas.height = this.rect.h;
+
+
+	this.tooltip = document.createElement('div');
+	this.tooltip.classList.add('tooltip', 'invisible');
+	this.container.appendChild(this.tooltip);
+	this.tooltip.insertAdjacentHTML('afterbegin', `<div id="timeDiv"></div><div id="valueDiv"></div>`);
+	this.timeDiv = this.tooltip.querySelector('#timeDiv');
+	this.valueDiv = this.tooltip.querySelector('#valueDiv');
+
+	this.setTooltipText = (params) => {
+		const time = `${params.time * 1000.0}`.slice(0, 7);
+		const value = `${params.value * 100.0}`.slice(0, 7);
+		this.timeDiv.textContent = `${time} ms`;
+		this.valueDiv.textContent = `${value} %`;
+	};
+	this.moveTooltipTo = (pos) => {
+		this.tooltip.style.left = `${pos.x + 30.0}px`;
+		this.tooltip.style.top = `${pos.y}px`;
+		this.setTooltipText(this.pos2Point(pos));
+	};
+	this.toggleTooltip = (hidden) => this.tooltip.classList.toggle('invisible', hidden);
 
 	
 	this.elements2Points = (elements) => {
@@ -64,6 +84,8 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		element.style.left = left + 'px';
 		element.style.top = top + 'px';
 
+		this.moveTooltipTo({ x: left, y: top });
+
 		this.sortNodes();
 		this.envelope.points = this.elements2Points(this.nodes);
 		this.drawLines();
@@ -78,7 +100,8 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 	});
 
 	document.addEventListener('mouseup', (e) => {
-		//console.log('mouseup', e);
+		this.toggleTooltip(true);
+
 		if (!this.dragData) return;
 		let left = e.clientX - this.dragData.offsetX;
 		let top = e.clientY - this.dragData.offsetY;
@@ -88,10 +111,13 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 	});
 
 	this.container.addEventListener('mousedown', (e) => {
-		if (!!this.dragData) return;
 		let left = e.pageX - this.rect.x;
 		let top = e.pageY - this.rect.y;
-		if (e.button === 0) this.addNode(left, top, e);
+		this.moveTooltipTo({ x: left, y: top });
+		if (e.button === 0) {
+			if (!this.dragData) this.addNode(left, top, e);
+			this.toggleTooltip(false);
+		}
 		else e.preventDefault();
 	});
 
@@ -182,7 +208,6 @@ function GainControlUI(oscillator, control) {
 
 	this.control.value = this.oscillator.gain;
 	this.control.addEventListener('changed', (e) => {
-		console.log('GAIN VALUECHANGE', e);
 		this.oscillator.gain = +this.control.value;
 	});
 }
@@ -213,9 +238,10 @@ function OscillatorUi(oscillator, container, name) {
 
 	this.oscWaveformUI.value = this.oscillator.type;
 	this.oscWaveformUI.addEventListener('input', () => {
-		this.oscillator.type = this.oscWaveformUI.value;
+		this.oscillator.setWave(this.oscWaveformUI.value);
 		document.activeElement.blur();
 	});
+
 
 	// MODULATE SELECT
 	this.oscModulateSelectUI = this.oscUi.querySelector('#oscModulateSelect');
@@ -223,9 +249,8 @@ function OscillatorUi(oscillator, container, name) {
 	this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
 	this.oscModulateSelectUI.addEventListener('input', () => {
 		const val = this.oscModulateSelectUI.value;
-		this.setMod(val === 'none' ? null : +val);
-
-		console.log('oaehuah', this.oscillator.mod);
+		this.oscillator.mod = val === 'none' ? null : +val;
+		this.setGainRange();
 		document.activeElement.blur();
 	});
 
@@ -235,13 +260,24 @@ function OscillatorUi(oscillator, container, name) {
 	};
 
 
+	// MODULATE MODE SELECT
+	this.oscModulateModeSelectUI = this.oscUi.querySelector('#oscModulateModeSelect');
+
+	this.oscModulateModeSelectUI.value = `${this.oscillator.modType ?? 0}`;
+	this.oscModulateModeSelectUI.addEventListener('input', () => {
+		this.oscillator.modType = +this.oscModulateModeSelectUI.value;
+		this.setGainRange();
+		document.activeElement.blur();
+	});
+
+
 	// GAIN
 	this.oscGainControl = this.oscUi.querySelector('#oscGain');
 	this.oscGainControlUI = new GainControlUI(this.oscillator, this.oscGainControl);
 
 
 	// DETUNE
-	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune');
+	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune'); // TODO: Use jodnumb
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
 	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
 	this.oscDetuneUI.value = 0.0;
@@ -254,6 +290,15 @@ function OscillatorUi(oscillator, container, name) {
 	this.oscDetuneUI.addEventListener('input', this.oscDetuneInput);
 
 
+	// PHASE
+	this.oscPhaseUI = this.oscUi.querySelector('#oscPhase');
+	this.oscPhaseUI.value = '' + this.oscillator.phase;
+	this.oscPhaseUI.addEventListener('input', () => {
+		this.oscillator.setPhase(+this.oscPhaseUI.value);
+		document.activeElement.blur();
+	});
+
+
 	// LFO
 	this.oscLFOFreqUI = this.oscUi.querySelector('#oscLFOFreq');
 	this.oscLFOFreqUI.value = this.oscillator.fixedFreq;
@@ -262,9 +307,8 @@ function OscillatorUi(oscillator, container, name) {
 	});
 	this.oscLFOToggleUI = this.oscUi.querySelector('#oscLFOToggle');
 	this.oscLFOToggleUI.value = !!this.oscillator.isLFO;
-	this.oscLFOToggleUI.addEventListener('change', (r) => {
+	this.oscLFOToggleUI.addEventListener('change', () => {
 		this.oscillator.isLFO = this.oscLFOToggleUI.checked;
-		console.log('LFOToggle', this.oscillator.isLFO, this.oscLFOToggleUI.checked, r);
 	});
 
 
@@ -279,9 +323,8 @@ function OscillatorUi(oscillator, container, name) {
 
 	
 
-	this.setMod = (mod = null) => {
-		this.oscillator.mod = mod;
-		if (mod === null) {
+	this.setGainRange = () => {
+		if (this.oscillator.mod === null || this.oscillator.modType > 0) {
 			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
 			this.oscGainControl.max = 1.0;
 			this.oscGainControl.speed = 1.0;
@@ -293,7 +336,7 @@ function OscillatorUi(oscillator, container, name) {
 
 	
 	// INIT
-	this.setMod(this.oscillator.mod);
+	this.setGainRange();
 }
 
 

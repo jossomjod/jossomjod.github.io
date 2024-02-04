@@ -69,7 +69,14 @@
 			</div>
 
 			<div class="control">
-				<!-- <input type="range" id="oscGain" name="oscGain" min="0" max="1" step="0.001"> -->
+				<label for="oscModulateModeSelect">Modulate Mode</label>
+				<select name="oscModulateModeSelect" id="oscModulateModeSelect">
+					<option value="0">FM</option>
+					<option value="1">AM</option>
+				</select>
+			</div>
+
+			<div class="control">
 				<label for="oscGain">Gain</label>
 				<jod-numb  name="oscGain" id="oscGain" min="0" max="1" value="1"></jod-numb>
 			</div>
@@ -82,8 +89,12 @@
 			</div>
 
 			<div class="control">
+				<label for="oscPhase">Phase</label>
+				<input class="phase" type="number" id="oscPhase" name="oscPhase" min="-10" max="10" step="0.01">
+			</div>
+
+			<div class="control">
 				<label for="oscLFOFreq">LFO Frequency</label>
-				<!-- <input class="detune" type="number" id="oscLFOFreq" name="oscLFOFreq" min="-44100" max="44100" step="0.01"> -->
 				<jod-numb  name="oscLFOFreq" id="oscLFOFreq" min="-44100" max="44100"></jod-numb>
 				<input class="checkbox" type="checkbox" id="oscLFOToggle" name="oscLFOToggle">
 				<label for="oscLFOToggle">LFO</label>
@@ -101,6 +112,20 @@
 			<canvas class="envelope-canvas" id="oscEnvCanvas">
 				There was always meant to be a canvas element here. Too bad your browser sucks.
 			</canvas>
+		</div>
+	</div>
+</template>
+
+
+<!---------- JODROLL ---------->
+
+<template id="jodroll-template">
+	<div class="jodroll-container">
+		<div class="track-container">
+
+		</div>
+		<div class="note-container">
+			
 		</div>
 	</div>
 </template>

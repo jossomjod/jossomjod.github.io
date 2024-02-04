@@ -23,20 +23,19 @@ TODO: actually do the todos
 
 
 TODO:
-- modulate/carry input
-- pitch automation
-- web component: a number input you can drag to adjust
+- modulate/carry input    DONE
+- pitch automation        DONE
+- web component: a number input you can drag to adjust       DONE
   - different rates of change depending on horizontal mouse pos maybe? Experiment.
 	- maybe drag the left side for BIG changes, right side for small, middle for medium?
 	- right/left/middle click and drag?
 	- modifier keys?
+- LOW FUCKING PASS OILY JOSH
 
 
 WE NEED SMALLER VALUES
 Tiny changes make a big difference with FM synthesis.
-
-
-TODODOODODODDO: REeeeeeeeverb
+DONE
 
 
 and also
@@ -44,6 +43,19 @@ hmmmmm
 i forgor
 
 ok, yeah
-we need to give better feedback on what the custom nuber input is doing
+we need to give better feedback on what the custom number input is doing
 and also fix it so it works better
 yep
+
+In FL studio you modify the clicked digit when you click and drag.
+Just check the x coordinate onclick and do some math to account for font size maybe?
+mono-space
+
+
+
+
+
+Notes on PeriodicWave:
+
+https://webaudio.github.io/web-audio-api/#PeriodicWaveOptions
+https://webaudio.github.io/web-audio-api/#oscillator-coefficients

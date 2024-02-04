@@ -91,7 +91,7 @@ var upperKeys = [
 ];
 
 let octave = 2;
-let noteOffset = 0;
+let noteOffset = 2;
 
 
 var keyboardKeys = {};

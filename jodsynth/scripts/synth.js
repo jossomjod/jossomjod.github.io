@@ -39,35 +39,120 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 
 const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
+// The web audio API doesn't support phase-shifting the oscillator
+// so we need to generate each waveform with a phase offset
+function getPhaseShiftedSawWave(ac, phaseOffset = 0.0) {
+	const numHarmonics = 30;
+	const real = new Float32Array(numHarmonics);
+	const imag = new Float32Array(numHarmonics);
+	real[0] = 0.0;
+	imag[0] = 0.0;
+
+	for (let i = 1; i <= numHarmonics-1; i++) {
+		imag[i] = ((-1) ** (i + 1)) * (2 / (i * Math.PI + phaseOffset));
+	}
+	return ac.createPeriodicWave(real, imag);
+}
+
+function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
+	const numHarmonics = 30;
+	const real = new Float32Array(numHarmonics);
+	const imag = new Float32Array(numHarmonics);
+
+	real[0] = 0.0;
+	imag[0] = 0.0;
+
+	for (let i = 1; i <= numHarmonics-1; i++) {
+		imag[i] = (2 / ((i + phaseOffset) * Math.PI)) * (1 - (-1) ** i);
+	}
+	console.log(imag);
+	return ac.createPeriodicWave(real, imag);
+}
+
+function getPhaseShiftedTriangleWave(ac, phaseOffset = 0.0) {
+	const numHarmonics = 30;
+	const real = new Float32Array(numHarmonics);
+	const imag = new Float32Array(numHarmonics);
+
+	real[0] = 0.0;
+	imag[0] = 0.0;
+
+	for (let i = 1; i <= numHarmonics-1; i++) {
+		const pii = (i + phaseOffset) * Math.PI;
+		imag[i] = (8 * Math.sin(pii / 2)) / pii ** 2;
+	}
+	return ac.createPeriodicWave(real, imag);
+}
+
+function getPhaseShiftedSineWave(ac, phaseOffset = 0.0) {
+	const numHarmonics = 2;
+	const real = new Float32Array(numHarmonics);
+	const imag = new Float32Array(numHarmonics);
+
+	real[0] = 0 + phaseOffset;
+	imag[0] = 0;
+	real[1] = 1 - phaseOffset;
+	imag[1] = 0;
+
+	return ac.createPeriodicWave(real, imag);
+}
+
+function getPeriodicWave(ac, type = 'sawtooth', phase) {
+	switch (type) {
+		case 'sawtooth':
+			return getPhaseShiftedSawWave(ac, phase);
+		case 'square':
+			return getPhaseShiftedSquareWave(ac, phase);
+		case 'triangle':
+			return getPhaseShiftedTriangleWave(ac, phase);
+		case 'sine':
+		default:
+			return getPhaseShiftedSineWave(ac, phase);
+	}
+}
 
 
 
 
-//function Oscillator(ac, type = 'square', detune = 0.0, gainMult = 1.0, gainEnvelope, mod, isLFO = false) {
-function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelope, mod, isLFO = false) {
+function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelope, mod, phase) {
 	this.type = type;
 	this.detune = detune;
 	this.gain = 1.0;
 	this.gainEnvelope = gainEnvelope;
 	this.pitchEnvelope = pitchEnvelope;
+	this.modType = 0; // 0: FM, 1: AM
 	this.mod = mod;
 	this.isCarrier = () => this.mod === null;
-	this.isLFO = isLFO;
+	this.isLFO = false;
 	this.fixedFreq = 1.0;
 	this.name = '';
+	this.phase = phase;
+	this.customeWave;
+
+	this.setWave = (waveform) => {
+		this.type = waveform;
+		this.customeWave = getPeriodicWave(ac, waveform, this.phase);
+	}
+	this.setWave(type);
+
+	this.setPhase = (phs) => {
+		this.phase = phs;
+		this.customeWave = getPeriodicWave(ac, this.type, this.phase);
+	}
 
 	this.start = (frequency, gainNode) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
 		// You have to make a new osc every time
-		const osc = new OscillatorNode(ac, { type: this.type, detune: this.detune, frequency: freq });
+		const osc = new OscillatorNode(ac, { /* type: this.type, */ detune: this.detune, frequency: freq });
+		osc.setPeriodicWave(this.customeWave);
 
 		//osc.onended = () => console.log('the end');
 		gainNode.gain.value = this.gain;
 		osc.connect(gainNode);
 		osc.start();
 
-		if (this.gainEnvelope) this.gainEnvelope.start(gainNode.gain, 0.0, this.gain);
-		if (this.pitchEnvelope) this.pitchEnvelope.start(osc.detune, this.detune, 1200.0);
+		this.gainEnvelope?.start(gainNode.gain, 0.0, this.gain);
+		this.pitchEnvelope?.start(osc.detune, this.detune, 1200.0);
 
 		return osc;
 	}
@@ -89,13 +174,6 @@ var oscarGainPoints = [
 	{ value: 0.0, time: 1.0 },
 ];
 
-var osirisGainPoints = [
-	{ value: 1.0, time: 0.0 },
-	{ value: 0.3, time: 0.2 },
-	{ value: 0.2, time: 0.8 },
-	{ value: 0.0, time: 1.4 },
-];
-
 var osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
 	{ value: 1.0, time: 0.3 },
@@ -109,21 +187,35 @@ var pitchPoints = [
 	{ value: 0.0, time: 0.5 },
 ];
 
-//TODO: Experiment with multiplying gain by 2^(12/tone)
 
 function Synth(ac) {
 	this.playing = false;
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
+	this.oscillators = [];
+	this.preset;// = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => this.gain.connect(audioNode);
 
-	this.oscillators = [
-		new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null),
-		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), 0),
-		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), 1),
-		new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), 2),
-	];
+	this.applyPreset = (preset = this.preset) => {
+		switch(preset) {
+			case 'supersaw':
+				this.oscillators = this.generateSupersaw(5);
+				break;
+			case 'phase_saws':
+				this.oscillators = [
+					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, -0.1),
+					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.2),
+				];
+				break;
+			default:
+				this.oscillators = [
+					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.0),
+					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), 0, 0.0),
+				];
+		}
+	}
+
 	
 	this.start = (freq) => {
 		const oscs = this.oscillators.map((osc) => {
@@ -135,7 +227,9 @@ function Synth(ac) {
 		oscs.forEach((t, i) => {
 			const mod = this.oscillators[i].mod;
 			if (mod !== null && typeof mod === 'number') {
-				t.gain.connect(oscs[mod].oscillator.frequency);
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
 			}
@@ -149,16 +243,35 @@ function Synth(ac) {
 	};
 
 	this.addOsc = () => {
-		console.log('[synth.js Synth] Adding oscillator');
-		/* const i = this.oscillators.length-2;
-		const modIdx = i < 0 ? 0 : i; */
 		return this.oscillators.push(new Oscillator(
 			ac,
 			'sine',
 			0.0,
 			new ArrayEnvelope(ac, osmanGainPoints, 0.0),
 			new ArrayEnvelope(ac, pitchPoints, 1200.0),
-			null
+			null,
+			0.0
 		));
 	}
+
+	this.generateSupersaw = (numOsc = 5) => {
+		const oscs = [];
+		for (let i = -numOsc; i < numOsc; i++) {
+			let mul = i % numOsc;
+			const detune = mul * mul;
+			const phase = mul * mul + Math.random() * 0.01;
+			oscs.push(new Oscillator(
+				ac,
+				'sawtooth',
+				detune,
+				new ArrayEnvelope(ac, oscarGainPoints, 0.0),
+				new ArrayEnvelope(ac, pitchPoints, 1200.0),
+				null,
+				phase
+			));
+		}
+		return oscs;
+	}
+
+	this.applyPreset();
 }
