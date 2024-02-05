@@ -114,7 +114,7 @@ noteManagerGain.connect(masterGain);
 
 var noteManager = new NoteManager(ac, noteManagerGain);
 
-
+var noteManagerUi = new NoteManagerUI();
 
 
 
@@ -148,6 +148,9 @@ document.body.onkeydown = function(e) {
 			break;
 		case 36:
 			noteOffset++;
+			break;
+		case 172:
+			noteManagerUi.toggleVisible();
 			break;
 		default:
 			toggleKeys(e, true);

@@ -25,7 +25,12 @@ function Note(freq, start, dur) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.notes = [new Note(220, 0, 0.3), new Note(330, 0.4, 0.3), new Note(221, 0.8, 0.3), new Note(285, 1.2, 0.3)];
+	this.notes = [
+		new Note(220, 0, 0.3), new Note(330, 0, 0.3),
+		new Note(330, 0.4, 0.3), new Note(440, 0.4, 0.3),
+		new Note(221, 0.8, 0.3), new Note(330.8, 0.8, 0.3),
+		new Note(282, 1.2, 0.3), new Note(417, 1.2, 0.3),
+	];
 
 	this.play = () => {
 		this.notes.forEach((n) => n.play(ac, output));

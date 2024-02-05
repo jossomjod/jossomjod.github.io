@@ -14,6 +14,7 @@
 		<script src="scripts/functions.js"></script>
 		<script src="custom-elements/jod-numb.element.js"></script>
 		<script src="scripts/note-manager.js"></script>
+		<script src="scripts/note-manager-ui.js"></script>
 		<script src="scripts/synth.js"></script>
 		<script src="scripts/synth-ui.js"></script>
 		<script src="scripts/ui.js"></script>
@@ -23,19 +24,23 @@
 		<div class="main-content">
 			<div class="top-bar">
 				<a href="../index.html">Home</a>
+				<button onclick="noteManagerUi.toggleVisible()">TRACKER YO</button>
 			</div>
-			<div class="synth-container">
-				<div>
-					<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
-					<label for="masterGain">Master Gain</label>
+			<div class="tracker-container"></div>
+			<div class="synth-body">
+				<div class="synth-container">
+					<div>
+						<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
+						<label for="masterGain">Master Gain</label>
+					</div>
+					<div>
+						<input type="range" id="reverbGain" name="reverbGain" min="0" max="1" step="0.01">
+						<label for="reverbGain">Reverb Gain</label>
+					</div>
 				</div>
-				<div>
-					<input type="range" id="reverbGain" name="reverbGain" min="0" max="1" step="0.01">
-					<label for="reverbGain">Reverb Gain</label>
+				<div class="button-container">
+					<button id="addOscBtn">+ Add oscillator</button>
 				</div>
-			</div>
-			<div class="button-container">
-				<button id="addOscBtn">+ Add oscillator</button>
 			</div>
 		</div>
 		<script src="scripts/main.js" defer></script>
@@ -123,7 +128,7 @@
 <template id="jodroll-template">
 	<div class="jodroll-container">
 		<div class="track-container">
-
+			TEST CONTENT
 		</div>
 		<div class="note-container">
 			
