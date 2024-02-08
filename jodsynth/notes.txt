@@ -40,7 +40,7 @@ mono-space
 
 
 note manager TODOs:
-- render notes
+- render notes better
 - edit notes
 - automation
 
