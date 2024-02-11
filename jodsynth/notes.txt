@@ -17,6 +17,7 @@ TODO:
 	- right/left/middle click and drag?
 	- modifier keys?
 - LOW FUCKING PASS OILY JOSH
+- and we gotta hmmmm make AM multiplicative duh
 
 
 WE NEED SMALLER VALUES
