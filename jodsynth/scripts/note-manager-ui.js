@@ -58,10 +58,14 @@ function NoteManagerUI(noteManager) {
 	this.secondaryAction = 4;
 	this.scrollAction = 2;
 
+	this.gridSizeX = this.pxPerSec * 0.25;
+	this.snapX = false;
+	this.snapY = true;
+
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		const rect = this.canvas.getBoundingClientRect();
-		realX = e.x - rect.left;
-		realY = this.height - (e.y - rect.top);
+		let realX = e.x - rect.left;
+		let realY = this.height - (e.y - rect.top);
 
 		if (e.buttons === this.primaryAction) {
 			// TODO:
@@ -69,6 +73,8 @@ function NoteManagerUI(noteManager) {
 			if (false) {
 				
 			} else {
+				if (this.snapY) realY = this.snapToGridY(realY); // TODO: fix scroll offset bug
+				if (this.snapX) realX = this.snapToGridX(realX);
 				this.addNote(realX, realY);
 			}
 		}
@@ -76,7 +82,7 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer.addEventListener('mousemove', (e) => {
 		if (e.buttons === this.scrollAction) {
 			this.scrollX += e.movementX;
-			this.scrollY += e.movementY;
+			this.scrollY -= e.movementY;
 			this.drawNotes(noteManager.notes);
 		}
 	});
@@ -85,16 +91,23 @@ function NoteManagerUI(noteManager) {
 
 	this.timeToX = (time) => {
 		return this.scrollX + time * this.pxPerSec;
-	}
+	};
 	this.xToTime = (x) => {
 		return (x - this.scrollX) / this.pxPerSec;
-	}
+	};
 	this.toneToY = (tone) => {
 		return this.height - (this.scrollY + tone * this.pxPerTone);
-	}
+	};
 	this.yToTone = (y) => {
 		return (y - this.scrollY) / this.pxPerTone;
-	}
+	};
+
+	this.snapToGridX = (x) => {
+		return Math.round(x / this.pxPerSec) * this.pxPerSec;
+	};
+	this.snapToGridY = (y) => {
+		return Math.round(y / this.pxPerTone) * this.pxPerTone;
+	};
 
 	this.addNote = (x, y) => {
 		const time = this.xToTime(x);
