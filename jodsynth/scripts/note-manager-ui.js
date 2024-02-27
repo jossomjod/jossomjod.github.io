@@ -43,8 +43,9 @@ function NoteManagerUI(noteManager) {
 	this.ctx = this.canvas.getContext('2d');
 	this.pxPerSec = 300;
 	this.pxPerTone = 8;
-	this.width = this.canvas.width = this.trackerContainer.width = window.innerWidth;
+	this.width = this.trackerContainer.width = window.innerWidth;
 	this.height = this.canvas.height = this.trackerContainer.height = 400;
+	this.canvas.width = this.width - 100;
 	this.scrollX = 0;
 	this.scrollY = 0;
 	this.noteHeight = this.pxPerTone;
@@ -59,8 +60,8 @@ function NoteManagerUI(noteManager) {
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		const rect = this.canvas.getBoundingClientRect();
-		realX = e.x - rect.left; // TODO: fix offset trouble
-		realY = e.y - rect.top;
+		realX = e.x - rect.left;
+		realY = this.height - (e.y - rect.top);
 
 		if (e.buttons === this.primaryAction) {
 			// TODO:
@@ -89,7 +90,7 @@ function NoteManagerUI(noteManager) {
 		return (x - this.scrollX) / this.pxPerSec;
 	}
 	this.toneToY = (tone) => {
-		return this.scrollY + tone * this.pxPerTone;
+		return this.height - (this.scrollY + tone * this.pxPerTone);
 	}
 	this.yToTone = (y) => {
 		return (y - this.scrollY) / this.pxPerTone;
@@ -110,8 +111,8 @@ function NoteManagerUI(noteManager) {
 
 
 	this.drawNote = (note) => {
-		const x = this.scrollX + note.startTime * this.pxPerSec;
-		const y = this.scrollY + note.tone * this.pxPerTone;
+		const x = this.timeToX(note.startTime);
+		const y = this.toneToY(note.tone);
 		const w = note.duration * this.pxPerSec;
 		const h = this.noteHeight;
 		this.ctx.fillStyle = '#6699ff';
@@ -133,6 +134,7 @@ function NoteManagerUI(noteManager) {
 	this.visible = true;
 	this.toggleVisible = (visible = !this.visible) => {
 		this.visible = visible;
+		this.trackerContainer.setAttribute('style', `width: ${this.width}px`);
 		this.trackerContainer.classList.toggle('invisible', !visible);
 	};
 	this.toggleVisible();
