@@ -135,22 +135,28 @@ document.body.onkeydown = function(e) {
 	if (e.repeat) return;
 	e.preventDefault();
 	switch (e.which) {
-		case 32:
+		case 32: // space
 			noteManager.play();
 			break;
-		case 33:
+		case 33: // pgup
 			octave++;
 			break;
-		case 34:
+		case 34: // pgdown
 			octave--;
 			break;
-		case 35:
+		case 35: // End
 			noteOffset--;
 			break;
-		case 36:
+		case 36: // Home
 			noteOffset++;
 			break;
-		case 172:
+		case 114: // F3
+			noteManagerUi.snapX = !noteManagerUi.snapX;
+			break;
+		case 115: // F5
+			noteManagerUi.snapY = !noteManagerUi.snapY;
+			break;
+		case 172: // That key under Esc, left of 1, above Tab
 			noteManagerUi.toggleVisible();
 			break;
 		default:

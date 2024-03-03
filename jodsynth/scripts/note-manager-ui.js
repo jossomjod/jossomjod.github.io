@@ -58,9 +58,13 @@ function NoteManagerUI(noteManager) {
 	this.secondaryAction = 4;
 	this.scrollAction = 2;
 
-	this.gridSizeX = this.pxPerSec * 0.25;
+	this.gridSizeX = this.pxPerSec * 0.1; // TODO: use beats instead of seconds
+	this.offsetY = this.pxPerTone / 2;
 	this.snapX = false;
 	this.snapY = true;
+
+	this.clickedNoteIndex = -1;
+	this.clickedNote = null;
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		const rect = this.canvas.getBoundingClientRect();
@@ -69,12 +73,11 @@ function NoteManagerUI(noteManager) {
 
 		switch (e.buttons) {
 			case this.primaryAction:
-				// TODO:
-				// check note clicked
-				if (false) {
-					
+				this.clickedNoteIndex = this.getNoteIndexAtPos(realX, realY);
+				if (this.clickedNoteIndex > -1) {
+					this.clickedNote = noteManager.notes[this.clickedNoteIndex];
 				} else {
-					if (this.snapY) realY = this.snapToGridY(realY); // TODO: fix scroll offset bug
+					if (this.snapY) realY = this.snapToGridY(realY);
 					if (this.snapX) realX = this.snapToGridX(realX);
 					this.addNote(realX, realY);
 				}
@@ -83,13 +86,28 @@ function NoteManagerUI(noteManager) {
 				const index = this.getNoteIndexAtPos(realX, realY);
 				if (index > -1) this.deleteNote(index);
 				break;
+			case 0:
+				this.clickedNote = null;
+				this.clickedNoteIndex = -1;
+				break;
 		}
 	});
+
 	this.trackerContainer.addEventListener('mousemove', (e) => {
-		if (e.buttons === this.scrollAction) {
-			this.scrollX += e.movementX;
-			this.scrollY -= e.movementY;
-			this.drawNotes(noteManager.notes);
+		switch (e.buttons) {
+			case this.primaryAction:
+				const rect = this.canvas.getBoundingClientRect();
+				let realX = e.x - rect.left;
+				let realY = this.height - (e.y - rect.top);
+				if (this.snapY) realY = this.snapToGridY(realY);
+				if (this.snapX) realX = this.snapToGridX(realX);
+				if (this.clickedNote) this.moveNote(this.clickedNote, realX, realY);
+				break;
+			case this.scrollAction:
+				this.scrollX += e.movementX;
+				this.scrollY -= e.movementY;
+				this.drawNotes(noteManager.notes);
+				break;
 		}
 	});
 	
@@ -119,23 +137,31 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.snapToGridX = (x) => {
-		return Math.round(x / this.pxPerSec) * this.pxPerSec;
+		return Math.round(x / this.gridSizeX) * this.gridSizeX + this.scrollX % this.gridSizeX;
 	};
 	this.snapToGridY = (y) => {
-		return Math.round(y / this.pxPerTone) * this.pxPerTone;
+		return Math.round(y / this.pxPerTone) * this.pxPerTone + this.scrollY % this.pxPerTone;
 	};
 
 	this.getNoteAtPos = (x, y) => {
+		const time = this.xToTime(x);
+		const tone = this.yToTone(y);
 		return noteManager.notes.find((n) => {
-			const rect = this.noteToRect(n);
-			return rect.x < x && rect.y < y && rect.x + rect.w > x & rect.y + rect.h > y;
+			const t = n.startTime;
+			const d = t + n.duration;
+			const nt = n.tone;
+			return time > t && time < d && tone < nt && tone > (nt - 1);
 		});
 	};
 
 	this.getNoteIndexAtPos = (x, y) => {
+		const time = this.xToTime(x);
+		const tone = this.yToTone(y);
 		return noteManager.notes.findIndex((n) => {
-			const rect = this.noteToRect(n);
-			return rect.x < x && rect.y < y && rect.x + rect.w > x & rect.y + rect.h > y;
+			const t = n.startTime;
+			const d = t + n.duration;
+			const nt = n.tone;
+			return time > t && time < d && tone < nt && tone > (nt - 1);
 		});
 	};
 
@@ -143,12 +169,21 @@ function NoteManagerUI(noteManager) {
 		const time = this.xToTime(x);
 		const tone = this.yToTone(y);
 		const duration = this.newNoteDuration;
-		const newNote = noteManager.addNote(time, tone, duration);
-		this.drawNote(newNote);
+		this.clickedNote = noteManager.addNote(time, tone, duration);
+		this.clickedNoteIndex = noteManager.notes.length - 1;
+		this.drawNote(this.clickedNote);
 	};
+
+	this.moveNote = (note, x, y) => {
+		const time = this.xToTime(x);
+		const tone = this.yToTone(y);
+		note.startTime = time;
+		note.setTone(tone);
+		this.drawNotes();
+	};
+
 	this.deleteNote = (index) => {
-		console.log('DELET', index);
-		//noteManager.notes.splice(index);
+		noteManager.notes.splice(index, 1);
 		this.drawNotes();
 	}
 
@@ -169,16 +204,25 @@ function NoteManagerUI(noteManager) {
 
 	this.drawNotes = (notes = noteManager.notes) => {
 		this.drawClear();
+		this.drawGrid();
 		notes.forEach((n) => {
 			if (this.timeToX(n.startTime + n.duration) < 0.0) return;
-			if (this.timeToX(n.startTime) > this.width - 100.0) return;
+			if (this.timeToX(n.startTime) > this.width) return;
 			this.drawNote(n);
 		});
 	};
 
 	this.drawGrid = () => {
 		const visibleRows = this.height / this.pxPerTone;
-		// TODO
+		
+		this.ctx.beginPath();
+		this.ctx.strokeStyle = '#a7cab362';
+		for (let i = 0; i < visibleRows; i++) {
+			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
+			this.ctx.moveTo(0, y);
+			this.ctx.lineTo(this.width, y);
+		}
+		this.ctx.stroke();
 	}
 
 

@@ -14,6 +14,11 @@ function Note(tone, start, dur) {
 	this.frequency = toneToFreq(this.tone);
 	this.gain = 1.0;
 
+	this.setTone = (_tone) => {
+		this.tone = _tone;
+		this.frequency = toneToFreq(this.tone);
+	};
+
 	/**
 	 * @param {AudioContext} ac
 	 * @param {AudioNode} output
