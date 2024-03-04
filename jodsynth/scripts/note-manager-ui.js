@@ -14,34 +14,16 @@ function Rect(x, y, w, h) {
 	this.h = h || 0;
 }
 
-function noteToRect(note) {
-
-}
-
-function NoteUi(note) {
-	this.note = note;
-	this.color = color || '#c0ffee';
-	this.x = 0;
-	this.y = 0;
-	this.w = 0;
-	this.h = 0;
-
-	this.update = () => {
-
-	}
-
-	this.draw = () => {
-		
-	}
-}
-
 function NoteManagerUI(noteManager) {
 	this.trackerContainer = document.querySelector('.tracker-container');
 	this.jodrollTemplate = document.querySelector('#jodroll-template');
 	this.jodroll = this.jodrollTemplate.content.cloneNode(true);
-	this.canvas = this.jodroll.querySelector('.jodroll-canvas');
+	this.canvas = this.jodroll.querySelector('#jodroll-main-canvas');
+	this.overlay1 = this.jodroll.querySelector('#jodroll-overlay1');
 	this.ctx = this.canvas.getContext('2d');
-	this.pxPerSec = 300;
+	this.octx1 = this.overlay1.getContext('2d');
+
+	this.pxPerBeat = 50;
 	this.pxPerTone = 8;
 	this.width = this.trackerContainer.width = window.innerWidth;
 	this.height = this.canvas.height = this.trackerContainer.height = 400;
@@ -49,24 +31,26 @@ function NoteManagerUI(noteManager) {
 	this.scrollX = 0;
 	this.scrollY = 0;
 	this.noteHeight = this.pxPerTone;
-	this.newNoteDuration = 0.25;
+	this.newNoteDuration = 1;
 	this.caretTime = 0;
 	this.playbackStartedTimeOffset = 0;
 	this.isPlaying = () => noteManager.isPlaying;
 
 	this.primaryAction = 1;
-	this.secondaryAction = 4;
-	this.scrollAction = 2;
+	this.secondaryAction = 2;
+	this.scrollAction = 4;
 
-	this.gridSizeX = this.pxPerSec * 0.1; // TODO: use beats instead of seconds
+	this.gridSizeX = this.pxPerBeat;
 	this.offsetY = this.pxPerTone / 2;
-	this.snapX = false;
+	this.snapX = true;
 	this.snapY = true;
 
 	this.clickedNoteIndex = -1;
 	this.clickedNote = null;
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
+		e.preventDefault();
+		e.stopPropagation();
 		const rect = this.canvas.getBoundingClientRect();
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
@@ -83,6 +67,12 @@ function NoteManagerUI(noteManager) {
 				}
 				break;
 			case this.scrollAction:
+				e.preventDefault();
+				e.stopPropagation();
+				break;
+			case this.secondaryAction:
+				e.preventDefault();
+				e.stopPropagation();
 				const index = this.getNoteIndexAtPos(realX, realY);
 				if (index > -1) this.deleteNote(index);
 				break;
@@ -90,18 +80,26 @@ function NoteManagerUI(noteManager) {
 				this.clickedNote = null;
 				this.clickedNoteIndex = -1;
 				break;
+			default:
+				console.log('MOUSE EVENT', e);
 		}
 	});
 
 	this.trackerContainer.addEventListener('mousemove', (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const rect = this.canvas.getBoundingClientRect();
+		let realX = e.x - rect.left;
+		let realY = this.height - (e.y - rect.top);
 		switch (e.buttons) {
-			case this.primaryAction:
-				const rect = this.canvas.getBoundingClientRect();
-				let realX = e.x - rect.left;
-				let realY = this.height - (e.y - rect.top);
+			case this.primaryAction: // TODO: use relative & fix snap to grid
 				if (this.snapY) realY = this.snapToGridY(realY);
 				if (this.snapX) realX = this.snapToGridX(realX);
 				if (this.clickedNote) this.moveNote(this.clickedNote, realX, realY);
+				break;
+			case this.secondaryAction:
+				const index = this.getNoteIndexAtPos(realX, realY);
+				if (index > -1) this.deleteNote(index);
 				break;
 			case this.scrollAction:
 				this.scrollX += e.movementX;
@@ -114,10 +112,10 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer.appendChild(this.jodroll);
 
 	this.timeToX = (time) => {
-		return this.scrollX + time * this.pxPerSec;
+		return this.scrollX + time * this.pxPerBeat;
 	};
 	this.xToTime = (x) => {
-		return (x - this.scrollX) / this.pxPerSec;
+		return (x - this.scrollX) / this.pxPerBeat;
 	};
 	this.toneToY = (tone) => {
 		return this.height - (this.scrollY + tone * this.pxPerTone);
@@ -128,7 +126,7 @@ function NoteManagerUI(noteManager) {
 	this.noteToRect = (note) => {
 		const x = this.timeToX(note.startTime);
 		const y = this.toneToY(note.tone);
-		const w = note.duration * this.pxPerSec;
+		const w = note.duration * this.pxPerBeat;
 		const h = this.noteHeight;
 		return { x, y, w, h };
 	};
@@ -137,7 +135,7 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.snapToGridX = (x) => {
-		return Math.round(x / this.gridSizeX) * this.gridSizeX + this.scrollX % this.gridSizeX;
+		return Math.round(x / this.gridSizeX) * this.gridSizeX + this.scrollX % this.gridSizeX - this.gridSizeX;
 	};
 	this.snapToGridY = (y) => {
 		return Math.round(y / this.pxPerTone) * this.pxPerTone + this.scrollY % this.pxPerTone;
@@ -175,7 +173,8 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.moveNote = (note, x, y) => {
-		const time = this.xToTime(x);
+		let time = this.xToTime(x);
+		if (time < 0) time = 0;
 		const tone = this.yToTone(y);
 		note.startTime = time;
 		note.setTone(tone);
@@ -187,16 +186,16 @@ function NoteManagerUI(noteManager) {
 		this.drawNotes();
 	}
 
-	this.drawClear = () => {
-		this.ctx.fillStyle = '#000000';
-		this.ctx.fillRect(0, 0, this.width, this.height);
+	this.drawClear = (ctx = this.ctx) => {
+		ctx.fillStyle = '#000000';
+		ctx.fillRect(0, 0, this.width, this.height);
 	};
 
 
 	this.drawNote = (note) => {
 		const x = this.timeToX(note.startTime);
 		const y = this.toneToY(note.tone);
-		const w = note.duration * this.pxPerSec;
+		const w = note.duration * this.pxPerBeat;
 		const h = this.noteHeight;
 		this.ctx.fillStyle = '#6699ff';
 		this.ctx.fillRect(x, y, w, h);
@@ -212,20 +211,47 @@ function NoteManagerUI(noteManager) {
 		});
 	};
 
-	this.drawGrid = () => {
+	this.drawGrid = (ctx = this.ctx) => {
 		const visibleRows = this.height / this.pxPerTone;
+		const visibleCols = this.width / this.pxPerBeat;
 		
-		this.ctx.beginPath();
-		this.ctx.strokeStyle = '#a7cab362';
+		// horizontal lines
+		ctx.beginPath();
+		ctx.strokeStyle = '#a7cab352';
 		for (let i = 0; i < visibleRows; i++) {
 			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
-			this.ctx.moveTo(0, y);
-			this.ctx.lineTo(this.width, y);
+			ctx.moveTo(0, y);
+			ctx.lineTo(this.width, y);
 		}
-		this.ctx.stroke();
-	}
+		ctx.stroke();
+
+		// vertical lines
+		ctx.beginPath();
+		ctx.strokeStyle = '#a7cab322';
+		for (let i = 0; i < visibleCols; i++) {
+			const x = i * this.pxPerBeat + this.scrollX % this.pxPerBeat;
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, this.height);
+		}
+		ctx.stroke();
+
+		// start line
+		ctx.beginPath();
+		ctx.strokeStyle = '#579cef';
+		ctx.moveTo(this.scrollX, 0);
+		ctx.lineTo(this.scrollX, this.height);
+		ctx.stroke();
+	};
 
 
+
+	this.drawCaret = (x, ctx = this.octx1) => {
+		ctx.beginPath();
+		ctx.strokeStyle = '#c7bc8f';
+		ctx.moveTo(x, 0);
+		ctx.lineTo(x, this.height);
+		ctx.stroke();
+	};
 
 	this.visible = true;
 	this.toggleVisible = (visible = !this.visible) => {

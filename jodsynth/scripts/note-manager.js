@@ -7,6 +7,14 @@ function toneToFreq(tone) {
 	return 440 * Math.pow(2, (tone - 49) / 12);
 }
 
+function beatsToSeconds(beats, bpm) {
+	return 60 * beats / bpm;
+}
+
+function secondsToBeats(sec, bpm) {
+	return bpm * sec / 60;
+}
+
 function Note(tone, start, dur) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
@@ -23,14 +31,16 @@ function Note(tone, start, dur) {
 	 * @param {AudioContext} ac
 	 * @param {AudioNode} output
 	 */
-	this.play = (ac, output, startTimeOffset) => {
-		const currentTime = ac.currentTime - startTimeOffset;
+	this.play = (ac, output, bpm) => {
+		const currentTime = ac.currentTime;
+		const startTime = currentTime + beatsToSeconds(this.startTime, bpm);
+		const endTime = startTime + beatsToSeconds(this.duration, bpm);
 		const osc = ac.createOscillator();
 		osc.type = 'square';
-		osc.frequency.setValueAtTime(this.frequency, currentTime);
+		osc.frequency.setValueAtTime(this.frequency, startTime);
 		osc.connect(output);
-		osc.start(currentTime + this.startTime);
-		osc.stop(currentTime + this.startTime + this.duration);
+		osc.start(startTime);
+		osc.stop(endTime);
 	}
 }
 
@@ -40,25 +50,27 @@ function Note(tone, start, dur) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.startTimeOffset = 0;
+	this.bpm = 120;
 	this.notes = [
-		new Note(24, 0, 0.3), new Note(32, 0, 0.3),
-		new Note(32, 0.4, 0.3), new Note(48, 0.4, 0.3),
-		new Note(24.01, 0.8, 0.3), new Note(32.04, 0.8, 0.3),
-		new Note(30, 1.2, 0.3), new Note(46, 1.2, 0.3),
+		new Note(24, 0, 1), new Note(32, 0, 1),
+		new Note(32, 1, 1), new Note(48, 1, 1),
+		new Note(24.01, 2, 1), new Note(32.04, 2, 1),
+		new Note(30, 3, 1), new Note(46, 3, 1),
 	];
 	this.isPlaying = false;
 
 	this.addNote = (startTime, tone, duration) => {
+		if (startTime < 0) startTime = 0;
 		const newNote = new Note(tone, startTime, duration);
 		this.notes.push(newNote);
-		if (startTime < this.startTimeOffset) this.startTimeOffset = startTime;
 		return newNote;
 	}
 
 	this.play = () => {
-		this.notes.forEach((n) => n.play(ac, output, this.startTimeOffset));
+		this.notes.forEach((n) => n.play(ac, output, this.bpm));
 	}
+
+	this.getCurrentTime = () => secondsToBeats(ac.currentTime, this.bpm);
 }
 
 
