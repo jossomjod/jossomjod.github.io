@@ -114,7 +114,7 @@ noteManagerGain.connect(masterGain);
 
 var noteManager = new NoteManager(ac, noteManagerGain);
 
-var noteManagerUi = new NoteManagerUI(noteManager);
+var noteManagerUi = new NoteManagerUI(noteManager, synth);
 
 noteManagerUi.drawNotes(noteManager.notes);
 
