@@ -120,6 +120,27 @@ noteManagerUi.drawNotes(noteManager.notes);
 
 
 
+
+
+// SAVE / LOAD ---------------------------------
+var saveData = { notes: '[]' };
+
+
+function saveState() {
+	saveData.notes = JSON.stringify(noteManager.notes);
+	console.log('saving...', saveData.notes);
+	localStorage.setItem('notes', saveData.notes);
+}
+
+function loadState() {
+	console.log('loading...');
+	saveData.notes = localStorage.getItem('notes') ?? '[]';
+	noteManager.notes = JSON.parse(saveData.notes);
+	noteManagerUi.drawNotes();
+}
+
+
+
 // EVENTS----------------------------------------------------------------------
 
 window.oncontextmenu = (e) => {
@@ -155,6 +176,12 @@ document.body.onkeydown = function(e) {
 			break;
 		case 115: // F5
 			noteManagerUi.snapY = !noteManagerUi.snapY;
+			break;
+		case 116: // F5
+			saveState();
+			break;
+		case 120: // F9
+			loadState();
 			break;
 		case 172: // That key under Esc, left of 1, above Tab
 			noteManagerUi.toggleVisible();

@@ -1,12 +1,3 @@
-/**
- * @param {CanvasRenderingContext2D} ctx 
- * @param {NoteUi} note 
- */
-function drawNote(ctx, noteUi) {
-	ctx.fillStyle = noteUi.color;
-	ctx.fillRect()
-}
-
 function Rect(x, y, w, h) {
 	this.x = x || 0;
 	this.y = y || 0;
@@ -24,7 +15,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.octx1 = this.overlay1.getContext('2d');
 
 	this.pxPerBeat = 50;
-	this.pxPerTone = 8;
+	this.pxPerTone = 10;
 	this.width = this.trackerContainer.width = window.innerWidth;
 	this.height = this.canvas.height = this.trackerContainer.height = 400;
 	this.canvas.width = this.width - 100;
@@ -49,6 +40,8 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.clickedNoteIndex = -1;
 	this.clickedNote = null;
 	this.previewNoteId = null;
+	this.isResizing = false;
+	this.resizeTriggerSize = 10;
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
@@ -56,14 +49,19 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const rect = this.canvas.getBoundingClientRect();
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
+		
 		const time = this.xToTime(realX);
+		const snappedTime = this.snapToGridTime(time);
 		const tone = this.yToTone(realY); // TODO: use time and tone instead of x and y as much as possible
 
 		switch (e.buttons) {
 			case this.primaryAction:
+				if (this.clickedNote) this.previewNote(false);
+
 				this.clickedNoteIndex = this.getNoteIndexAtPos(realX, realY);
 				if (this.clickedNoteIndex > -1) {
 					this.clickedNote = noteManager.notes[this.clickedNoteIndex];
+					this.isResizing = this.checkResizeTrigger(this.clickedNote, realX);
 				} else {
 					if (this.snapY) realY = this.snapToGridY(realY);
 					if (this.snapX) realX = this.snapToGridX(realX);
@@ -81,8 +79,6 @@ function NoteManagerUI(noteManager, previewSynth) {
 				const index = this.getNoteIndexAtPos(realX, realY);
 				if (index > -1) this.deleteNote(index);
 				break;
-			default:
-				console.log('MOUSE EVENT', e);
 		}
 	});
 	this.trackerContainer.addEventListener('mouseup', (e) => {
@@ -90,9 +86,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 		e.stopPropagation();
 		
 		if (~e.buttons & this.primaryAction) {
+			if (this.clickedNote) this.newNoteDuration = this.clickedNote.duration;
+
 			this.previewNote(false);
 			this.clickedNote = null;
 			this.clickedNoteIndex = -1;
+			this.isResizing = false;
 		}
 	});
 
@@ -102,12 +101,19 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const rect = this.canvas.getBoundingClientRect();
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
+
 		switch (e.buttons) {
-			case this.primaryAction: // TODO: use relative
-				if (this.snapY) realY = this.snapToGridY(realY);
+			case this.primaryAction:
 				if (this.snapX) realX = this.snapToGridX(realX);
+				if (this.snapY) realY = this.snapToGridY(realY);
 				if (this.clickedNote) {
-					this.moveNote(this.clickedNote, realX, realY);
+					const dTime = this.xToTime(realX) - this.clickedNote.startTime;
+					if (this.isResizing) {
+						this.resizeNoteBy(this.clickedNote, dTime);
+						break;
+					}
+					const dTone = this.yToTone(realY) - this.clickedNote.tone;
+					this.moveNoteBy(this.clickedNote, dTime, dTone);
 					this.previewNoteId.forEach((pn) => pn.oscillator.frequency.value = toneToFreq(this.clickedNote.tone));
 				}
 				break;
@@ -124,7 +130,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 	});
 
 
-	this.trackerContainer.addEventListener('wheel', (e) => { // NOTE! wheel event is implementation specific
+	this.trackerContainer.addEventListener('wheel', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.25;
@@ -159,11 +165,14 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 	this.snapToGridX = (x) => {
 		const t = this.xToTime(x);
-		return this.timeToX(Math.floor(t));
+		return this.timeToX(Math.floor(t / this.gridSizeTime) * this.gridSizeTime);
 	};
 	this.snapToGridY = (y) => {
 		const t = this.yToTone(y);
 		return this.height - this.toneToY(Math.ceil(t));
+	};
+	this.snapToGridTime = (t) => {
+		return Math.floor(t / this.gridSizeTime) * this.gridSizeTime;
 	};
 
 	this.getNoteAtPos = (x, y) => {
@@ -182,10 +191,14 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const tone = this.yToTone(y);
 		return noteManager.notes.findIndex((n) => {
 			const t = n.startTime;
-			const d = t + n.duration;
+			const d = t + n.duration + this.resizeTriggerSize / this.pxPerBeat / 2;
 			const nt = n.tone;
 			return time > t && time < d && tone < nt && tone > (nt - 1);
 		});
+	};
+	this.checkResizeTrigger = (note, realX) => {
+		const endX = this.timeToX(note.startTime + note.duration);
+		return Math.abs(realX - endX) < this.resizeTriggerSize;
 	};
 
 	this.addNote = (x, y) => {
@@ -200,9 +213,21 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.moveNote = (note, x, y) => {
 		let time = this.xToTime(x);
 		if (time < 0) time = 0;
-		const tone = this.yToTone(y);
 		note.startTime = time;
-		note.setTone(tone);
+		note.tone = this.yToTone(y);
+		this.drawNotes();
+	};
+
+	this.moveNoteBy = (note, dTime, dTone) => {
+		note.startTime += dTime;
+		if (note.startTime < 0) note.startTime = 0;
+		note.tone += dTone;
+		this.drawNotes();
+	};
+
+	this.resizeNoteBy = (note, t) => {
+		note.duration = t;
+		if (note.duration < 0) note.duration = 0;
 		this.drawNotes();
 	};
 
@@ -228,8 +253,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const y = this.toneToY(note.tone);
 		const w = note.duration * this.pxPerBeat;
 		const h = this.noteHeight;
+		const r = this.resizeTriggerSize;
 		this.ctx.fillStyle = '#6699ff';
 		this.ctx.fillRect(x, y, w, h);
+
+		this.ctx.fillStyle = '#99c9ff';
+		this.ctx.fillRect(x + w - r * 0.5, y, r, h);
 	};
 
 	this.drawNotes = (notes = noteManager.notes) => {

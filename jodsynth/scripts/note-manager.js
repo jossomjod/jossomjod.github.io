@@ -19,29 +19,25 @@ function Note(tone, start, dur) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
 	this.tone = tone || 24;
-	this.frequency = toneToFreq(this.tone);
 	this.gain = 1.0;
+}
 
-	this.setTone = (_tone) => {
-		this.tone = _tone;
-		this.frequency = toneToFreq(this.tone);
-	};
-
-	/**
-	 * @param {AudioContext} ac
-	 * @param {AudioNode} output
-	 */
-	this.play = (ac, output, bpm) => {
-		const currentTime = ac.currentTime;
-		const startTime = currentTime + beatsToSeconds(this.startTime, bpm);
-		const endTime = startTime + beatsToSeconds(this.duration, bpm);
-		const osc = ac.createOscillator();
-		osc.type = 'square';
-		osc.frequency.setValueAtTime(this.frequency, startTime);
-		osc.connect(output);
-		osc.start(startTime);
-		osc.stop(endTime);
-	}
+/**
+ * @param {Note} note
+ * @param {AudioContext} ac
+ * @param {AudioNode} output
+ * @param {number} bpm
+ */
+function playNote (note, ac, output, bpm) {
+	const currentTime = ac.currentTime;
+	const startTime = currentTime + beatsToSeconds(note.startTime, bpm);
+	const endTime = startTime + beatsToSeconds(note.duration, bpm);
+	const osc = ac.createOscillator();
+	osc.type = 'square';
+	osc.frequency.setValueAtTime(toneToFreq(note.tone), startTime);
+	osc.connect(output);
+	osc.start(startTime);
+	osc.stop(endTime);
 }
 
 
@@ -50,7 +46,7 @@ function Note(tone, start, dur) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.bpm = 120;
+	this.bpm = 140;
 	this.notes = [
 		new Note(24, 0, 1), new Note(32, 0, 1),
 		new Note(32, 1, 1), new Note(48, 1, 1),
@@ -67,7 +63,7 @@ function NoteManager(ac, output) {
 	}
 
 	this.play = () => {
-		this.notes.forEach((n) => n.play(ac, output, this.bpm));
+		this.notes.forEach((n) => playNote(n, ac, output, this.bpm));
 	}
 
 	this.getCurrentTime = () => secondsToBeats(ac.currentTime, this.bpm);
