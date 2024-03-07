@@ -28,9 +28,9 @@ function Note(tone, start, dur) {
  * @param {AudioNode} output
  * @param {number} bpm
  */
-function playNote (note, ac, output, bpm) {
-	const currentTime = ac.currentTime;
+function playNote (note, oscArr, ac, output, currentTime, bpm) {
 	const startTime = currentTime + beatsToSeconds(note.startTime, bpm);
+	if (startTime < 0) return;
 	const endTime = startTime + beatsToSeconds(note.duration, bpm);
 	const osc = ac.createOscillator();
 	osc.type = 'square';
@@ -38,8 +38,8 @@ function playNote (note, ac, output, bpm) {
 	osc.connect(output);
 	osc.start(startTime);
 	osc.stop(endTime);
+	oscArr.push(osc);
 }
-
 
 /**
  * @param {AudioContext} ac
@@ -47,26 +47,31 @@ function playNote (note, ac, output, bpm) {
  */
 function NoteManager(ac, output) {
 	this.bpm = 140;
-	this.notes = [
-		new Note(24, 0, 1), new Note(32, 0, 1),
-		new Note(32, 1, 1), new Note(48, 1, 1),
-		new Note(24.01, 2, 1), new Note(32.04, 2, 1),
-		new Note(30, 3, 1), new Note(46, 3, 1),
-	];
+	this.notes = [];
 	this.isPlaying = false;
+	this.playbackStartTime = 0;
+	this.activeOscillators = [];
 
 	this.addNote = (startTime, tone, duration) => {
 		if (startTime < 0) startTime = 0;
 		const newNote = new Note(tone, startTime, duration);
 		this.notes.push(newNote);
 		return newNote;
-	}
+	};
 
-	this.play = () => {
-		this.notes.forEach((n) => playNote(n, ac, output, this.bpm));
-	}
+	this.play = (startTime = 0) => {
+		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTime, this.bpm);
+		this.isPlaying = true;
+		this.notes.forEach((n) => playNote(n, this.activeOscillators, ac, output, this.playbackStartTime, this.bpm));
+	};
 
-	this.getCurrentTime = () => secondsToBeats(ac.currentTime, this.bpm);
+	this.stop = () => {
+		this.isPlaying = false;
+		this.activeOscillators.forEach((osc) => osc.stop());
+		this.activeOscillators = [];
+	};
+
+	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
 }
 
 

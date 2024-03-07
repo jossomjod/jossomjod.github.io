@@ -123,31 +123,62 @@ noteManagerUi.drawNotes(noteManager.notes);
 
 
 // SAVE / LOAD ---------------------------------
-var saveData = { notes: '[]' };
+var saveNameInput = document.querySelector('#saveNameInput');
 
-
-function saveState() {
-	saveData.notes = JSON.stringify(noteManager.notes);
-	console.log('saving...', saveData.notes);
-	localStorage.setItem('notes', saveData.notes);
+function quickSave() {
+	const notes = JSON.stringify(noteManager.notes);
+	localStorage.setItem('notes', notes);
 }
 
-function loadState() {
-	console.log('loading...');
-	saveData.notes = localStorage.getItem('notes') ?? '[]';
-	noteManager.notes = JSON.parse(saveData.notes);
+function quickLoad() {
+	const notes = localStorage.getItem('notes') ?? '[]';
+	noteManager.notes = JSON.parse(notes);
 	noteManagerUi.drawNotes();
 }
 
+quickLoad();
+
+// TODO: save synth preset
+function saveAll() {
+	const saveName = saveNameInput.value;
+	if (!saveName) return;
+	console.log('Saving as ', saveName);
+
+	const data = {
+		notes: noteManager.notes,
+	};
+	localStorage.setItem(saveName, JSON.stringify(data));
+}
+
+function loadAll() {
+	const saveName = saveNameInput.value;
+	if (!saveName) return;
+	console.log('Loading ', saveName);
+	
+	const data = JSON.parse(localStorage.getItem(saveName));
+	console.log('load data:', data);
+	if (data && data.notes) {
+		noteManager.notes = data.notes;
+		noteManagerUi.drawNotes();
+	}
+}
 
 
 // EVENTS----------------------------------------------------------------------
 
-window.oncontextmenu = (e) => {
+const synthBody = document.querySelector('.synth-body');
+const topBar = document.querySelector('.top-bar');
+
+synthBody.oncontextmenu = (e) => {
   e.preventDefault();
 };
 
-
+topBar.onkeydown = (e) => {
+	e.stopPropagation();
+};
+topBar.onkeyup = (e) => {
+	e.stopPropagation();
+};
 
 
 // KEY STUFF
@@ -157,7 +188,7 @@ document.body.onkeydown = function(e) {
 	e.preventDefault();
 	switch (e.which) {
 		case 32: // space
-			noteManager.play();
+			noteManagerUi.togglePlayback({ fromCursor: keys.ctrl });
 			break;
 		case 33: // pgup
 			octave++;
@@ -178,10 +209,10 @@ document.body.onkeydown = function(e) {
 			noteManagerUi.snapY = !noteManagerUi.snapY;
 			break;
 		case 116: // F5
-			saveState();
+			quickSave();
 			break;
 		case 120: // F9
-			loadState();
+			quickLoad();
 			break;
 		case 172: // That key under Esc, left of 1, above Tab
 			noteManagerUi.toggleVisible();

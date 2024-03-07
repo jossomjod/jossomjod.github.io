@@ -29,3 +29,8 @@ button:hover, a:hover {
 	background-color: #464984;
 	color: #fff0e5;
 }
+
+.top-bar {
+	display: flex;
+	gap: 5px;
+}

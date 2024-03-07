@@ -17,14 +17,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
 	this.width = this.trackerContainer.width = window.innerWidth;
-	this.height = this.canvas.height = this.trackerContainer.height = 400;
+	this.height = this.canvas.height = this.trackerContainer.height = 600;
 	this.canvas.width = this.width - 100;
 	this.scrollX = 0;
 	this.scrollY = 0;
 	this.noteHeight = this.pxPerTone;
 	this.newNoteDuration = 1;
-	this.caretTime = 0;
-	this.playbackStartedTimeOffset = 0;
 	this.isPlaying = () => noteManager.isPlaying;
 
 	this.primaryAction = 1;
@@ -43,6 +41,8 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
 
+	this.cursorX = 0;
+
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -53,6 +53,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const time = this.xToTime(realX);
 		const snappedTime = this.snapToGridTime(time);
 		const tone = this.yToTone(realY); // TODO: use time and tone instead of x and y as much as possible
+		const snappedTone = this.snapToGridTone(tone);
 
 		switch (e.buttons) {
 			case this.primaryAction:
@@ -95,12 +96,15 @@ function NoteManagerUI(noteManager, previewSynth) {
 		}
 	});
 
+	this.trackerContainer.oncontextmenu = (e) => e.preventDefault();;
+
 	this.trackerContainer.addEventListener('mousemove', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 		const rect = this.canvas.getBoundingClientRect();
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
+		this.cursorX = realX;
 
 		switch (e.buttons) {
 			case this.primaryAction:
@@ -173,6 +177,9 @@ function NoteManagerUI(noteManager, previewSynth) {
 	};
 	this.snapToGridTime = (t) => {
 		return Math.floor(t / this.gridSizeTime) * this.gridSizeTime;
+	};
+	this.snapToGridTone = (t) => {
+		return Math.floor(t / this.pxPerTone) * this.pxPerTone;
 	};
 
 	this.getNoteAtPos = (x, y) => {
@@ -311,12 +318,36 @@ function NoteManagerUI(noteManager, previewSynth) {
 		ctx.stroke();
 	};
 
-	this.drawCaret = (x, ctx = this.octx1) => {
+	this.drawCaret = (x, ctx = this.ctx) => {
 		ctx.beginPath();
 		ctx.strokeStyle = '#c7bc8f';
 		ctx.moveTo(x, 0);
 		ctx.lineTo(x, this.height);
 		ctx.stroke();
+	};
+
+	this.playbackAnimationFrame = () => {
+		const time = noteManager.getCurrentTime();
+		const caretPos = this.timeToX(time);
+		
+		this.drawNotes();
+		this.drawCaret(caretPos);
+
+		if (noteManager.isPlaying) {
+			requestAnimationFrame(this.playbackAnimationFrame);
+		} else {
+			this.drawNotes();
+		}
+	};
+
+	this.togglePlayback = (options) => {
+		if (noteManager.isPlaying) {
+			noteManager.stop();
+		} else {
+			if (options.fromCursor) noteManager.play(this.xToTime(this.cursorX));
+			else noteManager.play();
+			this.playbackAnimationFrame();
+		}
 	};
 
 	this.visible = true;

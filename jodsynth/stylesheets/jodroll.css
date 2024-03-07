@@ -9,7 +9,9 @@
   background-color: aqua;
 }
 .note-container {
-  height: 400px;
+  height: 600px;
+  max-height: 600px;
+  min-height: 600px;
   flex-grow: 1;
   background-color: red;
 }
@@ -20,5 +22,5 @@
 .jodroll-canvas.overlay {
 	position: relative;
 	left: 0;
-	top: -404px;
+	top: -604px;
 }
