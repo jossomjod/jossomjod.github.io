@@ -112,7 +112,7 @@ const noteManagerGain = ac.createGain();
 noteManagerGain.gain.value = 1.0;
 noteManagerGain.connect(masterGain);
 
-var noteManager = new NoteManager(ac, noteManagerGain);
+var noteManager = new NoteManager(ac, noteManagerGain, synth);
 
 var noteManagerUi = new NoteManagerUI(noteManager, synth);
 

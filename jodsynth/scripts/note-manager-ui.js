@@ -46,6 +46,8 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		document.activeElement.blur();
+
 		const rect = this.canvas.getBoundingClientRect();
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
@@ -134,7 +136,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 	});
 
 
-	this.trackerContainer.addEventListener('wheel', (e) => {
+	this.trackerContainer.addEventListener('wheel', (e) => { // TODO: zoom on cursor
 		e.preventDefault();
 		e.stopPropagation();
 		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.25;
