@@ -281,7 +281,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
-		const gridX = this.pxPerBeat / Math.round(this.pxPerBeat / 30);
+		const gridX = this.pxPerBeat / Math.round(2 * this.pxPerBeat / 30);
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = this.width / gridX;
 		

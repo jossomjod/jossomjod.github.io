@@ -205,14 +205,14 @@ var oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.8 },
-	{ value: 0.0, time: 1.0 },
+	{ value: 0.0, time: 0.81 },
 ];
 
 var osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.9 },
-	{ value: 0.0, time: 1.0 },
+	{ value: 0.0, time: 0.91 },
 ];
 
 var pitchPoints = [

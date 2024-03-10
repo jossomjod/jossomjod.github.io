@@ -151,7 +151,7 @@ function saveAll() {
 }
 
 function loadAll() {
-	const saveName = saveNameInput.value;
+	const saveName = saveNameInput.value || saveNameInput.innerHTML;
 	if (!saveName) return;
 	console.log('Loading ', saveName);
 	
@@ -183,7 +183,7 @@ topBar.onkeyup = (e) => {
 
 // KEY STUFF
 
-document.body.onkeydown = function(e) {
+document.body.onkeydown = (e) => {
 	if (e.repeat) return;
 	e.preventDefault();
 	switch (e.which) {
@@ -205,10 +205,10 @@ document.body.onkeydown = function(e) {
 		case 114: // F3
 			noteManagerUi.snapX = !noteManagerUi.snapX;
 			break;
-		case 115: // F5
+		case 115: // F4
 			noteManagerUi.snapY = !noteManagerUi.snapY;
 			break;
-		case 116: // F5
+		case 119: // F8
 			quickSave();
 			break;
 		case 120: // F9
@@ -223,7 +223,7 @@ document.body.onkeydown = function(e) {
 };
 
 
-document.body.onkeyup = function(e) {
+document.body.onkeyup = (e) => {
 	e.preventDefault();
 	toggleKeys(e, false);
 };
