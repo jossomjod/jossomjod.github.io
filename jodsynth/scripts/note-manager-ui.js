@@ -9,10 +9,14 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.trackerContainer = document.querySelector('.tracker-container');
 	this.jodrollTemplate = document.querySelector('#jodroll-template');
 	this.jodroll = this.jodrollTemplate.content.cloneNode(true);
+	this.trackContainer = this.jodroll.querySelector('.track-container');
+	this.addTrackBtn = this.jodroll.querySelector('#addTrackBtn');
 	this.canvas = this.jodroll.querySelector('#jodroll-main-canvas');
 	this.overlay1 = this.jodroll.querySelector('#jodroll-overlay1');
 	this.ctx = this.canvas.getContext('2d');
 	this.octx1 = this.overlay1.getContext('2d');
+
+	this.currentSynthUi;
 
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
@@ -29,6 +33,8 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.secondaryAction = 2;
 	this.scrollAction = 4;
 
+	this.beatsPerBar = 4; // the top number in the time signature
+	this.beatDivisor = 4; // the bottom number in the time signature
 	this.gridSizeTime = 0.25; // 4 vertical lines per beat   TODO
 	this.gridSizeX = this.pxPerBeat;
 	this.offsetY = this.pxPerTone / 2;
@@ -63,7 +69,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 				this.clickedNoteIndex = this.getNoteIndexAtPos(realX, realY);
 				if (this.clickedNoteIndex > -1) {
-					this.clickedNote = noteManager.notes[this.clickedNoteIndex];
+					this.clickedNote = noteManager.getSelectedTrack().notes[this.clickedNoteIndex];
 					this.isResizing = this.checkResizeTrigger(this.clickedNote, realX);
 				} else {
 					if (this.snapY) realY = this.snapToGridY(realY);
@@ -130,7 +136,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 			case this.scrollAction:
 				this.scrollX += e.movementX;
 				this.scrollY -= e.movementY;
-				this.drawNotes(noteManager.notes);
+				this.drawNotes();
 				break;
 		}
 	});
@@ -187,7 +193,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.getNoteAtPos = (x, y) => {
 		const time = this.xToTime(x);
 		const tone = this.yToTone(y);
-		return noteManager.notes.find((n) => {
+		return noteManager.getSelectedTrack().notes.find((n) => {
 			const t = n.startTime;
 			const d = t + n.duration;
 			const nt = n.tone;
@@ -198,7 +204,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.getNoteIndexAtPos = (x, y) => {
 		const time = this.xToTime(x);
 		const tone = this.yToTone(y);
-		return noteManager.notes.findIndex((n) => {
+		return noteManager.getSelectedTrack().notes.findIndex((n) => {
 			const t = n.startTime;
 			const d = t + n.duration + this.resizeTriggerSize / this.pxPerBeat / 2;
 			const nt = n.tone;
@@ -215,7 +221,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const tone = this.yToTone(y);
 		const duration = this.newNoteDuration;
 		this.clickedNote = noteManager.addNote(time, tone, duration);
-		this.clickedNoteIndex = noteManager.notes.length - 1;
+		this.clickedNoteIndex = noteManager.getSelectedTrack().notes.length - 1;
 		this.drawNote(this.clickedNote);
 	};
 
@@ -241,14 +247,71 @@ function NoteManagerUI(noteManager, previewSynth) {
 	};
 
 	this.deleteNote = (index) => {
-		noteManager.notes.splice(index, 1);
+		noteManager.getSelectedTrack().notes.splice(index, 1);
 		this.drawNotes();
 	}
 
 	this.previewNote = (bool) => {
 		const tone = this.clickedNote?.tone ?? 12;
-		if (bool) this.previewNoteId = previewSynth.start(toneToFreq(tone));
-		else if (this.previewNoteId) previewSynth.stop(this.previewNoteId);
+		if (bool) this.previewNoteId = noteManager.getSelectedTrack().synth.start(toneToFreq(tone));
+		else if (this.previewNoteId) noteManager.getSelectedTrack().synth.stop(this.previewNoteId);
+	};
+
+	this.renderTracks = (tracks = noteManager.tracks) => {
+		while (this.trackContainer.firstChild) {
+			this.trackContainer.removeChild(this.trackContainer.firstChild);
+		}
+		tracks.forEach((t) => {
+			const div = document.createElement('div');
+			div.innerHTML = t.name || `Track ${i}`;
+			div.className = 'jodroll-track';
+			div.addEventListener('mousedown', (e) => {
+				e.stopPropagation();
+				e.preventDefault();
+				this.selectTrack(div, t);
+			});
+			this.trackContainer.appendChild(div);
+		});
+	};
+
+	this.addTrack = () => {
+		const track = noteManager.createTrack();
+		this.setSynthUi(track);
+
+		const div = document.createElement('div');
+		div.innerHTML = track.name;
+		div.className = 'jodroll-track';
+		div.addEventListener('mousedown', (e) => {
+			e.stopPropagation();
+			e.preventDefault();
+			this.selectTrack(div, track);
+		});
+		this.trackContainer.appendChild(div);
+	};
+	this.addTrackBtn.addEventListener('mousedown', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		this.addTrack();
+	});
+
+	this.removeTrack = (track) => {
+		// TODO
+	};
+
+	this.selectTrack = (element, track) => {
+		console.log('Track selected', track);
+		noteManager.selectTrack(track);
+		this.drawNotes();
+		this.setSynthUi(track);
+	};
+
+	this.setSynthUi = (track) => {
+		if (this.currentSynthUi) {
+			const container = document.querySelector('.synth-container');
+			while (container.firstChild) container.removeChild(container.firstChild);
+			delete this.currentSynthUi;
+		}
+		this.currentSynthUi = new SynthUi(track.synth);
 	};
 
 	this.drawClear = (ctx = this.ctx) => {
@@ -270,7 +333,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		this.ctx.fillRect(x + w - r * 0.5, y, r, h);
 	};
 
-	this.drawNotes = (notes = noteManager.notes) => {
+	this.drawNotes = (notes = noteManager.getSelectedTrack().notes) => {
 		this.drawClear();
 		this.drawGrid();
 		notes.forEach((n) => {
@@ -359,4 +422,5 @@ function NoteManagerUI(noteManager, previewSynth) {
 		this.trackerContainer.classList.toggle('invisible', !visible);
 	};
 	this.toggleVisible();
+	this.addTrack();
 }

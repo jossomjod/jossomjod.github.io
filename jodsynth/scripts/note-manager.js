@@ -52,36 +52,64 @@ function NoteManager(ac, output, synth) {
 	this.playbackStartTime = 0;
 	this.activeOscillators = [];
 	this.synth = synth; // TODO: more synths
-	this.synths = [];
+	this.tracks = [];
+	this.selectedTrack = 0;
+	this.soloTrack = false;
 
 	this.addNote = (startTime, tone, duration) => {
 		if (startTime < 0) startTime = 0;
 		const newNote = new Note(tone, startTime, duration);
-		this.notes.push(newNote);
+		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
 	};
 
 	this.play = (startTime = 0) => {
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTime, this.bpm);
 		this.isPlaying = true;
-		this.notes.forEach((n) => {
+		this.getSelectedTrack().notes.forEach((n) => {
 			const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
 			if (startTime < 0) return;
 			const duration = beatsToSeconds(n.duration, this.bpm);
 			const freq = toneToFreq(n.tone);
-			this.activeOscillators.push(this.synth.schedulePlayback({ startTime, duration, freq }));
-
-			//playNote(n, this.activeOscillators, ac, output, this.playbackStartTime, this.bpm);
+			this.activeOscillators.push(this.getSelectedTrack().synth.schedulePlayback({ startTime, duration, freq }));
 		});
 	};
 
 	this.stop = () => {
 		this.isPlaying = false;
-		this.activeOscillators.forEach((osc) => this.synth.stop(osc));
+		this.activeOscillators.forEach((osc) => this.getSelectedTrack().synth.stop(osc));
 		this.activeOscillators = [];
 	};
 
+	this.getNotesToPlay = () => {
+		// TODO
+	};
+
+	this.playbackLoop = () => {
+		setInterval(() => {
+			// TODO: start all notes that should begin within the interval
+		}, 1000);
+	}
+
 	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
+
+	this.createTrack = () => {
+		const index = this.tracks.length + 1;
+		const track = { synth: new Synth(ac, output), notes: [], name: 'Track ' + index, active: true, muted: false };
+		this.tracks.push(track);
+		return track;
+	};
+
+	this.selectTrack = (track) => {
+		this.tracks[this.selectedTrack].active = false;
+		track.active = true;
+		this.selectedTrack = this.tracks.indexOf(track);
+		console.log('Selected track ', this.selectedTrack);
+	};
+
+	this.getSelectedTrack = () => {
+		return this.tracks[this.selectedTrack];
+	};
 }
 
 

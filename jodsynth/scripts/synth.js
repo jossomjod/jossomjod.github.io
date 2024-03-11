@@ -222,7 +222,7 @@ var pitchPoints = [
 ];
 
 
-function Synth(ac) {
+function Synth(ac, output) {
 	this.playing = false;
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
@@ -230,6 +230,7 @@ function Synth(ac) {
 	this.preset;// = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => this.gain.connect(audioNode);
+	if (output) this.connect(output);
 
 	this.applyPreset = (preset = this.preset) => {
 		switch(preset) {

@@ -64,12 +64,12 @@ synthGain
 	.connect(masterGain);
 }
 
-
+/* 
 const synthUi = new SynthUi(synth);
 
 const addOscBtn = document.querySelector('#addOscBtn');
 addOscBtn.onclick = () => synthUi.addOsc();
-
+ */
 
 
 
@@ -145,7 +145,8 @@ function saveAll() {
 	console.log('Saving as ', saveName);
 
 	const data = {
-		notes: noteManager.notes,
+		notes: noteManager.notes, // deprecated
+		//tracks: noteManager.tracks, // TODO: Make the synth storable
 	};
 	localStorage.setItem(saveName, JSON.stringify(data));
 }
@@ -157,8 +158,9 @@ function loadAll() {
 	
 	const data = JSON.parse(localStorage.getItem(saveName));
 	console.log('load data:', data);
-	if (data && data.notes) {
+	if (data) {
 		noteManager.notes = data.notes;
+		//noteManager.tracks = data.tracks; // Won't work until the Synth is made storable
 		noteManagerUi.drawNotes();
 	}
 }
