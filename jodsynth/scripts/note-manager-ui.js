@@ -136,7 +136,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 			case this.scrollAction:
 				this.scrollX += e.movementX;
 				this.scrollY -= e.movementY;
-				this.drawNotes();
+				this.render();
 				break;
 		}
 	});
@@ -147,7 +147,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		e.stopPropagation();
 		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.25;
 		this.gridSizeX = this.pxPerBeat;
-		this.drawNotes();
+		this.render();
 	});
 	
 	this.trackerContainer.appendChild(this.jodroll);
@@ -230,25 +230,25 @@ function NoteManagerUI(noteManager, previewSynth) {
 		if (time < 0) time = 0;
 		note.startTime = time;
 		note.tone = this.yToTone(y);
-		this.drawNotes();
+		this.render();
 	};
 
 	this.moveNoteBy = (note, dTime, dTone) => {
 		note.startTime += dTime;
 		if (note.startTime < 0) note.startTime = 0;
 		note.tone += dTone;
-		this.drawNotes();
+		this.render();
 	};
 
 	this.resizeNoteBy = (note, t) => {
 		note.duration = t;
 		if (note.duration < 0) note.duration = 0;
-		this.drawNotes();
+		this.render();
 	};
 
 	this.deleteNote = (index) => {
 		noteManager.getSelectedTrack().notes.splice(index, 1);
-		this.drawNotes();
+		this.render();
 	}
 
 	this.previewNote = (bool) => {
@@ -299,10 +299,11 @@ function NoteManagerUI(noteManager, previewSynth) {
 	};
 
 	this.selectTrack = (element, track) => {
-		console.log('Track selected', track);
+		this.trackContainer.childNodes.forEach((c) => c.className = 'jodroll-track');
 		noteManager.selectTrack(track);
-		this.drawNotes();
+		this.render();
 		this.setSynthUi(track);
+		element.className += ' active';
 	};
 
 	this.setSynthUi = (track) => {
@@ -314,33 +315,48 @@ function NoteManagerUI(noteManager, previewSynth) {
 		this.currentSynthUi = new SynthUi(track.synth);
 	};
 
+	this.addOsc = () => {
+		this.currentSynthUi?.addOsc();
+	}
+
 	this.drawClear = (ctx = this.ctx) => {
 		ctx.fillStyle = '#000000';
 		ctx.fillRect(0, 0, this.width, this.height);
 	};
 
 
-	this.drawNote = (note) => {
+	this.drawNote = (note, color = '#6699ff', resizeColor = '#99c9ff') => {
 		const x = this.timeToX(note.startTime);
 		const y = this.toneToY(note.tone);
 		const w = note.duration * this.pxPerBeat;
 		const h = this.noteHeight;
 		const r = this.resizeTriggerSize;
-		this.ctx.fillStyle = '#6699ff';
+		this.ctx.fillStyle = color;
 		this.ctx.fillRect(x, y, w, h);
 
-		this.ctx.fillStyle = '#99c9ff';
+		this.ctx.fillStyle = resizeColor;
 		this.ctx.fillRect(x + w - r * 0.5, y, r, h);
 	};
 
-	this.drawNotes = (notes = noteManager.getSelectedTrack().notes) => {
-		this.drawClear();
-		this.drawGrid();
+	this.drawNotes = (notes = noteManager.getSelectedTrack().notes, color = '#6699ff', resizeColor = '#99c9ff') => {
 		notes.forEach((n) => {
 			if (this.timeToX(n.startTime + n.duration) < 0.0) return;
 			if (this.timeToX(n.startTime) > this.width) return;
-			this.drawNote(n);
+			this.drawNote(n, color, resizeColor);
 		});
+	};
+
+	this.drawAllTracks = () => {
+		noteManager.tracks.forEach((t) => {
+			if (t.active) this.drawNotes(t.notes);
+			else this.drawNotes(t.notes, '#6699ff3c', '#99c9ff6c');
+		});
+	};
+
+	this.render = () => {
+		this.drawClear();
+		this.drawGrid();
+		this.drawAllTracks();
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
@@ -395,22 +411,22 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const time = noteManager.getCurrentTime();
 		const caretPos = this.timeToX(time);
 		
-		this.drawNotes();
+		this.render();
 		this.drawCaret(caretPos);
 
 		if (noteManager.isPlaying) {
 			requestAnimationFrame(this.playbackAnimationFrame);
 		} else {
-			this.drawNotes();
+			this.render();
 		}
 	};
 
 	this.togglePlayback = (options) => {
 		if (noteManager.isPlaying) {
-			noteManager.stop();
+			noteManager.stopAll();
 		} else {
-			if (options.fromCursor) noteManager.play(this.xToTime(this.cursorX));
-			else noteManager.play();
+			if (options.fromCursor) noteManager.playAll(this.xToTime(this.cursorX));
+			else noteManager.playAll();
 			this.playbackAnimationFrame();
 		}
 	};

@@ -64,12 +64,6 @@ synthGain
 	.connect(masterGain);
 }
 
-/* 
-const synthUi = new SynthUi(synth);
-
-const addOscBtn = document.querySelector('#addOscBtn');
-addOscBtn.onclick = () => synthUi.addOsc();
- */
 
 
 
@@ -116,7 +110,13 @@ var noteManager = new NoteManager(ac, noteManagerGain, synth);
 
 var noteManagerUi = new NoteManagerUI(noteManager, synth);
 
-noteManagerUi.drawNotes(noteManager.notes);
+noteManagerUi.render();
+
+
+const addOscBtn = document.querySelector('#addOscBtn');
+addOscBtn.onclick = () => noteManagerUi.addOsc();
+
+
 
 
 
@@ -234,8 +234,8 @@ function toggleKeys(e, bool) {
 	const key = keyboardKeys[e.code];
 	if (key) {
 		key.down = bool;
-		if (bool) key.id = synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
-		else synth.stop(key.id);
+		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
+		else noteManager.getSelectedTrack().synth.stop(key.id);
 		return;
 	}
 
