@@ -5,6 +5,13 @@ function Rect(x, y, w, h) {
 	this.h = h || 0;
 }
 
+const Colors = {
+	gridLine: '#a7cab322',
+	gridOctave: '#97a6ca44',
+	gridBar: '#97a6ca44',
+	gridBeat: '#a3adba2c',
+};
+
 function NoteManagerUI(noteManager, previewSynth) {
 	this.trackerContainer = document.querySelector('.tracker-container');
 	this.jodrollTemplate = document.querySelector('#jodroll-template');
@@ -47,6 +54,10 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
 
+	this.selectedNotes = [];
+	this.isSelectingArea = false;
+	this.areaSelectAABB = { ax: 0, ay: 0, bx: 0, by: 0 };
+
 	this.cursorX = 0;
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
@@ -66,25 +77,45 @@ function NoteManagerUI(noteManager, previewSynth) {
 		switch (e.buttons) {
 			case this.primaryAction:
 				if (this.clickedNote) this.previewNote(false);
-
 				this.clickedNoteIndex = this.getNoteIndexAtPos(realX, realY);
+
+				if (e.ctrlKey) {
+					if (this.clickedNoteIndex > -1) {
+						const idx = this.selectedNotes.findIndex((s) => s === this.clickedNoteIndex);
+						if (idx > -1) this.selectedNotes.splice(idx, 1);
+						else this.selectedNotes.push(this.clickedNoteIndex);
+						this.render();
+						break;
+					}
+
+					this.areaSelectAABB.ax = realX;
+					this.areaSelectAABB.ay = realY;
+					this.areaSelectAABB.bx = realX;
+					this.areaSelectAABB.by = realY;
+					this.isSelectingArea = true;
+					break;
+				}
+
+
 				if (this.clickedNoteIndex > -1) {
+					const idx = this.selectedNotes.findIndex((s) => s === this.clickedNoteIndex);
+					if (idx === -1) {
+						this.selectedNotes = [this.clickedNoteIndex];
+						this.render();
+					}
+
 					this.clickedNote = noteManager.getSelectedTrack().notes[this.clickedNoteIndex];
 					this.isResizing = this.checkResizeTrigger(this.clickedNote, realX);
 				} else {
 					if (this.snapY) realY = this.snapToGridY(realY);
 					if (this.snapX) realX = this.snapToGridX(realX);
 					this.addNote(realX, realY);
+					this.selectedNotes = [this.clickedNoteIndex];
+					this.render();
 				}
 				this.previewNote(true);
 				break;
-			case this.scrollAction:
-				e.preventDefault();
-				e.stopPropagation();
-				break;
 			case this.secondaryAction:
-				e.preventDefault();
-				e.stopPropagation();
 				const index = this.getNoteIndexAtPos(realX, realY);
 				if (index > -1) this.deleteNote(index);
 				break;
@@ -95,6 +126,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 		e.stopPropagation();
 		
 		if (~e.buttons & this.primaryAction) {
+			if (this.isSelectingArea) {
+				this.isSelectingArea = false;
+				this.selectedNotes = this.getNoteIndicesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
+				this.render();
+			}
+
 			if (this.clickedNote) this.newNoteDuration = this.clickedNote.duration;
 
 			this.previewNote(false);
@@ -118,14 +155,22 @@ function NoteManagerUI(noteManager, previewSynth) {
 			case this.primaryAction:
 				if (this.snapX) realX = this.snapToGridX(realX);
 				if (this.snapY) realY = this.snapToGridY(realY);
+
+				if (this.isSelectingArea) {
+					this.areaSelectAABB.bx = realX;
+					this.areaSelectAABB.by = realY;
+					this.render();
+					break;
+				}
+
 				if (this.clickedNote) {
 					const dTime = this.xToTime(realX) - this.clickedNote.startTime;
 					if (this.isResizing) {
-						this.resizeNoteBy(this.clickedNote, dTime);
+						this.resizeNotesBy(dTime);
 						break;
 					}
 					const dTone = this.yToTone(realY) - this.clickedNote.tone;
-					this.moveNoteBy(this.clickedNote, dTime, dTone);
+					this.moveNotesBy(dTime, dTone); // BUG: Notes hitting x 0 get misaligned
 					this.previewNoteId.forEach((pn) => pn.oscillator.frequency.value = toneToFreq(this.clickedNote.tone));
 				}
 				break;
@@ -216,13 +261,27 @@ function NoteManagerUI(noteManager, previewSynth) {
 		return Math.abs(realX - endX) < this.resizeTriggerSize;
 	};
 
+	this.getNoteIndicesInAABB = (aX, aY, bX, bY) => {
+		const ax = this.xToTime(Math.min(aX, bX));
+		const ay = this.yToTone(Math.min(aY, bY));
+		const bx = this.xToTime(Math.max(aX, bX));
+		const by = this.yToTone(Math.max(aY, bY));
+
+		return noteManager.getSelectedTrack().notes.map((n, i) => {
+			const t = n.startTime;
+			const d = t + n.duration;
+			const nt = n.tone;
+			const isIn = d > ax && t < bx && nt >= ay && nt <= by;
+			return isIn ? i : null;
+		}).filter((i) => i !== null);
+	};
+
 	this.addNote = (x, y) => {
 		const time = this.xToTime(x);
 		const tone = this.yToTone(y);
 		const duration = this.newNoteDuration;
 		this.clickedNote = noteManager.addNote(time, tone, duration);
 		this.clickedNoteIndex = noteManager.getSelectedTrack().notes.length - 1;
-		this.drawNote(this.clickedNote);
 	};
 
 	this.moveNote = (note, x, y) => {
@@ -235,19 +294,30 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 	this.moveNoteBy = (note, dTime, dTone) => {
 		note.startTime += dTime;
-		if (note.startTime < 0) note.startTime = 0;
 		note.tone += dTone;
+		if (note.startTime < 0) note.startTime = 0;
+	};
+
+	this.moveNotesBy = (dTime, dTone) => {
+		const notes = noteManager.getSelectedTrack().notes;
+		this.selectedNotes.forEach((ni) => this.moveNoteBy(notes[ni], dTime, dTone));
 		this.render();
 	};
 
 	this.resizeNoteBy = (note, t) => {
 		note.duration = t;
 		if (note.duration < 0) note.duration = 0;
+	};
+
+	this.resizeNotesBy = (t) => { // FIXME
+		const notes = noteManager.getSelectedTrack().notes;
+		this.selectedNotes.forEach((ni) => this.resizeNoteBy(notes[ni], t));
 		this.render();
 	};
 
 	this.deleteNote = (index) => {
 		noteManager.getSelectedTrack().notes.splice(index, 1);
+		this.selectedNotes = [];
 		this.render();
 	}
 
@@ -287,6 +357,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 			this.selectTrack(div, track);
 		});
 		this.trackContainer.appendChild(div);
+		this.selectTrack(div, track);
 	};
 	this.addTrackBtn.addEventListener('mousedown', (e) => {
 		e.stopPropagation();
@@ -339,10 +410,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 	};
 
 	this.drawNotes = (notes = noteManager.getSelectedTrack().notes, color = '#6699ff', resizeColor = '#99c9ff') => {
-		notes.forEach((n) => {
+		notes.forEach((n, i) => {
 			if (this.timeToX(n.startTime + n.duration) < 0.0) return;
 			if (this.timeToX(n.startTime) > this.width) return;
-			this.drawNote(n, color, resizeColor);
+			const kek = notes === noteManager.getSelectedTrack().notes;
+			if (kek && this.selectedNotes.find((s) => s === i) !== undefined) this.drawNote(n, '#9259f2', resizeColor);
+			else this.drawNote(n, color, resizeColor);
 		});
 	};
 
@@ -353,30 +426,54 @@ function NoteManagerUI(noteManager, previewSynth) {
 		});
 	};
 
+	this.drawAABB = (aabb, color = '#88ccff66') => {
+		const y = this.height - aabb.ay;
+		const w = aabb.bx - aabb.ax;
+		const h = (this.height - aabb.by) - y;
+
+		this.ctx.fillStyle = color;
+		this.ctx.fillRect(aabb.ax, y, w, h);
+	};
+
 	this.render = () => {
 		this.drawClear();
 		this.drawGrid();
 		this.drawAllTracks();
+		if (this.isSelectingArea) this.drawAABB(this.areaSelectAABB);
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
 		const gridX = this.pxPerBeat / Math.round(2 * this.pxPerBeat / 30);
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = this.width / gridX;
+		const offsetRows = Math.ceil(this.scrollY / this.pxPerTone);
 		
 		// horizontal lines
 		ctx.beginPath();
-		ctx.strokeStyle = '#a7cab352';
+		ctx.strokeStyle = Colors.gridLine;
 		for (let i = 0; i < visibleRows; i++) {
 			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
+			const isOctave = (i + offsetRows) % 12 === 0;
+
+			if (isOctave) {
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.strokeStyle = Colors.gridOctave;
+			}
 			ctx.moveTo(0, y);
 			ctx.lineTo(this.width, y);
+
+			if (isOctave) {
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.strokeStyle = Colors.gridLine;
+			}
 		}
 		ctx.stroke();
 
 		// vertical lines
 		ctx.beginPath();
-		ctx.strokeStyle = '#a7cab322';
+		ctx.strokeStyle = Colors.gridLine;
 		for (let i = 0; i < visibleCols; i++) {
 			const x = i * gridX + this.scrollX % gridX;
 			ctx.moveTo(x, 0);

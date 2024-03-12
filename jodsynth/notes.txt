@@ -41,8 +41,7 @@ mono-space
 
 
 note manager TODOs:
-- render notes better
-- edit notes
+- fix endlessly playing note bug
 - automation
 
 
