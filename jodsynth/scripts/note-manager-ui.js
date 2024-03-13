@@ -5,11 +5,20 @@ function Rect(x, y, w, h) {
 	this.h = h || 0;
 }
 
-const Colors = {
+const jodColors = {
+	background: '#000000',
+	caret: '#c7bc8f',
+	gridReference: '#579cef',
 	gridLine: '#a7cab322',
 	gridOctave: '#97a6ca44',
 	gridBar: '#97a6ca44',
 	gridBeat: '#a3adba2c',
+	selectArea: '#88ccff66',
+	selectedNote: '#9259f2',
+	note: '#6699ff',
+	resizeHandle: '#99c9ff',
+	fadedNote: '#6699ff3c',
+	fadedResizeHandle: '#99c9ff6c',
 };
 
 function NoteManagerUI(noteManager, previewSynth) {
@@ -391,12 +400,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 	}
 
 	this.drawClear = (ctx = this.ctx) => {
-		ctx.fillStyle = '#000000';
+		ctx.fillStyle = jodColors.background;
 		ctx.fillRect(0, 0, this.width, this.height);
 	};
 
 
-	this.drawNote = (note, color = '#6699ff', resizeColor = '#99c9ff') => {
+	this.drawNote = (note, color = jodColors.note, resizeColor = jodColors.resizeHandle) => {
 		const x = this.timeToX(note.startTime);
 		const y = this.toneToY(note.tone);
 		const w = note.duration * this.pxPerBeat;
@@ -409,12 +418,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 		this.ctx.fillRect(x + w - r * 0.5, y, r, h);
 	};
 
-	this.drawNotes = (notes = noteManager.getSelectedTrack().notes, color = '#6699ff', resizeColor = '#99c9ff') => {
+	this.drawNotes = (notes = noteManager.getSelectedTrack().notes, color = jodColors.note, resizeColor = jodColors.resizeHandle) => {
 		notes.forEach((n, i) => {
 			if (this.timeToX(n.startTime + n.duration) < 0.0) return;
 			if (this.timeToX(n.startTime) > this.width) return;
 			const kek = notes === noteManager.getSelectedTrack().notes;
-			if (kek && this.selectedNotes.find((s) => s === i) !== undefined) this.drawNote(n, '#9259f2', resizeColor);
+			if (kek && this.selectedNotes.find((s) => s === i) !== undefined) this.drawNote(n, jodColors.selectedNote, resizeColor);
 			else this.drawNote(n, color, resizeColor);
 		});
 	};
@@ -422,11 +431,11 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.drawAllTracks = () => {
 		noteManager.tracks.forEach((t) => {
 			if (t.active) this.drawNotes(t.notes);
-			else this.drawNotes(t.notes, '#6699ff3c', '#99c9ff6c');
+			else this.drawNotes(t.notes, jodColors.fadedNote, jodColors.fadedResizeHandle);
 		});
 	};
 
-	this.drawAABB = (aabb, color = '#88ccff66') => {
+	this.drawAABB = (aabb, color = jodColors.selectArea) => {
 		const y = this.height - aabb.ay;
 		const w = aabb.bx - aabb.ax;
 		const h = (this.height - aabb.by) - y;
@@ -450,7 +459,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		
 		// horizontal lines
 		ctx.beginPath();
-		ctx.strokeStyle = Colors.gridLine;
+		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleRows; i++) {
 			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
 			const isOctave = (i + offsetRows) % 12 === 0;
@@ -458,7 +467,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 			if (isOctave) {
 				ctx.stroke();
 				ctx.beginPath();
-				ctx.strokeStyle = Colors.gridOctave;
+				ctx.strokeStyle = jodColors.gridOctave;
 			}
 			ctx.moveTo(0, y);
 			ctx.lineTo(this.width, y);
@@ -466,14 +475,14 @@ function NoteManagerUI(noteManager, previewSynth) {
 			if (isOctave) {
 				ctx.stroke();
 				ctx.beginPath();
-				ctx.strokeStyle = Colors.gridLine;
+				ctx.strokeStyle = jodColors.gridLine;
 			}
 		}
 		ctx.stroke();
 
 		// vertical lines
 		ctx.beginPath();
-		ctx.strokeStyle = Colors.gridLine;
+		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleCols; i++) {
 			const x = i * gridX + this.scrollX % gridX;
 			ctx.moveTo(x, 0);
@@ -483,14 +492,14 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 		// center tone line
 		ctx.beginPath();
-		ctx.strokeStyle = '#579cef';
+		ctx.strokeStyle = jodColors.gridReference;
 		ctx.moveTo(0, -this.scrollY);
 		ctx.lineTo(this.width, -this.scrollY);
 		ctx.stroke();
 
 		// start line
 		ctx.beginPath();
-		ctx.strokeStyle = '#579cef';
+		ctx.strokeStyle = jodColors.gridReference;
 		ctx.moveTo(this.scrollX, 0);
 		ctx.lineTo(this.scrollX, this.height);
 		ctx.stroke();
@@ -498,7 +507,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 	this.drawCaret = (x, ctx = this.ctx) => {
 		ctx.beginPath();
-		ctx.strokeStyle = '#c7bc8f';
+		ctx.strokeStyle = jodColors.caret;
 		ctx.moveTo(x, 0);
 		ctx.lineTo(x, this.height);
 		ctx.stroke();

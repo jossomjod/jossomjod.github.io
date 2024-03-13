@@ -138,7 +138,6 @@ function NoteManager(ac, output, synth) {
 		this.tracks[this.selectedTrack].active = false;
 		track.active = true;
 		this.selectedTrack = this.tracks.indexOf(track);
-		console.log('Selected track ', this.selectedTrack);
 	};
 
 	this.getSelectedTrack = () => {
