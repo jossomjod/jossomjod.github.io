@@ -9,6 +9,7 @@
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<link rel="stylesheet" href="../stylesheets/global_style.css" />
 		<link rel="stylesheet" href="stylesheets/style.css" />
+		<link rel="stylesheet" href="stylesheets/jodroll.css" />
 		<link rel="icon"  type="image/png" href="../images/favicon.png">
 		<script src="../scripts/vector.js"></script>
 		<script src="scripts/functions.js"></script>
@@ -25,6 +26,11 @@
 			<div class="top-bar">
 				<a href="../index.html">Home</a>
 				<button onclick="noteManagerUi.toggleVisible()">TRACKER YO</button>
+				<div class="save-form">
+					<input id="saveNameInput" class="text-input" placeholder="Preset name">
+					<button onclick="saveAll()">Save</button>
+					<button onclick="loadAll()">Load</button>
+				</div>
 			</div>
 			<div class="tracker-container"></div>
 			<div class="synth-body">
@@ -127,11 +133,13 @@
 
 <template id="jodroll-template">
 	<div class="jodroll-container">
-		<div class="track-container">
-			TEST CONTENT
+		<div class="side-panel">
+			<div class="track-container"></div>
+			<button class="add-track-btn" id="addTrackBtn">+ Add track</button>
 		</div>
 		<div class="note-container">
-			
+			<canvas id="jodroll-main-canvas" class="jodroll-canvas">invisible canvas wooo</canvas>
+			<canvas id="jodroll-overlay1" class="jodroll-canvas overlay">wooooooooo</canvas>
 		</div>
 	</div>
 </template>

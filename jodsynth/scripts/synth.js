@@ -15,15 +15,14 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 	this.getRelease = () => this.points.at(-1).time - this.points.at(-2).time;
 
 	// Call this when starting a note. prop must be an AudioParam.
-	this.start = (prop, base = 0.0, mult = this.multiplier) => {
+	this.start = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime) => {
 		if (!prop) return;
-		const acc = ac.currentTime;
-		prop.cancelScheduledValues(acc);
-		prop.setValueAtTime(base, acc);
+		prop.cancelScheduledValues(startTime);
+		prop.setValueAtTime(base, startTime);
 
 		this.points.forEach((p) => {
 			if (p === this.points.at(-1)) return;
-			prop.linearRampToValueAtTime(base + p.value * mult, ac.currentTime + p.time);
+			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
 		});
 	};
 
@@ -33,6 +32,20 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		const endValue = base + this.points.at(-1).value * this.multiplier;
 		prop.cancelScheduledValues(ac.currentTime);
 		prop.linearRampToValueAtTime(endValue, ac.currentTime + this.getRelease());
+	};
+
+	this.schedulePlayback = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1) => {
+		if (!prop) return;
+		prop.setValueAtTime(base, startTime);
+
+		this.points.forEach((p) => {
+			if (p === this.points.at(-1)) return;
+			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
+		});
+		const endTime = startTime + duration;
+		const endValue = base + this.points.at(-1).value * this.multiplier;
+		prop.cancelScheduledValues(endTime);
+		prop.linearRampToValueAtTime(endValue, endTime + this.getRelease());
 	};
 }
 
@@ -140,7 +153,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		this.customeWave = getPeriodicWave(ac, this.type, this.phase);
 	}
 
-	this.start = (frequency, gainNode) => {
+	this.start = (frequency, gainNode, time = ac.currentTime) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
 		// You have to make a new osc every time
 		const osc = new OscillatorNode(ac, { /* type: this.type, */ detune: this.detune, frequency: freq });
@@ -149,10 +162,10 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		//osc.onended = () => console.log('the end');
 		gainNode.gain.value = this.gain;
 		osc.connect(gainNode);
-		osc.start();
+		osc.start(time);
 
-		this.gainEnvelope?.start(gainNode.gain, 0.0, this.gain);
-		this.pitchEnvelope?.start(osc.detune, this.detune, 1200.0);
+		this.gainEnvelope?.start(gainNode.gain, 0.0, this.gain, time);
+		this.pitchEnvelope?.start(osc.detune, this.detune, 1200.0, time);
 
 		return osc;
 	}
@@ -164,6 +177,27 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		}
 		else osc.stop(time);
 	}
+
+	this.schedulePlayback = (frequency, gainNode, startTime = ac.currentTime, duration = 1) => {
+		const freq = this.isLFO ? this.fixedFreq : frequency;
+		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
+		osc.setPeriodicWave(this.customeWave);
+
+		gainNode.gain.value = this.gain;
+		osc.connect(gainNode);
+		osc.start(startTime);
+
+		this.gainEnvelope?.schedulePlayback(gainNode.gain, 0.0, this.gain, startTime);
+		this.pitchEnvelope?.schedulePlayback(osc.detune, this.detune, 1200.0, startTime);
+
+		const endTime = startTime + duration;
+		if (this.gainEnvelope) {
+			osc.stop(endTime + this.gainEnvelope.getRelease());
+		}
+		else osc.stop(endTime);
+
+		return osc;
+	}
 }
 
 
@@ -171,14 +205,14 @@ var oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.8 },
-	{ value: 0.0, time: 1.0 },
+	{ value: 0.0, time: 0.81 },
 ];
 
 var osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.9 },
-	{ value: 0.0, time: 1.0 },
+	{ value: 0.0, time: 0.91 },
 ];
 
 var pitchPoints = [
@@ -188,7 +222,7 @@ var pitchPoints = [
 ];
 
 
-function Synth(ac) {
+function Synth(ac, output) {
 	this.playing = false;
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
@@ -196,6 +230,7 @@ function Synth(ac) {
 	this.preset;// = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => this.gain.connect(audioNode);
+	if (output) this.connect(output);
 
 	this.applyPreset = (preset = this.preset) => {
 		switch(preset) {
@@ -238,8 +273,28 @@ function Synth(ac) {
 		return oscs;
 	};
 	
-	this.stop = (oscs) => {
-		oscs.forEach((o, i) => this.oscillators[i].stop(ac.currentTime, o.oscillator, o.gain));
+	this.stop = (oscs, time = ac.currentTime) => {
+		oscs.forEach((o, i) => this.oscillators[i]?.stop(time, o.oscillator, o.gain));
+	};
+
+	this.schedulePlayback = ({ startTime, duration, freq }) => {
+		const oscs = this.oscillators.map((osc) => {
+			const gain = ac.createGain();
+			const oscillator = osc.schedulePlayback(freq, gain, startTime, duration);
+			return { gain, oscillator };
+		});
+
+		oscs.forEach((t, i) => {
+			const mod = this.oscillators[i].mod;
+			if (mod !== null && typeof mod === 'number') {
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			} else {
+				t.gain.connect(this.gain);
+			}
+		});
+		return oscs;
 	};
 
 	this.addOsc = () => {

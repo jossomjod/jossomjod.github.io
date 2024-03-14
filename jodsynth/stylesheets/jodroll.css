@@ -1,3 +1,47 @@
 .jodroll-container {
-	
+  display: flex;
+  background-color: blueviolet;
+}
+
+.track-container, .side-panel {
+  width: 100px !important;
+  max-width: 100px !important;
+  min-width: 100px !important;
+  background-color: #04152e;
+}
+
+.jodroll-track {
+	cursor: pointer;
+  display: inline-block;
+  width: 100%;
+  padding: 10px;
+	border-bottom: 1px solid #113388;
+	background-color: #376cf3;
+}
+.jodroll-track:hover {
+	background-color: #4785ff;
+}
+.jodroll-track.active {
+	background-color: #77b5ff;
+	text-shadow: 1px 1px #01040f;
+	box-shadow: 0 0 7px 1px #fff;
+}
+
+.note-container {
+  height: 600px;
+  max-height: 600px;
+  min-height: 600px;
+  flex-grow: 1;
+  background-color: red;
+}
+
+.jodroll-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.jodroll-canvas.overlay {
+	position: relative;
+	left: 0;
+	top: -604px;
 }

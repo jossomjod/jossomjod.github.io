@@ -1,40 +1,148 @@
 
-function Note(freq, start, dur) {
-	this.startTime = start || 0.0;
-	this.duration = dur || 1.0;
-	this.frequency = freq || 440.0;
-	this.gain = 1.0;
-
-	/**
-	 * @param {AudioContext} ac
-	 * @param {AudioNode} output
-	 */
-	this.play = (ac, output) => {
-		const osc = ac.createOscillator();
-		osc.type = 'square';
-		osc.frequency.setValueAtTime(this.frequency, ac.currentTime);
-		osc.connect(output);
-		osc.start(ac.currentTime + this.startTime);
-		osc.stop(ac.currentTime + this.startTime + this.duration);
-	}
+function freqToTone(freq) {
+	return 12 * Math.log2(freq / 440) + 49;
 }
 
+function toneToFreq(tone) {
+	return 440 * Math.pow(2, (tone - 49) / 12);
+}
+
+function beatsToSeconds(beats, bpm) {
+	return 60 * beats / bpm;
+}
+
+function secondsToBeats(sec, bpm) {
+	return bpm * sec / 60;
+}
+
+function Note(tone, start, dur) {
+	this.startTime = start || 0.0;
+	this.duration = dur || 1.0;
+	this.tone = tone || 24;
+	this.gain = 1.0;
+}
+
+/**
+ * @param {Note} note
+ * @param {AudioContext} ac
+ * @param {AudioNode} output
+ * @param {number} bpm
+ */
+function playNote (note, oscArr, ac, output, currentTime, bpm) {
+	const startTime = currentTime + beatsToSeconds(note.startTime, bpm);
+	if (startTime < 0) return;
+	const endTime = startTime + beatsToSeconds(note.duration, bpm);
+	const osc = ac.createOscillator();
+	osc.type = 'square';
+	osc.frequency.setValueAtTime(toneToFreq(note.tone), startTime);
+	osc.connect(output);
+	osc.start(startTime);
+	osc.stop(endTime);
+	oscArr.push(osc);
+}
 
 /**
  * @param {AudioContext} ac
  * @param {AudioNode} output
  */
-function NoteManager(ac, output) {
-	this.notes = [
-		new Note(220, 0, 0.3), new Note(330, 0, 0.3),
-		new Note(330, 0.4, 0.3), new Note(440, 0.4, 0.3),
-		new Note(221, 0.8, 0.3), new Note(330.8, 0.8, 0.3),
-		new Note(282, 1.2, 0.3), new Note(417, 1.2, 0.3),
-	];
+function NoteManager(ac, output, synth) {
+	this.bpm = 140;
+	this.notes = [];
+	this.isPlaying = false;
+	this.playbackStartTime = 0;
+	this.activeOscillators = [];
+	this.synth = synth; // TODO: more synths
+	this.tracks = [];
+	this.selectedTrack = 0;
+	this.soloTrack = false;
 
-	this.play = () => {
-		this.notes.forEach((n) => n.play(ac, output));
+	this.addNote = (startTime, tone, duration) => {
+		if (startTime < 0) startTime = 0;
+		const newNote = new Note(tone, startTime, duration);
+		this.getSelectedTrack().notes.push(newNote);
+		return newNote;
+	};
+
+	/** @deprecated */
+	this.play = (startTime = 0) => {
+		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTime, this.bpm);
+		this.isPlaying = true;
+		this.getSelectedTrack().notes.forEach((n) => {
+			const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
+			if (startTime < 0) return;
+			const duration = beatsToSeconds(n.duration, this.bpm);
+			const freq = toneToFreq(n.tone);
+			this.activeOscillators.push(this.getSelectedTrack().synth.schedulePlayback({ startTime, duration, freq }));
+		});
+	};
+
+	/** @deprecated */
+	this.stop = () => {
+		this.isPlaying = false;
+		this.activeOscillators.forEach((osc) => this.getSelectedTrack().synth.stop(osc));
+		this.activeOscillators = [];
+	};
+
+
+	this.playTrack = (track, startTimeMs) => {
+		const oscs = [];
+		track.notes.forEach((n) => {
+			const startTime = startTimeMs + beatsToSeconds(n.startTime, this.bpm);
+			if (startTime < 0) return;
+			const duration = beatsToSeconds(n.duration, this.bpm);
+			const freq = toneToFreq(n.tone);
+			oscs.push(track.synth.schedulePlayback({ startTime, duration, freq }));
+		});
+		return oscs;
+	};
+
+	this.stopTrack = (track, oscs) => {
+		oscs.forEach((osc) => track.synth.stop(osc));
+	};
+
+	this.playAll = (startTimeBeats = 0) => {
+		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
+		this.isPlaying = true;
+		this.activeOscillators = this.tracks.filter((t) => !t.muted).map((t) => {
+			return this.playTrack(t, this.playbackStartTime);
+		});
+	};
+
+	this.stopAll = () => {
+		this.isPlaying = false;
+		this.activeOscillators.forEach((oscs, i) => {
+			this.stopTrack(this.tracks[i], oscs);
+		});
+	};
+
+	this.getNotesToPlay = () => {
+		// TODO
+	};
+
+	this.playbackLoop = () => {
+		setInterval(() => {
+			// TODO: start all notes that should begin within the interval
+		}, 1000);
 	}
+
+	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
+
+	this.createTrack = () => {
+		const index = this.tracks.length + 1;
+		const track = { synth: new Synth(ac, output), notes: [], name: 'Track ' + index, active: true, muted: false };
+		this.tracks.push(track);
+		return track;
+	};
+
+	this.selectTrack = (track) => {
+		this.tracks[this.selectedTrack].active = false;
+		track.active = true;
+		this.selectedTrack = this.tracks.indexOf(track);
+	};
+
+	this.getSelectedTrack = () => {
+		return this.tracks[this.selectedTrack];
+	};
 }
 
 

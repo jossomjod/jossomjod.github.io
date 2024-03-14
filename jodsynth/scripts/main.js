@@ -65,12 +65,6 @@ synthGain
 }
 
 
-const synthUi = new SynthUi(synth);
-
-const addOscBtn = document.querySelector('#addOscBtn');
-addOscBtn.onclick = () => synthUi.addOsc();
-
-
 
 
 var keys = {
@@ -112,44 +106,117 @@ const noteManagerGain = ac.createGain();
 noteManagerGain.gain.value = 1.0;
 noteManagerGain.connect(masterGain);
 
-var noteManager = new NoteManager(ac, noteManagerGain);
+var noteManager = new NoteManager(ac, noteManagerGain, synth);
 
-var noteManagerUi = new NoteManagerUI();
+var noteManagerUi = new NoteManagerUI(noteManager, synth);
+
+noteManagerUi.render();
 
 
+const addOscBtn = document.querySelector('#addOscBtn');
+addOscBtn.onclick = () => noteManagerUi.addOsc();
+
+
+
+
+
+
+
+// SAVE / LOAD ---------------------------------
+var saveNameInput = document.querySelector('#saveNameInput');
+
+function quickSave() {
+	const notes = JSON.stringify(noteManager.notes);
+	localStorage.setItem('notes', notes);
+}
+
+function quickLoad() {
+	const notes = localStorage.getItem('notes') ?? '[]';
+	noteManager.notes = JSON.parse(notes);
+	noteManagerUi.drawNotes();
+}
+
+quickLoad();
+
+// TODO: save synth preset
+function saveAll() {
+	const saveName = saveNameInput.value;
+	if (!saveName) return;
+	console.log('Saving as ', saveName);
+
+	const data = {
+		notes: noteManager.notes, // deprecated
+		//tracks: noteManager.tracks, // TODO: Make the synth storable
+	};
+	localStorage.setItem(saveName, JSON.stringify(data));
+}
+
+function loadAll() {
+	const saveName = saveNameInput.value || saveNameInput.innerHTML;
+	if (!saveName) return;
+	console.log('Loading ', saveName);
+	
+	const data = JSON.parse(localStorage.getItem(saveName));
+	console.log('load data:', data);
+	if (data) {
+		noteManager.notes = data.notes;
+		//noteManager.tracks = data.tracks; // Won't work until the Synth is made storable
+		noteManagerUi.drawNotes();
+	}
+}
 
 
 // EVENTS----------------------------------------------------------------------
 
-window.oncontextmenu = (e) => {
+const synthBody = document.querySelector('.synth-body');
+const topBar = document.querySelector('.top-bar');
+
+synthBody.oncontextmenu = (e) => {
   e.preventDefault();
 };
 
-
+topBar.onkeydown = (e) => {
+	e.stopPropagation();
+};
+topBar.onkeyup = (e) => {
+	e.stopPropagation();
+};
 
 
 // KEY STUFF
 
-document.body.onkeydown = function(e) {
+document.body.onkeydown = (e) => {
 	if (e.repeat) return;
 	e.preventDefault();
 	switch (e.which) {
-		case 32:
-			noteManager.play();
+		case 32: // space
+			noteManagerUi.togglePlayback({ fromCursor: keys.ctrl });
 			break;
-		case 33:
+		case 33: // pgup
 			octave++;
 			break;
-		case 34:
+		case 34: // pgdown
 			octave--;
 			break;
-		case 35:
+		case 35: // End
 			noteOffset--;
 			break;
-		case 36:
+		case 36: // Home
 			noteOffset++;
 			break;
-		case 172:
+		case 114: // F3
+			noteManagerUi.snapX = !noteManagerUi.snapX;
+			break;
+		case 115: // F4
+			noteManagerUi.snapY = !noteManagerUi.snapY;
+			break;
+		case 119: // F8
+			quickSave();
+			break;
+		case 120: // F9
+			quickLoad();
+			break;
+		case 172: // That key under Esc, left of 1, above Tab
 			noteManagerUi.toggleVisible();
 			break;
 		default:
@@ -158,7 +225,7 @@ document.body.onkeydown = function(e) {
 };
 
 
-document.body.onkeyup = function(e) {
+document.body.onkeyup = (e) => {
 	e.preventDefault();
 	toggleKeys(e, false);
 };
@@ -167,8 +234,8 @@ function toggleKeys(e, bool) {
 	const key = keyboardKeys[e.code];
 	if (key) {
 		key.down = bool;
-		if (bool) key.id = synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
-		else synth.stop(key.id);
+		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
+		else noteManager.getSelectedTrack().synth.stop(key.id);
 		return;
 	}
 
