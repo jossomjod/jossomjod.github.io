@@ -1,6 +1,6 @@
 html, body {
 	margin: 2%;
-    padding: 0;
+  padding: 0;
 	width: 98%;
 	height: 98%;
 	color: #ddc;
@@ -41,6 +41,36 @@ video {
 	background-color: #020414;
 }
 
+.dance {
+	display: inline-block;
+	position: relative;
+	animation: dancing .8s ease-in-out 0s infinite;
+	color: #ffffff;
+	text-shadow: 1px 1px 5px #ff8282, 0 0 3em #aaaaff, 0 0 1.2em #99aaff;
+}
+
+.roll {
+	display: inline-block;
+	margin-left: 10px;
+	animation: rolling 1.8s linear 0s infinite;
+	text-shadow: 1px 1px 5px #ff8282, 0 0 3em #aaaaff, 0 0 1.2em #99aaff;
+}
+
+.crazy {
+	display: inline-block;
+	animation: crazy .3s ease-in-out 0s infinite;
+}
+.crazy2 {
+	animation-delay: 0.08s;
+}
+
+@media (prefers-reduced-motion) {
+	.dance, .roll, .crazy {
+		animation: unset;
+	}
+}
+
+
 
 @media  screen and (min-width: 1000px) {
 	.description, .media {
@@ -69,5 +99,63 @@ video {
 
 	to {
 		text-shadow: #e0e5ff 1px 0 10px;
+	}
+}
+
+@keyframes dancing {
+	from {
+		transform: scale(1, 1);
+		top: 0;
+		rotate: 0deg;
+	}
+	30% {
+		transform: scale(0.9, 1.2);
+		top: -7px;
+		rotate: 8deg;
+	}
+	50% {
+		transform: scale(1, 1);
+		top: 0;
+		rotate: 0deg;
+	}
+	80% {
+		transform: scale(0.9, 1.2);
+		top: -7px;
+		rotate: -8deg;
+	}
+	to {
+		transform: scale(1, 1);
+		top: 0;
+		rotate: 0deg;
+	}
+}
+
+@keyframes rolling {
+	from {
+		rotate: 0deg;
+	}
+	to {
+		rotate: 360deg;
+	}
+}
+
+@keyframes crazy {
+	from {
+		translate: 0 0;
+	}
+	20% {
+		translate: -0.1em -0.2em;
+	}
+	40% {
+		translate: 0.2em -0.02em;
+	}
+	60% {
+		translate: -0.2em -0.02em;
+	}
+	80% {
+		translate: 0.1em -0.2em;
+	}
+	to {
+		translate: 0 0;
 	}
 }
