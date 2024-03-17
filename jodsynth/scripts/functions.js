@@ -129,7 +129,7 @@ function smoothStart(t) {
 }
 
 function smoothStop(t) {
-	var num = 1 - t;
+	const num = 1 - t;
 	return 1 - num * num;
 }
 
@@ -146,6 +146,10 @@ function smoothStartStop(t) {
 }
 
 
+
+function lerp(a, b, t) {
+	return a * t + b * (1 - t);
+}
 
 
 // COLORS----------------------------------------------------------------------

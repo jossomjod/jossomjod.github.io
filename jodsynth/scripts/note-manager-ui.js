@@ -328,7 +328,22 @@ function NoteManagerUI(noteManager, previewSynth) {
 		noteManager.getSelectedTrack().notes.splice(index, 1);
 		this.selectedNotes = [];
 		this.render();
-	}
+	};
+
+	this.copyNotes = (notes = this.selectedNotes) => {
+		const realNotes = noteManager.getSelectedTrack().notes;
+		const noteArr = notes.map((i) => realNotes[i]);
+		clipboard = JSON.stringify(noteArr);
+	};
+
+	this.pasteNotes = () => {
+		const pastedNotes = JSON.parse(clipboard);
+		if (!pastedNotes?.length) return;
+		const track = noteManager.getSelectedTrack();
+		track.notes = track.notes.concat(pastedNotes);
+		this.selectedNotes = pastedNotes.map((p) => track.notes.indexOf(p));
+		this.render();
+	};
 
 	this.previewNote = (bool) => {
 		const tone = this.clickedNote?.tone ?? 12;
@@ -342,7 +357,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		}
 		tracks.forEach((t) => {
 			const div = document.createElement('div');
-			div.innerHTML = t.name || `Track ${i}`;
+			div.innerHTML = t.name;
 			div.className = 'jodroll-track';
 			div.addEventListener('mousedown', (e) => {
 				e.stopPropagation();
@@ -350,13 +365,12 @@ function NoteManagerUI(noteManager, previewSynth) {
 				this.selectTrack(div, t);
 			});
 			this.trackContainer.appendChild(div);
+			if (t.active) div.className += ' active';
 		});
 	};
 
 	this.addTrack = () => {
 		const track = noteManager.createTrack();
-		this.setSynthUi(track);
-
 		const div = document.createElement('div');
 		div.innerHTML = track.name;
 		div.className = 'jodroll-track';
@@ -368,6 +382,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		this.trackContainer.appendChild(div);
 		this.selectTrack(div, track);
 	};
+	
 	this.addTrackBtn.addEventListener('mousedown', (e) => {
 		e.stopPropagation();
 		e.preventDefault();
@@ -530,6 +545,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.togglePlayback = (options) => {
 		if (noteManager.isPlaying) {
 			noteManager.stopAll();
+			//noteManager.stopPlaybackLoop();
 		} else {
 			if (options.fromCursor) noteManager.playAll(this.xToTime(this.cursorX));
 			else noteManager.playAll();

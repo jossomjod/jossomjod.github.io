@@ -65,7 +65,7 @@ synthGain
 }
 
 
-
+var clipboard;
 
 var keys = {
 	left: false,
@@ -126,17 +126,16 @@ addOscBtn.onclick = () => noteManagerUi.addOsc();
 var saveNameInput = document.querySelector('#saveNameInput');
 
 function quickSave() {
-	const notes = JSON.stringify(noteManager.notes);
-	localStorage.setItem('notes', notes);
+	const tracks = JSON.stringify(noteManager.getStringableTracks());
+	localStorage.setItem('tracks', tracks);
 }
 
 function quickLoad() {
-	const notes = localStorage.getItem('notes') ?? '[]';
-	noteManager.notes = JSON.parse(notes);
-	noteManagerUi.drawNotes();
+	const tracks = localStorage.getItem('tracks') ?? '[]';
+	noteManager.loadTracks(JSON.parse(tracks));
+	noteManagerUi.render();
+	noteManagerUi.renderTracks();
 }
-
-quickLoad();
 
 // TODO: save synth preset
 function saveAll() {
@@ -145,8 +144,7 @@ function saveAll() {
 	console.log('Saving as ', saveName);
 
 	const data = {
-		notes: noteManager.notes, // deprecated
-		//tracks: noteManager.tracks, // TODO: Make the synth storable
+		tracks: noteManager.getStringableTracks(),
 	};
 	localStorage.setItem(saveName, JSON.stringify(data));
 }
@@ -159,9 +157,9 @@ function loadAll() {
 	const data = JSON.parse(localStorage.getItem(saveName));
 	console.log('load data:', data);
 	if (data) {
-		noteManager.notes = data.notes;
-		//noteManager.tracks = data.tracks; // Won't work until the Synth is made storable
-		noteManagerUi.drawNotes();
+		noteManager.loadTracks(data.tracks);
+		noteManagerUi.render();
+		noteManagerUi.renderTracks();
 	}
 }
 
@@ -204,6 +202,12 @@ document.body.onkeydown = (e) => {
 		case 36: // Home
 			noteOffset++;
 			break;
+		case 67: // C
+			if (e.ctrlKey) noteManagerUi.copyNotes();
+			break;
+		case 86: // V
+			if (e.ctrlKey) noteManagerUi.pasteNotes();
+			break;
 		case 114: // F3
 			noteManagerUi.snapX = !noteManagerUi.snapX;
 			break;
@@ -220,8 +224,9 @@ document.body.onkeydown = (e) => {
 			noteManagerUi.toggleVisible();
 			break;
 		default:
-			toggleKeys(e, true);
+			break;
 	}
+	toggleKeys(e, true);
 };
 
 
@@ -231,14 +236,6 @@ document.body.onkeyup = (e) => {
 };
 
 function toggleKeys(e, bool) {
-	const key = keyboardKeys[e.code];
-	if (key) {
-		key.down = bool;
-		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
-		else noteManager.getSelectedTrack().synth.stop(key.id);
-		return;
-	}
-
 	switch (e.which) {
 		case 37:
 			keys.left = bool;
@@ -258,5 +255,14 @@ function toggleKeys(e, bool) {
 		default:
 			console.log('Key event - physical:', e.code, 'which:', e.which);
 			break;
+	}
+	if (e.ctrlKey) return;
+
+	const key = keyboardKeys[e.code];
+	if (key) {
+		key.down = bool;
+		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
+		else noteManager.getSelectedTrack().synth.stop(key.id);
+		return;
 	}
 }

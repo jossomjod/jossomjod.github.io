@@ -160,7 +160,6 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 	};
 
 	this.removeNode = (node) => {
-		//node.removeEventListener('mousedown');
 		node.remove();
 		this.nodes.splice(this.nodes.indexOf(node), 1);
 		node = undefined;
@@ -169,7 +168,6 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 	};
 
 	this.generateNodes = (points) => {
-		console.log('generating nodes', points);
 		this.nodes = points.map((point) => {
 			const pos = this.point2Pos(point);
 			return this.addNode(pos.left + this.radius, pos.top - this.radius);

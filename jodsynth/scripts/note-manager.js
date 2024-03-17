@@ -55,6 +55,9 @@ function NoteManager(ac, output, synth) {
 	this.tracks = [];
 	this.selectedTrack = 0;
 	this.soloTrack = false;
+	this.loopEnd = 4 * this.bpm;
+	this.isLooping = true;
+	this.intervalId = 0;
 
 	this.addNote = (startTime, tone, duration) => {
 		if (startTime < 0) startTime = 0;
@@ -115,15 +118,35 @@ function NoteManager(ac, output, synth) {
 		});
 	};
 
-	this.getNotesToPlay = () => {
-		// TODO
+	this.getNotesToPlay = (notes, start, end) => {
+		return notes.filter((n) => n.startTime >= start && n.startTime < end);
 	};
 
-	this.playbackLoop = () => {
-		setInterval(() => {
-			// TODO: start all notes that should begin within the interval
-		}, 1000);
+	this.playbackLoop = (startTimeBeats = 0) => {
+		const interval = 600;
+		this.isPlaying = true;
+		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
+		clearInterval(this.intervalId);
+		this.intervalId = setInterval(() => {
+			this.tracks.forEach((t) => {
+				if (t.muted) return;
+				const notes = this.getNotesToPlay(t.notes, ac.currentTime - this.playbackStartTime, interval);
+				
+				notes.forEach((n) => {
+					const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
+					if (startTime < 0) return;
+					const duration = beatsToSeconds(n.duration, this.bpm);
+					const freq = toneToFreq(n.tone);
+					t.synth.schedulePlayback({ startTime, duration, freq });
+				});
+			});
+		}, interval);
 	}
+
+	this.stopPlaybackLoop = () => {
+		this.isPlaying = false;
+		clearInterval(this.intervalId);
+	};
 
 	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
 
@@ -142,6 +165,18 @@ function NoteManager(ac, output, synth) {
 
 	this.getSelectedTrack = () => {
 		return this.tracks[this.selectedTrack];
+	};
+
+	this.getStringableTracks = () => {
+		return this.tracks.map((t) => ({ ...t, synth: undefined }));
+	};
+
+	this.loadTracks = (tracks) => { // temp save/load fix that resets the synth
+		if (!tracks?.length) return;
+		this.tracks = tracks.map((t, i) => {
+			if (t.active) this.selectedTrack = i;
+			return ({ ...t, synth: new Synth(ac, output) });
+		});
 	};
 }
 

@@ -1,7 +1,6 @@
 function EnvelopePoint(value, time) {
 	this.value = value;
 	this.time = time;
-	this.totalTime;
 }
 
 
@@ -38,13 +37,32 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		if (!prop) return;
 		prop.setValueAtTime(base, startTime);
 
-		this.points.forEach((p) => {
-			if (p === this.points.at(-1)) return;
-			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
-		});
 		const endTime = startTime + duration;
 		const endValue = base + this.points.at(-1).value * this.multiplier;
-		prop.cancelScheduledValues(endTime);
+
+		let prevVal = base;
+
+/* 
+		const pts = this.points.filter((p, i) => p.time < duration && i !== this.points.length - 1);
+		pts.forEach((p) => {
+			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
+		}); */
+
+
+		for (let i = 0; i < this.points.length-1; i++) {
+			const p = this.points[i];
+			if (p.time >= duration) {
+				const endVal = lerp(p.value, prevVal, (p.time - duration) / duration);
+				prop.linearRampToValueAtTime(base + endVal * mult, endTime);
+				break;
+			}
+			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
+			prevVal = p.value;
+		};
+		const sustain = this.points.at(-2);
+		if (sustain.time < duration) {
+			prop.linearRampToValueAtTime(sustain.value, endTime);
+		}
 		prop.linearRampToValueAtTime(endValue, endTime + this.getRelease());
 	};
 }
@@ -78,7 +96,6 @@ function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
 	for (let i = 1; i <= numHarmonics-1; i++) {
 		imag[i] = (2 / ((i + phaseOffset) * Math.PI)) * (1 - (-1) ** i);
 	}
-	console.log(imag);
 	return ac.createPeriodicWave(real, imag);
 }
 
@@ -187,8 +204,8 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.connect(gainNode);
 		osc.start(startTime);
 
-		this.gainEnvelope?.schedulePlayback(gainNode.gain, 0.0, this.gain, startTime);
-		this.pitchEnvelope?.schedulePlayback(osc.detune, this.detune, 1200.0, startTime);
+		this.gainEnvelope?.schedulePlayback(gainNode.gain, 0.0, this.gain, startTime, duration);
+		this.pitchEnvelope?.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration);
 
 		const endTime = startTime + duration;
 		if (this.gainEnvelope) {
