@@ -365,7 +365,10 @@ function NoteManagerUI(noteManager, previewSynth) {
 				this.selectTrack(div, t);
 			});
 			this.trackContainer.appendChild(div);
-			if (t.active) div.className += ' active';
+			if (t.active) {
+				div.className += ' active';
+				this.setSynthUi(t);
+			}
 		});
 	};
 

@@ -17,12 +17,15 @@ a {
 	text-decoration: none;
 }
 
-button, a {
+button, a, select {
 	background-color: #101940;
 	color: #ffe0c0;
 	border-color: #101835;
-	padding: 1em;
 	border-radius: 0.3em;
+}
+
+button, a {
+	padding: 1em;
 }
 
 button:hover, a:hover {

@@ -115,6 +115,21 @@ function showText(ctx, txt, pos, color) {
 }
 
 
+
+
+
+function makeSerializable(obj) {
+	return Object.entries(obj)
+		.filter(([,v]) => typeof v !== 'function')
+		.reduce((prev, [key, value]) => {
+			prev[key] = (!!value && typeof value === 'object') ? makeSerializable(value) : value;
+			return prev;
+		}, {});
+}
+
+
+
+
 // EASING----------------------------------------------------------------------
 // See https://www.youtube.com/watch?v=mr5xkf6zSzk for details.
 

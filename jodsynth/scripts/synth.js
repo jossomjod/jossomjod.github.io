@@ -163,7 +163,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		this.type = waveform;
 		this.customeWave = getPeriodicWave(ac, waveform, this.phase);
 	}
-	this.setWave(type);
+	this.setWave(this.type);
 
 	this.setPhase = (phs) => {
 		this.phase = phs;
@@ -215,6 +215,22 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 
 		return osc;
 	}
+
+	this.createEnvelopeFromObject = (obj) => {
+		if (!obj) return undefined;
+		return new ArrayEnvelope(ac, Object.values(obj.points), obj.multiplier);
+	};
+
+	this.save = () => {
+		return makeSerializable(this);
+	};
+	this.load = (data) => {
+		data.gainEnvelope = this.createEnvelopeFromObject(data.gainEnvelope);
+		data.pitchEnvelope = this.createEnvelopeFromObject(data.pitchEnvelope);
+		Object.assign(this, data);
+		this.setWave(this.type);
+		return this;
+	};
 }
 
 
@@ -239,7 +255,7 @@ var pitchPoints = [
 ];
 
 
-function Synth(ac, output) {
+function Synth(ac, output, fromObject) {
 	this.playing = false;
 	this.gain = ac.createGain();
 	this.gain.gain.value = 1.0;
@@ -345,5 +361,19 @@ function Synth(ac, output) {
 		return oscs;
 	}
 
-	this.applyPreset();
+	this.createOscillatorFromObject = (obj) => {
+		const osc = new Oscillator(ac);
+		return osc.load(obj);
+	};
+
+	this.save = () => {
+		return { oscillators: this.oscillators.map((o) => o.save()) };
+	};
+	this.load = (data) => {
+		this.oscillators = data.oscillators.map((o) => this.createOscillatorFromObject(o));
+	};
+
+	if (fromObject) {
+		this.load(fromObject);
+	} else this.applyPreset();
 }

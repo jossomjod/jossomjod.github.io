@@ -13,6 +13,7 @@
 		<link rel="icon"  type="image/png" href="../images/favicon.png">
 		<script src="../scripts/vector.js"></script>
 		<script src="scripts/functions.js"></script>
+		<script src="scripts/templates.js"></script>
 		<script src="custom-elements/jod-numb.element.js"></script>
 		<script src="scripts/note-manager.js"></script>
 		<script src="scripts/note-manager-ui.js"></script>
@@ -27,9 +28,13 @@
 				<a href="../index.html">Home</a>
 				<button onclick="noteManagerUi.toggleVisible()">TRACKER</button>
 				<div class="save-form">
-					<input id="saveNameInput" class="text-input" placeholder="Preset name">
+					<input id="saveNameInput" class="text-input" placeholder="Save name">
 					<button onclick="saveAll()">Save</button>
 					<button onclick="loadAll()">Load</button>
+					<select id="templateSelect">
+						<option value="0">Template: Empty</option>
+						<option value="1">Template: Trek</option>
+					</select>
 				</div>
 			</div>
 			<div class="tracker-container"></div>

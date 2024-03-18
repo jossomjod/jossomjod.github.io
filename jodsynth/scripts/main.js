@@ -124,10 +124,22 @@ addOscBtn.onclick = () => noteManagerUi.addOsc();
 
 // SAVE / LOAD ---------------------------------
 var saveNameInput = document.querySelector('#saveNameInput');
+var templateSelect = document.querySelector('#templateSelect');
+
+templateSelect.addEventListener('change', () => {
+	const index = +templateSelect.value;
+	const tracks = trackerTemplates[index]
+	if (!tracks) throw 'No template found for index' + index;
+	
+	noteManager.loadTracks(JSON.parse(tracks));
+	noteManagerUi.render();
+	noteManagerUi.renderTracks();
+});
 
 function quickSave() {
 	const tracks = JSON.stringify(noteManager.getStringableTracks());
 	localStorage.setItem('tracks', tracks);
+	navigator.clipboard.writeText(tracks).then((v) => console.log('tracks copied to clipboard', v));
 }
 
 function quickLoad() {
@@ -146,7 +158,10 @@ function saveAll() {
 	const data = {
 		tracks: noteManager.getStringableTracks(),
 	};
-	localStorage.setItem(saveName, JSON.stringify(data));
+	const stringData = JSON.stringify(data);
+	if (saveName.length < 100) localStorage.setItem(saveName, stringData);
+	else saveNameInput.value = '';
+	navigator.clipboard.writeText(stringData).then((v) => console.log('data copied to clipboard', v));
 }
 
 function loadAll() {
@@ -154,7 +169,8 @@ function loadAll() {
 	if (!saveName) return;
 	console.log('Loading ', saveName);
 	
-	const data = JSON.parse(localStorage.getItem(saveName));
+	const dataString = localStorage.getItem(saveName) ?? saveName;
+	const data = JSON.parse(dataString);
 	console.log('load data:', data);
 	if (data) {
 		noteManager.loadTracks(data.tracks);

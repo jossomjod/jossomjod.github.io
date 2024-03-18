@@ -16,7 +16,7 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		w: this.container.clientWidth,
 		h: this.container.clientHeight,
 	};
-	this.maxTime = 6.0;
+	this.maxTime = 4.0;
 	this.radius = 8.0;
 
 	this.canvas.width = this.rect.w;
@@ -130,7 +130,6 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 
 
 		element.addEventListener('mousedown', (e) => {
-			console.log('BUTTTONN', e.button);
 			if (e.button === 0) {
 				this.dragData = {
 					element,
@@ -343,14 +342,11 @@ function SynthUi(synth) {
 	this.container = document.querySelector('.synth-container');
 	this.template = document.querySelector('#oscillator-template');
 
-	console.log('template', this.template);
-
 	this.oscillators = this.synth.oscillators.map((osc, i) => {
 		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
 	});
 
 	this.addOsc = () => {
-		console.log('[synth-ui.js SynthUi] Adding oscillator UI');
 		const len = this.synth.addOsc();
 		const osc = this.synth.oscillators[len-1];
 		const newOscUi = new OscillatorUi(osc, this.container, `Oscillator ${len}`);

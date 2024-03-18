@@ -168,14 +168,19 @@ function NoteManager(ac, output, synth) {
 	};
 
 	this.getStringableTracks = () => {
-		return this.tracks.map((t) => ({ ...t, synth: undefined }));
+		return this.tracks.map((t) => ({ ...t, synth: t.synth.save() }));
 	};
 
-	this.loadTracks = (tracks) => { // temp save/load fix that resets the synth
-		if (!tracks?.length) return;
+	this.loadTracks = (tracks) => {
+		if (!tracks?.length) {
+			this.tracks = [];
+			this.createTrack();
+			this.selectedTrack = 0;
+			return;
+		}
 		this.tracks = tracks.map((t, i) => {
 			if (t.active) this.selectedTrack = i;
-			return ({ ...t, synth: new Synth(ac, output) });
+			return ({ ...t, synth: new Synth(ac, output, t.synth) });
 		});
 	};
 }
