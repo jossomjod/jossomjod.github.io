@@ -255,14 +255,60 @@ var pitchPoints = [
 ];
 
 
+
+
+function ReverbManager(ac, convolo, input, reverbGain, output) { //TODO
+		
+/* 
+	const reverbGainUI = document.querySelector('#reverbGain');
+	reverbGainUI.value = reverbGain.gain.value;
+	reverbGainUI.addEventListener('input', () => {
+		reverbGain.gain.value = reverbGainUI.value;
+	}); */
+
+	this.delay = ac.createDelay(2);
+	this.delay.delayTime.value = 0.4;
+	this.delayFeedback = new GainNode(ac, { value: 0.46 });
+
+	this.synthGain = new GainNode(ac, { value: 1.0 });
+	this.synthGain
+		.connect(this.delay)
+		.connect(this.delayFeedback)
+		.connect(this.delay)
+		.connect(output);
+
+	input.connect(output);
+	input.connect(convolo).connect(reverbGain).connect(this.synthGain).connect(output);
+}
+
+
+function createNoiseBuffer(ac) {
+	const bufferSize = ac.sampleRate * 1.0;
+	const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
+	const bufL = buford.getChannelData(0);
+	const bufR = buford.getChannelData(1);
+	for (let i = 0; i < bufferSize; i++) {
+		bufL[i] = Math.random() * 2 - 1;
+		bufR[i] = Math.random() * 2 - 1;
+	}
+}
+
+
 function Synth(ac, output, fromObject) {
 	this.playing = false;
-	this.gain = ac.createGain();
-	this.gain.gain.value = 1.0;
+	this.gain = new GainNode(ac, { value: 1 });
+	this.reverbManager;// = new ReverbManager(this.gain, this.reverbGain, output);
+	this.reverbGain = new GainNode(ac, { value: 1 });
+	this.reverb = ac.createConvolver();
+	this.reverb.buffer = createNoiseBuffer(ac);
 	this.oscillators = [];
 	this.preset;// = 'phase_saws';// 'supersaw';
 
-	this.connect = (audioNode) => this.gain.connect(audioNode);
+	this.connect = (audioNode) => {
+		this.reverbManager = new ReverbManager(ac, this.reverb, this.gain, this.reverbGain, audioNode);
+		//return this.gain.connect(audioNode);
+	};
+
 	if (output) this.connect(output);
 
 	this.applyPreset = (preset = this.preset) => {

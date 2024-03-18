@@ -339,7 +339,7 @@ function OscillatorUi(oscillator, container, name) {
 
 function SynthUi(synth) {
 	this.synth = synth;
-	this.container = document.querySelector('.synth-container');
+	this.container = document.querySelector('.oscillators-container');
 	this.template = document.querySelector('#oscillator-template');
 
 	this.oscillators = this.synth.oscillators.map((osc, i) => {

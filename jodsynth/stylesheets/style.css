@@ -19,7 +19,11 @@
   border-radius: 4px;
 }
 
-.synth-container {
+.fx-container {
+	margin: 20px;
+	background-color: #010a1d;
+}
+.oscillators-container {
 	flex-grow: 1;
 	margin: 20px;
 	background-color: #010a1d;

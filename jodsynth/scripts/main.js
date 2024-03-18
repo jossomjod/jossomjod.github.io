@@ -1,70 +1,4 @@
 const ac = new (window.AudioContext || window.webkitAudioContext);
-
-
-
-
-// REVERB EXPERIMENTS
-
-// Buffer
-const bufferSize = ac.sampleRate * 1.0;
-const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
-const bufL = buford.getChannelData(0);
-const bufR = buford.getChannelData(1);
-for (let i = 0; i < bufferSize; i++) {
-	bufL[i] = Math.random() * 2 - 1;
-	bufR[i] = Math.random() * 2 - 1;
-}
-
-const convolo = ac.createConvolver();
-convolo.buffer = buford;
-
-const reverbGain = new GainNode(ac, { value: 1.0 });
-
-
-const reverbGainUI = document.querySelector('#reverbGain');
-reverbGainUI.value = reverbGain.gain.value;
-reverbGainUI.addEventListener('input', () => {
-	reverbGain.gain.value = reverbGainUI.value;
-});
-
-
-// MASTER Gain
-
-const masterGain = ac.createGain();
-masterGain.connect(ac.destination);
-masterGain.gain.value = 0.2;
-
-const masterGainUI = document.querySelector('#masterGain');
-masterGainUI.value = masterGain.gain.value;
-masterGainUI.addEventListener('input', () => {
-	masterGain.gain.value = masterGainUI.value;
-});
-
-
-const synth = new Synth(ac);
-
-const synthGain = ac.createGain();
-synthGain.gain.value = 1.0;
-
-synth.connect(masterGain);
-
-synth.connect(convolo).connect(reverbGain).connect(synthGain).connect(masterGain);
-
-
-const masterDelay = ac.createDelay(2);
-masterDelay.delayTime.value = 0.4;
-const masterDelayFeedback = ac.createGain();
-masterDelayFeedback.gain.value = 0.16;
-
-if (true) { // Delay
-synthGain
-	.connect(masterDelay)
-	.connect(masterDelayFeedback)
-	.connect(masterDelay)
-	.connect(masterGain);
-}
-
-
 var clipboard;
 
 var keys = {
@@ -91,12 +25,25 @@ let noteOffset = 2;
 var keyboardKeys = {};
 
 function generateKeyDict() {
-	lowerKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i });
-	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i + 13 });
+	lowerKeys.forEach((k, i) => keyboardKeys[k] = { down: false, id: null, index: i });
+	upperKeys.forEach((k, i) => keyboardKeys[k] = { down: false, id: null, index: i + 13 });
 }
 generateKeyDict();
 
 
+
+
+// MASTER Gain
+
+const masterGain = ac.createGain();
+masterGain.connect(ac.destination);
+masterGain.gain.value = 0.2;
+
+const masterGainUI = document.querySelector('#masterGain');
+masterGainUI.value = masterGain.gain.value;
+masterGainUI.addEventListener('input', () => {
+	masterGain.gain.value = masterGainUI.value;
+});
 
 
 
@@ -106,11 +53,12 @@ const noteManagerGain = ac.createGain();
 noteManagerGain.gain.value = 1.0;
 noteManagerGain.connect(masterGain);
 
-var noteManager = new NoteManager(ac, noteManagerGain, synth);
+var noteManager = new NoteManager(ac, noteManagerGain);
 
-var noteManagerUi = new NoteManagerUI(noteManager, synth);
+var noteManagerUi = new NoteManagerUI(noteManager);
 
 noteManagerUi.render();
+noteManagerUi.renderTracks();
 
 
 const addOscBtn = document.querySelector('#addOscBtn');
@@ -203,6 +151,10 @@ document.body.onkeydown = (e) => {
 	if (e.repeat) return;
 	e.preventDefault();
 	switch (e.which) {
+		case 9: // tab
+			noteManagerUi.automationMode = !noteManagerUi.automationMode;
+			noteManagerUi.render();
+			break;
 		case 32: // space
 			noteManagerUi.togglePlayback({ fromCursor: keys.ctrl });
 			break;
@@ -217,6 +169,9 @@ document.body.onkeydown = (e) => {
 			break;
 		case 36: // Home
 			noteOffset++;
+			break;
+		case 46: // Delete
+			noteManagerUi.deleteSelectedNotes();
 			break;
 		case 67: // C
 			if (e.ctrlKey) noteManagerUi.copyNotes();

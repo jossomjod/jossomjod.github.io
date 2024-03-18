@@ -15,11 +15,22 @@ function secondsToBeats(sec, bpm) {
 	return bpm * sec / 60;
 }
 
-function Note(tone, start, dur) {
+function AutomationNode(time = 0, value = 0) {
+	this.time = time;
+	this.value = value;
+}
+
+function Note(tone, start, dur, gain, gainNodes, pitchNodes) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
 	this.tone = tone || 24;
-	this.gain = 1.0;
+	this.gain = gain || 1.0;
+	this.gainNodes = gainNodes || []; // AutomationNode[]
+	this.pitchNodes = pitchNodes || []; // AutomationNode[]
+}
+
+function envelopePointsToAutomationNodes(pts) {
+
 }
 
 /**
@@ -45,13 +56,11 @@ function playNote (note, oscArr, ac, output, currentTime, bpm) {
  * @param {AudioContext} ac
  * @param {AudioNode} output
  */
-function NoteManager(ac, output, synth) {
+function NoteManager(ac, output) {
 	this.bpm = 140;
-	this.notes = [];
 	this.isPlaying = false;
 	this.playbackStartTime = 0;
 	this.activeOscillators = [];
-	this.synth = synth; // TODO: more synths
 	this.tracks = [];
 	this.selectedTrack = 0;
 	this.soloTrack = false;
