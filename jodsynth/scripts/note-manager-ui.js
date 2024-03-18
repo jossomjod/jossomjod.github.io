@@ -160,7 +160,10 @@ function NoteManagerUI(noteManager, previewSynth) {
 		let realY = this.height - (e.y - rect.top);
 		this.cursorX = realX;
 
-		switch (e.buttons) {
+		const scrollHack = +e.altKey * this.scrollAction; // alternative to middle mouse button
+		const fakeButtons = e.buttons | scrollHack;
+
+		switch (fakeButtons) {
 			case this.primaryAction:
 				if (this.snapX) realX = this.snapToGridX(realX);
 				if (this.snapY) realY = this.snapToGridY(realY);
@@ -179,7 +182,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 						break;
 					}
 					const dTone = this.yToTone(realY) - this.clickedNote.tone;
-					this.moveNotesBy(dTime, dTone); // BUG: Notes hitting x 0 get misaligned
+					this.moveNotesBy(dTime, dTone);
 					this.previewNoteId.forEach((pn) => pn.oscillator.frequency.value = toneToFreq(this.clickedNote.tone));
 				}
 				break;
@@ -304,12 +307,17 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.moveNoteBy = (note, dTime, dTone) => {
 		note.startTime += dTime;
 		note.tone += dTone;
-		if (note.startTime < 0) note.startTime = 0;
 	};
 
 	this.moveNotesBy = (dTime, dTone) => {
 		const notes = noteManager.getSelectedTrack().notes;
 		this.selectedNotes.forEach((ni) => this.moveNoteBy(notes[ni], dTime, dTone));
+		const earlyNotes = this.selectedNotes.filter((ni) => notes[ni].startTime < 0);
+		if (earlyNotes.length) {
+			let earliestTime = 0;
+			earlyNotes.forEach((ni) => earliestTime = Math.min(notes[ni].startTime, earliestTime));
+			this.selectedNotes.forEach((ni) => this.moveNoteBy(notes[ni], -earliestTime, 0));
+		}
 		this.render();
 	};
 
