@@ -342,6 +342,12 @@ function SynthUi(synth) {
 	this.container = document.querySelector('.oscillators-container');
 	this.template = document.querySelector('#oscillator-template');
 
+	this.reverbGainUI = document.querySelector('#reverbGain');
+	this.reverbGainUI.value = this.synth.reverb;
+	this.reverbGainUI.addEventListener('input', () => {
+		this.synth.setReverbGain(this.reverbGainUI.value);
+	});
+
 	this.oscillators = this.synth.oscillators.map((osc, i) => {
 		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
 	});

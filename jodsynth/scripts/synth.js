@@ -255,30 +255,27 @@ var pitchPoints = [
 ];
 
 
-
-
-function ReverbManager(ac, convolo, input, reverbGain, output) { //TODO
-		
-/* 
-	const reverbGainUI = document.querySelector('#reverbGain');
-	reverbGainUI.value = reverbGain.gain.value;
-	reverbGainUI.addEventListener('input', () => {
-		reverbGain.gain.value = reverbGainUI.value;
-	}); */
+function ReverbManager(ac, input, output, reverb) {
+	this.reverbGain = ac.createGain();
+	this.reverbGain.gain.value = reverb;
+	this.reverb = ac.createConvolver();
+	this.reverb.buffer = createNoiseBuffer(ac);
 
 	this.delay = ac.createDelay(2);
 	this.delay.delayTime.value = 0.4;
-	this.delayFeedback = new GainNode(ac, { value: 0.46 });
+	this.delayFeedback = ac.createGain();
+	this.delayFeedback.gain.value = 0.16;
 
 	this.synthGain = new GainNode(ac, { value: 1.0 });
+
+	input.connect(output);
+	input.connect(this.reverb).connect(this.reverbGain).connect(this.synthGain).connect(output);
+
 	this.synthGain
 		.connect(this.delay)
 		.connect(this.delayFeedback)
 		.connect(this.delay)
 		.connect(output);
-
-	input.connect(output);
-	input.connect(convolo).connect(reverbGain).connect(this.synthGain).connect(output);
 }
 
 
@@ -291,25 +288,26 @@ function createNoiseBuffer(ac) {
 		bufL[i] = Math.random() * 2 - 1;
 		bufR[i] = Math.random() * 2 - 1;
 	}
+	return buford;
 }
 
 
 function Synth(ac, output, fromObject) {
 	this.playing = false;
 	this.gain = new GainNode(ac, { value: 1 });
-	this.reverbManager;// = new ReverbManager(this.gain, this.reverbGain, output);
-	this.reverbGain = new GainNode(ac, { value: 1 });
-	this.reverb = ac.createConvolver();
-	this.reverb.buffer = createNoiseBuffer(ac);
+	this.reverb = 1;
+	this.reverbManager = new ReverbManager(ac, this.gain, output, this.reverb);
 	this.oscillators = [];
 	this.preset;// = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => {
-		this.reverbManager = new ReverbManager(ac, this.reverb, this.gain, this.reverbGain, audioNode);
-		//return this.gain.connect(audioNode);
+		this.reverbManager = new ReverbManager(ac, this.gain, audioNode, this.reverb);
 	};
 
-	if (output) this.connect(output);
+	this.setReverbGain = (value) => {
+		this.reverb = value;
+		this.reverbManager.reverbGain.gain.value = value;
+	}
 
 	this.applyPreset = (preset = this.preset) => {
 		switch(preset) {
