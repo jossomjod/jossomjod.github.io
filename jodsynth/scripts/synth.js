@@ -411,10 +411,11 @@ function Synth(ac, output, fromObject) {
 	};
 
 	this.save = () => {
-		return { oscillators: this.oscillators.map((o) => o.save()) };
+		return { oscillators: this.oscillators.map((o) => o.save()), reverb: this.reverb };
 	};
 	this.load = (data) => {
 		this.oscillators = data.oscillators.map((o) => this.createOscillatorFromObject(o));
+		if (data.reverb !== undefined) this.setReverbGain(+data.reverb);
 	};
 
 	if (fromObject) {

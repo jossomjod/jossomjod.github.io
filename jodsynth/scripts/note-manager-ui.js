@@ -35,6 +35,11 @@ function NoteManagerUI(noteManager) {
 	this.ctx = this.canvas.getContext('2d');
 	this.octx1 = this.overlay1.getContext('2d');
 
+	this.reverbGainUI = document.querySelector('#reverbGain');
+	this.reverbGainUI.addEventListener('input', () => {
+		this.currentSynthUi?.synth.setReverbGain(this.reverbGainUI.value);
+	});
+
 	this.currentSynthUi;
 
 	this.pxPerBeat = 50;
@@ -434,6 +439,7 @@ function NoteManagerUI(noteManager) {
 			delete this.currentSynthUi;
 		}
 		this.currentSynthUi = new SynthUi(track.synth);
+		this.reverbGainUI.value = track.synth.reverb;
 	};
 
 	this.addOsc = () => {
