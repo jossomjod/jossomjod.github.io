@@ -44,14 +44,16 @@ function NoteManagerUI(noteManager) {
 
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
+	this.trackContainerWidth = 200;
 	this.width = this.trackerContainer.width = window.innerWidth;
 	this.height = this.canvas.height = this.trackerContainer.height = 600;
-	this.canvas.width = this.width - 100;
+	this.canvas.width = this.width - this.trackContainerWidth;
 	this.scrollX = 0;
 	this.scrollY = 0;
 	this.noteHeight = this.pxPerTone;
 	this.newNoteDuration = 1;
 	this.isPlaying = () => noteManager.isPlaying;
+	this.autoScrollOnPlayback = true;
 
 	this.primaryAction = 1;
 	this.secondaryAction = 2;
@@ -531,7 +533,7 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
-		const gridX = this.pxPerBeat / Math.round(2 * this.pxPerBeat / 30);
+		const gridX = this.pxPerBeat / Math.round(2 * this.pxPerBeat / 25); // TODO: better grid
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = this.width / gridX;
 		const offsetRows = Math.ceil(this.scrollY / this.pxPerTone);
@@ -596,6 +598,7 @@ function NoteManagerUI(noteManager) {
 		const time = noteManager.getCurrentTime();
 		const caretPos = this.timeToX(time);
 		
+		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.5;
 		this.render();
 		this.drawCaret(caretPos);
 

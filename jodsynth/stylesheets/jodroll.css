@@ -4,9 +4,10 @@
 }
 
 .track-container, .side-panel {
-  width: 100px !important;
-  max-width: 100px !important;
-  min-width: 100px !important;
+	box-sizing: border-box;
+  width: 200px !important;
+  max-width: 200px !important;
+  min-width: 200px !important;
   background-color: #04152e;
 }
 

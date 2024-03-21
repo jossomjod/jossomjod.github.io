@@ -185,6 +185,9 @@ document.body.onkeydown = (e) => {
 		case 115: // F4
 			noteManagerUi.snapY = !noteManagerUi.snapY;
 			break;
+		case 118: // F7
+			noteManagerUi.autoScrollOnPlayback = !noteManagerUi.autoScrollOnPlayback;
+			break;
 		case 119: // F8
 			quickSave();
 			break;
