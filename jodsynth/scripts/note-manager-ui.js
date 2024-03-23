@@ -488,7 +488,7 @@ function NoteManagerUI(noteManager) {
 		this.ctx.fillStyle = boxColor;
 		this.ctx.fillRect(x, y, w, h);
 
-		nodes.forEach((n) => {
+		nodes?.forEach((n) => {
 			const nx = this.timeToX(note.startTime + n.time);
 			const ny = y + n.value * this.automationBoxHeight;
 			this.drawCircle(nx, ny, 10, nodeColor);
@@ -503,7 +503,7 @@ function NoteManagerUI(noteManager) {
 				this.drawNoteAutomation(n, n.gainNodes);
 			} else {
 				const isSelected = notes === noteManager.getSelectedTrack().notes;
-				if (isSelected && this.selectedNotes.find((s) => s === i) !== undefined) this.drawNote(n, jodColors.selectedNote, resizeColor);
+				if (isSelected && this.selectedNotes.some((s) => s === i)) this.drawNote(n, jodColors.selectedNote, resizeColor);
 				else this.drawNote(n, color, resizeColor);
 			}
 		});
