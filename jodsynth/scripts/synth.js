@@ -351,7 +351,10 @@ function Synth(ac, output, fromObject) {
 	};
 	
 	this.stop = (oscs, time = ac.currentTime) => {
-		oscs.forEach((o, i) => this.oscillators[i]?.stop(time, o.oscillator, o.gain));
+		oscs.forEach((o, i) => {
+			console.log('tryna stop osc', o, i, this.oscillators[i]);
+			this.oscillators[i]?.stop(time, o.oscillator, o.gain);
+		});
 	};
 
 	this.schedulePlayback = ({ startTime, duration, freq }) => {

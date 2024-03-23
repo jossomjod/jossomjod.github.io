@@ -210,6 +210,7 @@ document.body.onkeyup = (e) => {
 };
 
 function toggleKeys(e, bool) {
+	console.log('toggleKeys(' + bool + ')');
 	switch (e.which) {
 		case 37:
 			keys.left = bool;
@@ -227,7 +228,7 @@ function toggleKeys(e, bool) {
 			keys.ctrl = bool;
 			break;
 		default:
-			console.log('Key event - physical:', e.code, 'which:', e.which);
+			//console.log('Key event - physical:', e.code, 'which:', e.which);
 			break;
 	}
 	if (e.ctrlKey) return;
@@ -237,6 +238,7 @@ function toggleKeys(e, bool) {
 		key.down = bool;
 		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
 		else noteManager.getSelectedTrack().synth.stop(key.id);
+		console.log('KEY', key);
 		return;
 	}
 }
