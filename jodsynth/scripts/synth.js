@@ -261,10 +261,10 @@ function ReverbManager(ac, input, output, reverb) {
 	this.reverb = ac.createConvolver();
 	this.reverb.buffer = createNoiseBuffer(ac);
 
-	this.delay = ac.createDelay(2);
+	this.delay = ac.createDelay(8);
 	this.delay.delayTime.value = 0.4;
 	this.delayFeedback = ac.createGain();
-	this.delayFeedback.gain.value = 0.16;
+	this.delayFeedback.gain.value = 0.06;
 
 	this.synthGain = new GainNode(ac, { value: 1.0 });
 
@@ -280,7 +280,7 @@ function ReverbManager(ac, input, output, reverb) {
 
 
 function createNoiseBuffer(ac) {
-	const bufferSize = ac.sampleRate * 1.0;
+	const bufferSize = ac.sampleRate * 2.0;
 	const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
 	const bufL = buford.getChannelData(0);
 	const bufR = buford.getChannelData(1);

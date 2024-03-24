@@ -45,6 +45,20 @@ note manager TODOs:
 - automation
 
 
+====== BUGS ======
+
+- notes sometimes get stuck and play endlessly when playing on the keyboard
+  - never happens in Firefox, happens often in Chrome and Edge
+	- seems to happen more often on low-end devices
+
+- some synth parameter inputs show incorrect values when loading a save or switching tracks
+  - affects jodnumb and detune (but not coarse)
+
+==================
+
+
+
+
 Notes on PeriodicWave:
 
 https://webaudio.github.io/web-audio-api/#PeriodicWaveOptions
