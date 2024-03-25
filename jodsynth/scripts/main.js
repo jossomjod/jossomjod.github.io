@@ -1,3 +1,5 @@
+console.log('Is secure context:', window.isSecureContext);
+
 const ac = new (window.AudioContext || window.webkitAudioContext);
 var clipboard;
 
@@ -148,7 +150,7 @@ topBar.onkeyup = (e) => {
 // KEY STUFF
 
 document.body.onkeydown = (e) => {
-	if (e.repeat) return;
+	if (e.repeat || e.isComposing || e.which === 229) return;
 	e.preventDefault();
 	switch (e.which) {
 		case 9: // tab
@@ -210,7 +212,6 @@ document.body.onkeyup = (e) => {
 };
 
 function toggleKeys(e, bool) {
-	console.log('toggleKeys(' + bool + ')');
 	switch (e.which) {
 		case 37:
 			keys.left = bool;
@@ -234,11 +235,10 @@ function toggleKeys(e, bool) {
 	if (e.ctrlKey) return;
 
 	const key = keyboardKeys[e.code];
-	if (key) {
+	if (key && key.down !== bool) {
 		key.down = bool;
 		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
 		else noteManager.getSelectedTrack().synth.stop(key.id);
-		console.log('KEY', key);
 		return;
 	}
 }
