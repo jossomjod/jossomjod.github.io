@@ -176,23 +176,19 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		const osc = new OscillatorNode(ac, { /* type: this.type, */ detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customeWave);
 
-		//osc.onended = () => console.log('the end');
 		gainNode.gain.value = this.gain;
 		osc.connect(gainNode);
 		osc.start(time);
 
-		this.gainEnvelope?.start(gainNode.gain, 0.0, this.gain, time);
-		this.pitchEnvelope?.start(osc.detune, this.detune, 1200.0, time);
+		this.gainEnvelope.start(gainNode.gain, 0.0, this.gain, time);
+		this.pitchEnvelope.start(osc.detune, this.detune, 1200.0, time);
 
 		return osc;
 	}
 	this.stop = (time, osc, gainNode) => {
-		if (this.gainEnvelope) {
-			this.gainEnvelope.stop(gainNode.gain, 0.0);
-			this.pitchEnvelope?.stop(osc.detune, this.detune);
-			osc.stop(time + this.gainEnvelope.getRelease());
-		}
-		else osc.stop(time);
+		this.gainEnvelope.stop(gainNode.gain, 0.0);
+		this.pitchEnvelope.stop(osc.detune, this.detune);
+		osc.stop(time + this.gainEnvelope.getRelease());
 	}
 
 	this.schedulePlayback = (frequency, gainNode, startTime = ac.currentTime, duration = 1) => {
@@ -204,14 +200,11 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.connect(gainNode);
 		osc.start(startTime);
 
-		this.gainEnvelope?.schedulePlayback(gainNode.gain, 0.0, this.gain, startTime, duration);
-		this.pitchEnvelope?.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration);
+		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, this.gain, startTime, duration);
+		this.pitchEnvelope.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration);
 
 		const endTime = startTime + duration;
-		if (this.gainEnvelope) {
-			osc.stop(endTime + this.gainEnvelope.getRelease());
-		}
-		else osc.stop(endTime);
+		osc.stop(endTime + this.gainEnvelope.getRelease());
 
 		return osc;
 	}
@@ -261,21 +254,16 @@ function ReverbManager(ac, input, output, reverb) {
 	this.reverb = ac.createConvolver();
 	this.reverb.buffer = createNoiseBuffer(ac);
 
-	this.delay = ac.createDelay(8);
+	this.delay = ac.createDelay(4);
 	this.delay.delayTime.value = 0.4;
 	this.delayFeedback = ac.createGain();
 	this.delayFeedback.gain.value = 0.06;
 
-	this.synthGain = new GainNode(ac, { value: 1.0 });
+	this.preDelay = ac.createDelay(1);
+	this.preDelay.delayTime.value = 0.41;
 
 	input.connect(output);
-	input.connect(this.reverb).connect(this.reverbGain).connect(this.synthGain).connect(output);
-
-	this.synthGain
-		.connect(this.delay)
-		.connect(this.delayFeedback)
-		.connect(this.delay)
-		.connect(output);
+	input.connect(this.preDelay).connect(this.reverb).connect(this.reverbGain).connect(output);
 }
 
 
@@ -352,7 +340,6 @@ function Synth(ac, output, fromObject) {
 	
 	this.stop = (oscs, time = ac.currentTime) => {
 		oscs.forEach((o, i) => {
-			console.log('tryna stop osc', o, i, this.oscillators[i]);
 			this.oscillators[i]?.stop(time, o.oscillator, o.gain);
 		});
 	};
