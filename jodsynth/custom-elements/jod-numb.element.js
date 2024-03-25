@@ -1,4 +1,6 @@
 class JodNumbElement extends HTMLElement {
+	static observedAttributes = ['value', 'speed', 'max', 'min'];
+
 	#value = 0;
 	lastValue = 0;
 	_max = 1;
@@ -48,17 +50,21 @@ class JodNumbElement extends HTMLElement {
 	}
 
 	attributeChangedCallback(name, old, newVal) {
-		console.log('AUIOEWHIAUEH', name, old, newVal);
+		console.log('AUIOEWHIAUEH', name, old, newVal); // TODO
+		//if (name === 'value') this.setValue(+newVal, { emitEvent: false });
 	}
 
-	setValue = (value) => {
+	setValue = (value, options = { emitEvent: true }) => {
 		this.#value = value;
-		this.wrapper.textContent = this.#value.toFixed(5);
-		this.dispatchEvent(this.changed);
+		this.wrapper.textContent = value.toFixed(5);
+		if (options.emitEvent) this.dispatchEvent(this.changed);
 	}
 
 	constructor() {
 		super();
+	}
+
+	connectedCallback() {
 		this.attachShadow({ mode: 'open' });
 
 		this._min = +(this.getAttribute('min') ?? 0);
@@ -72,7 +78,6 @@ class JodNumbElement extends HTMLElement {
 		wrapper.textContent = this.#value;
 
 		wrapper.addEventListener('mousedown', (e) => {
-			console.log('MOUSEDOWN on JOD NUMB', e);
 			e.preventDefault();
 			e.stopPropagation();
 			switch (e.buttons) {
@@ -103,7 +108,6 @@ class JodNumbElement extends HTMLElement {
 				value = value < this._min ? this._min : value > this._max ? this._max : value;
 				this.setValue(value);
 				this.value = value;
-				console.log('oaeijfouaj', this.value);
 			}
 		});
 

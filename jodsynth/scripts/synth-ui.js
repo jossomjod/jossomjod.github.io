@@ -204,6 +204,7 @@ function GainControlUI(oscillator, control) {
 	this.control = control;
 
 	this.control.value = this.oscillator.gain;
+	this.control.setAttribute('value', this.oscillator.gain + '');
 	this.control.addEventListener('changed', (e) => {
 		this.oscillator.gain = +this.control.value;
 	});
@@ -276,8 +277,9 @@ function OscillatorUi(oscillator, container, name) {
 	// DETUNE
 	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune'); // TODO: Use jodnumb
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
+	const coarse = Math.round(this.oscillator.detune / 100);
 	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
-	this.oscDetuneUI.value = 0.0;
+	this.oscDetuneUI.value = this.oscillator.detune - coarse * 100;
 	
 	this.oscDetuneInput = () => {
 		this.oscillator.detune = +this.oscCoarseUI.value * 100 + +this.oscDetuneUI.value;
