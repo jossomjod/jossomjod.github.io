@@ -13,8 +13,8 @@ function ReverbManager2(ac, input, output, reverb) {
 }
 
 
-function createNoiseBuffer2(ac) {
-	const bufferSize = ac.sampleRate * 2.0;
+function createNoiseBuffer2(ac, time) {
+	const bufferSize = ac.sampleRate * time;
 	const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
 	const bufL = buford.getChannelData(0);
 	const bufR = buford.getChannelData(1);
@@ -64,87 +64,89 @@ function setupReverb() {
 	this.renderTail();
 }
 
-// COPYPASTA
-function renderTail () {
-	const tailContext = new OfflineAudioContext(2, this.context.sampleRate * this.reverbTime, this.context.sampleRate);
-	const tailOsc = new Noise(tailContext, 1);
-	const tailLPFilter = new Filter(tailContext, "lowpass", 5000, 1);
-	const tailHPFilter = new Filter(tailContext, "highpass", 500, 1);
-
-	tailOsc.init();
-			tailOsc.connect(tailHPFilter.input);
-			tailHPFilter.connect(tailLPFilter.input);
-			tailLPFilter.connect(tailContext.destination);
-			tailOsc.attack = this.attack;
-			tailOsc.decay = this.decay;
-			tailOsc.release = this.release;
-
-	setTimeout(()=>{
-		tailContext.startRendering().then((buffer) => {
-			this.effect.buffer = buffer;
-		});
-
-		tailOsc.on({frequency: 500, velocity: 127});
-		tailOsc.off();
-	}, 20)
-}
-
 
 
 /**
  * @param {AudioContext} ac 
  */
-function ReverbEffect(ac, values = {}) {
-	this.values = values;
+function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dry: 0.5 }) {
+	this.fxType = 'reverb';
+	this.params = params;
 	this.reverb = ac.createConvolver();
 	this.wet = ac.createGain();
-	this.input = ac.createGain();
-	this.preDelay = ac.createDelay(3);
+	this.dry = ac.createGain();
+	this.preDelay = ac.createDelay(1);
+	this.input = new GainNode(ac, { gain: 1 });
 
 	this.connect = (destination) => {
-
+		this.input.connect(this.dry).connect(destination);
+		this.input
+			.connect(this.preDelay)
+			.connect(this.reverb)
+			.connect(this.wet)
+			.connect(destination);
+		return destination;
 	};
 
-	this.save = () => this.values;
-	this.load = (_values) => {
-		this.values = _values;
+	this.renderTail = () => {
+		const tailAc = new OfflineAudioContext(2, ac.sampleRate * this.params.reverbTime, ac.sampleRate);
+		const tailSource = new AudioBufferSourceNode(tailAc, {
+			buffer: createNoiseBuffer2(tailAc, this.params.reverbTime),
+		});
+		const gain = new GainNode(tailAc, { gain: 1 });
+
+		tailSource.connect(gain).connect(tailAc.destination);
+		gain.gain.linearRampToValueAtTime(0, tailAc.currentTime + this.params.reverbTime);
+		tailSource.start();
+
+		tailAc.startRendering().then((buffer) => {
+			this.reverb.buffer = buffer;
+		});
 	};
-	this.load(values);
+
+	this.save = () => this.params;
+	this.load = (_params) => {
+		this.params = _params;
+		this.wet.gain.setValueAtTime(this.params.wet, ac.currentTime);
+		this.dry.gain.setValueAtTime(this.params.dry, ac.currentTime);
+		this.preDelay.delayTime.setValueAtTime(this.params.preDelay, ac.currentTime);
+		this.renderTail();
+	};
+	this.load(params);
 }
 
-// COPYPASTA
-ReverbEffect.prototype.renderTail = () => {
-	const tailContext = new OfflineAudioContext(2, this.context.sampleRate * this.reverbTime, this.context.sampleRate);
-	const tailOsc = new Noise(tailContext, 1);
-	const tailLPFilter = new Filter(tailContext, "lowpass", 5000, 1);
-	const tailHPFilter = new Filter(tailContext, "highpass", 500, 1);
 
-	tailOsc.init();
-	tailOsc.connect(tailHPFilter.input);
-	tailHPFilter.connect(tailLPFilter.input);
-	tailLPFilter.connect(tailContext.destination);
-	tailOsc.attack = this.attack;
-	tailOsc.decay = this.decay;
-	tailOsc.release = this.release;
+function effectFromType(ac, type, params) {
+	switch (type) {
+		case 'reverb':
+			return new ReverbEffect(ac, params);
+		default:
+			throw `No effect exists with type ${type}`;
+	}
+}
 
-	setTimeout(()=>{
-		tailContext.startRendering().then((buffer) => {
-			this.effect.buffer = buffer;
-		});
-
-		tailOsc.on({frequency: 500, velocity: 127});
-		tailOsc.off();
-	}, 20)
-};
-
-
-
-
-
-function FxManager(ac) {
-	this.fxChain = [];
+function FxManager(ac, output, fromObject) {
+	this.input = new GainNode(ac, { gain: 1 });
+	this.fxChain = [new ReverbEffect(ac)];
 
 	this.connect = (destination) => {
-
+		let prev = this.input;
+		this.fxChain.forEach((fx) => {
+			prev.connect(fx.input);
+			prev = fx;
+		});
+		prev.connect(destination);
 	};
+
+	this.save = () => this.fxChain.reduce((obj, fx) => {
+		obj[fx.fxType] = fx.save();
+		return obj;
+	}, {});
+
+	this.load = (obj) => {
+		this.fxChain = Object.entries(obj).map(([type, params]) => effectFromType(ac, type, params));
+	};
+
+	if (fromObject) this.load(fromObject);
+	if (output) this.connect(output);
 }

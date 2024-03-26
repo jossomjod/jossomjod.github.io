@@ -248,54 +248,15 @@ var pitchPoints = [
 ];
 
 
-function ReverbManager(ac, input, output, reverb) {
-	this.reverbGain = ac.createGain();
-	this.reverbGain.gain.value = reverb;
-	this.reverb = ac.createConvolver();
-	this.reverb.buffer = createNoiseBuffer(ac);
-
-	this.delay = ac.createDelay(4);
-	this.delay.delayTime.value = 0.4;
-	this.delayFeedback = ac.createGain();
-	this.delayFeedback.gain.value = 0.06;
-
-	this.preDelay = ac.createDelay(1);
-	this.preDelay.delayTime.value = 0.41;
-
-	input.connect(output);
-	input.connect(this.preDelay).connect(this.reverb).connect(this.reverbGain).connect(output);
-}
-
-
-function createNoiseBuffer(ac) {
-	const bufferSize = ac.sampleRate * 2.0;
-	const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
-	const bufL = buford.getChannelData(0);
-	const bufR = buford.getChannelData(1);
-	for (let i = 0; i < bufferSize; i++) {
-		bufL[i] = Math.random() * 2 - 1;
-		bufR[i] = Math.random() * 2 - 1;
-	}
-	return buford;
-}
-
-
 function Synth(ac, output, fromObject) {
 	this.playing = false;
 	this.gain = new GainNode(ac, { value: 1 });
-	this.reverb = 1;
-	this.reverbManager = new ReverbManager(ac, this.gain, output, this.reverb);
 	this.oscillators = [];
 	this.preset;// = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => {
-		this.reverbManager = new ReverbManager(ac, this.gain, audioNode, this.reverb);
+		this.gain.connect(audioNode);
 	};
-
-	this.setReverbGain = (value) => {
-		this.reverb = value;
-		this.reverbManager.reverbGain.gain.value = value;
-	}
 
 	this.applyPreset = (preset = this.preset) => {
 		switch(preset) {
@@ -401,14 +362,14 @@ function Synth(ac, output, fromObject) {
 	};
 
 	this.save = () => {
-		return { oscillators: this.oscillators.map((o) => o.save()), reverb: this.reverb };
+		return { oscillators: this.oscillators.map((o) => o.save()) };
 	};
 	this.load = (data) => {
 		this.oscillators = data.oscillators.map((o) => this.createOscillatorFromObject(o));
-		if (data.reverb !== undefined) this.setReverbGain(+data.reverb);
 	};
 
 	if (fromObject) {
 		this.load(fromObject);
 	} else this.applyPreset();
+	if (output) this.connect(output);
 }

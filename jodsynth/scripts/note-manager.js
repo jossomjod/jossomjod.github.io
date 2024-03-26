@@ -29,9 +29,6 @@ function Note(tone, start, dur, gain, gainNodes, pitchNodes) {
 	this.pitchNodes = pitchNodes || []; // AutomationNode[]
 }
 
-function envelopePointsToAutomationNodes(pts) {
-
-}
 
 /**
  * @param {Note} note
@@ -69,8 +66,9 @@ function NoteManager(ac, output) {
 	this.intervalId = 0;
 
 	this.addNote = (startTime, tone, duration) => {
+		const synth = this.getSelectedTrack().synth.oscillators[0];
 		if (startTime < 0) startTime = 0;
-		const newNote = new Note(tone, startTime, duration);
+		const newNote = new Note(tone, startTime, duration, 1, synth.gainEnvelope.points.slice(), synth.pitchEnvelope.points.slice());
 		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
 	};
@@ -161,7 +159,9 @@ function NoteManager(ac, output) {
 
 	this.createTrack = () => {
 		const index = this.tracks.length + 1;
-		const track = { synth: new Synth(ac, output), notes: [], name: 'Track ' + index, active: true, muted: false };
+		const track = { notes: [], name: 'Track ' + index, active: true, muted: false };
+		track.fx = new FxManager(ac, output);
+		track.synth = new Synth(ac, track.fx.input);
 		this.tracks.push(track);
 		return track;
 	};
@@ -177,7 +177,7 @@ function NoteManager(ac, output) {
 	};
 
 	this.getStringableTracks = () => {
-		return this.tracks.map((t) => ({ ...t, synth: t.synth.save() }));
+		return this.tracks.map((t) => ({ ...t, synth: t.synth.save(), fx: t.fx.save() }));
 	};
 
 	this.loadTracks = (tracks) => {
@@ -189,7 +189,11 @@ function NoteManager(ac, output) {
 		}
 		this.tracks = tracks.map((t, i) => {
 			if (t.active) this.selectedTrack = i;
-			return ({ ...t, synth: new Synth(ac, output, t.synth) });
+
+			const track = t;
+			track.fx = new FxManager(ac, output, t.fx);
+			track.synth = new Synth(ac, track.fx.input, t.synth);
+			return track;
 		});
 	};
 }
