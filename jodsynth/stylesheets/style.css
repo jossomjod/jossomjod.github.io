@@ -19,7 +19,7 @@
   border-radius: 4px;
 }
 
-.fx-container {
+.fx-container, .global-fx-container {
 	margin: 20px;
 	background-color: #010a1d;
 }
