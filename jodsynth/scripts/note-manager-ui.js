@@ -35,11 +35,6 @@ function NoteManagerUI(noteManager) {
 	this.ctx = this.canvas.getContext('2d');
 	this.octx1 = this.overlay1.getContext('2d');
 
-	this.reverbGainUI = document.querySelector('#reverbGain');
-	this.reverbGainUI.addEventListener('input', () => {
-		this.currentSynthUi?.synth.setReverbGain(this.reverbGainUI.value);
-	});
-
 	this.currentSynthUi;
 
 	this.pxPerBeat = 50;
@@ -211,11 +206,13 @@ function NoteManagerUI(noteManager) {
 	});
 
 
-	this.trackerContainer.addEventListener('wheel', (e) => { // TODO: zoom on cursor
+	this.trackerContainer.addEventListener('wheel', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.1;
+		const cursorTime = this.xToTime(this.cursorX);
+		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
 		this.gridSizeX = this.pxPerBeat;
+		this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
 		this.render();
 	});
 	
@@ -441,7 +438,6 @@ function NoteManagerUI(noteManager) {
 			delete this.currentSynthUi;
 		}
 		this.currentSynthUi = new SynthUi(track.synth);
-		this.reverbGainUI.value = track.synth.reverb;
 	};
 
 	this.addOsc = () => {
@@ -468,10 +464,10 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawCircle = (x, y, r, color = jodColors.automationNode) => {
-		this.ctx.strokeStyle = color;
+		this.ctx.fillStyle = color;
 		this.ctx.beginPath();
 		this.ctx.arc(x, y, r, 0, Math.PI * 2);
-		this.ctx.stroke();
+		this.ctx.fill();
 	}
 
 	this.drawNoteAutomation = (
@@ -482,16 +478,16 @@ function NoteManagerUI(noteManager) {
 		lineColor = jodColors.automationLine
 	) => {
 		const x = this.timeToX(note.startTime);
-		const y = this.toneToY(note.tone) - this.automationBoxHeight * 0.5;
+		const y = this.toneToY(note.tone) + this.automationBoxHeight * 0.5;
 		const w = note.duration * this.pxPerBeat;
-		const h = this.automationBoxHeight;
+		const h = -this.automationBoxHeight;
 		this.ctx.fillStyle = boxColor;
 		this.ctx.fillRect(x, y, w, h);
 
 		nodes?.forEach((n) => {
 			const nx = this.timeToX(note.startTime + n.time);
-			const ny = y + n.value * this.automationBoxHeight;
-			this.drawCircle(nx, ny, 10, nodeColor);
+			const ny = y + n.value * -this.automationBoxHeight;
+			this.drawCircle(nx, ny, 6, nodeColor);
 		});
 	};
 
