@@ -13,7 +13,7 @@ function ReverbManager2(ac, input, output, reverb) {
 }
 
 
-function createNoiseBuffer2(ac, time) {
+function createNoiseBuffer(ac, time) {
 	const bufferSize = ac.sampleRate * time;
 	const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
 	const bufL = buford.getChannelData(0);
@@ -77,6 +77,7 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 	this.dry = ac.createGain();
 	this.preDelay = ac.createDelay(1);
 	this.input = new GainNode(ac, { gain: 1 });
+	this.timeOutId;
 
 	this.connect = (destination) => {
 		this.input.connect(this.dry).connect(destination);
@@ -88,15 +89,38 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 		return destination;
 	};
 
+	this.setParam = (param, value) => {
+		this.params[param] = value;
+
+		switch (param) {
+			case 'preDelay':
+				this.preDelay.delayTime.setValueAtTime(this.params.preDelay, ac.currentTime);
+				break;
+			case 'wet':
+				this.wet.gain.setValueAtTime(this.params.wet, ac.currentTime);
+				break;
+			case 'dry':
+				this.dry.gain.setValueAtTime(this.params.dry, ac.currentTime);
+				break;
+			default:
+				clearTimeout(this.timeOutId);
+				this.timeOutId = setTimeout(() => {
+					this.load(this.params);
+				}, 400);
+
+		}
+	};
+
 	this.renderTail = () => {
-		const tailAc = new OfflineAudioContext(2, ac.sampleRate * this.params.reverbTime, ac.sampleRate);
+		const reverbTime = this.params.reverbTime;
+		const tailAc = new OfflineAudioContext(2, ac.sampleRate * reverbTime, ac.sampleRate);
 		const tailSource = new AudioBufferSourceNode(tailAc, {
-			buffer: createNoiseBuffer2(tailAc, this.params.reverbTime),
+			buffer: createNoiseBuffer(tailAc, reverbTime),
 		});
 		const gain = new GainNode(tailAc, { gain: 1 });
 
 		tailSource.connect(gain).connect(tailAc.destination);
-		gain.gain.linearRampToValueAtTime(0, tailAc.currentTime + this.params.reverbTime);
+		gain.gain.linearRampToValueAtTime(0, tailAc.currentTime + reverbTime);
 		tailSource.start();
 
 		tailAc.startRendering().then((buffer) => {

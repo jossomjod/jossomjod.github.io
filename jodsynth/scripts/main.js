@@ -99,7 +99,7 @@ function quickLoad() {
 	noteManagerUi.renderTracks();
 }
 
-// TODO: save synth preset
+
 function saveAll() {
 	const saveName = saveNameInput.value;
 	if (!saveName) return;
