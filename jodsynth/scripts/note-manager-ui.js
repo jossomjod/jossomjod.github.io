@@ -22,6 +22,7 @@ const jodColors = {
 	automationBox: '#387f6caa',
 	automationNode: '#fca372',
 	automationLine: '#3afa8c99',
+	releaseBox: '#386e62aa',
 };
 
 function NoteManagerUI(noteManager) {
@@ -438,6 +439,14 @@ function NoteManagerUI(noteManager) {
 			delete this.currentSynthUi;
 		}
 		this.currentSynthUi = new SynthUi(track.synth);
+
+
+		if (this.currentFxUi) {
+			const container = document.querySelector('.fx-container');
+			while (container.firstChild) container.removeChild(container.firstChild);
+			delete this.currentFxUi;
+		}
+		this.currentFxUi = new FxManagerUi(track.fx);
 	};
 
 	this.addOsc = () => {
@@ -484,10 +493,19 @@ function NoteManagerUI(noteManager) {
 		this.ctx.fillStyle = boxColor;
 		this.ctx.fillRect(x, y, w, h);
 
-		nodes?.forEach((n) => {
+		if (!nodes?.length) return;
+
+		// Release box
+		const releaseW = (nodes.at(-1).time ?? 0) * this.pxPerBeat;
+		this.ctx.fillStyle = jodColors.releaseBox;
+		this.ctx.fillRect(x + w, y, releaseW, h);
+
+		// Automation nodes
+		nodes.forEach((n) => {
+			//if (n.time > note.duration) // TODO
 			const nx = this.timeToX(note.startTime + n.time);
 			const ny = y + n.value * -this.automationBoxHeight;
-			this.drawCircle(nx, ny, 6, nodeColor);
+			this.drawCircle(nx, ny, 7, nodeColor);
 		});
 	};
 
@@ -529,17 +547,19 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
-		const gridX = this.pxPerBeat / Math.round(2 * this.pxPerBeat / 25); // TODO: better grid
+		const visColsMult = 1 + Math.floor(this.pxPerBeat / 30);
+		const gridX = this.pxPerBeat / visColsMult;
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = this.width / gridX;
 		const offsetRows = Math.ceil(this.scrollY / this.pxPerTone);
+		const offsetCols = Math.round(this.scrollX / this.pxPerBeat);
 		
 		// horizontal lines
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleRows; i++) {
 			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
-			const isOctave = (i + offsetRows) % 12 === 0;
+			const isOctave = (i - offsetRows) % 12 === 0;
 
 			if (isOctave) {
 				ctx.stroke();
@@ -562,8 +582,21 @@ function NoteManagerUI(noteManager) {
 		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleCols; i++) {
 			const x = i * gridX + this.scrollX % gridX;
+			const isBar = (i + offsetCols) % this.beatsPerBar === 0;
+
+			if (isBar) {
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.strokeStyle = jodColors.gridBar;
+			}
 			ctx.moveTo(x, 0);
 			ctx.lineTo(x, this.height);
+
+			if (isBar) {
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.strokeStyle = jodColors.gridLine;
+			}
 		}
 		ctx.stroke();
 
@@ -594,7 +627,7 @@ function NoteManagerUI(noteManager) {
 		const time = noteManager.getCurrentTime();
 		const caretPos = this.timeToX(time);
 		
-		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.5;
+		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.pxPerBeat;// + this.width * 0.5;
 		this.render();
 		this.drawCaret(caretPos);
 
@@ -608,7 +641,6 @@ function NoteManagerUI(noteManager) {
 	this.togglePlayback = (options) => {
 		if (noteManager.isPlaying) {
 			noteManager.stopAll();
-			//noteManager.stopPlaybackLoop();
 		} else {
 			if (options.fromCursor) noteManager.playAll(this.xToTime(this.cursorX));
 			else noteManager.playAll();
