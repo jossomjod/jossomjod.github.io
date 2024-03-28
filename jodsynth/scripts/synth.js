@@ -265,14 +265,14 @@ function Synth(ac, output, fromObject) {
 				break;
 			case 'phase_saws':
 				this.oscillators = [
-					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, -0.1),
-					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.2),
+					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, -0.1),
+					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, 0.2),
 				];
 				break;
 			default:
 				this.oscillators = [
-					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), null, 0.0),
-					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 1200.0), 0, 0.0),
+					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, 0.0),
+					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 600.0), 0, 0.0),
 				];
 		}
 	}
@@ -331,7 +331,7 @@ function Synth(ac, output, fromObject) {
 			'sine',
 			0.0,
 			new ArrayEnvelope(ac, osmanGainPoints, 0.0),
-			new ArrayEnvelope(ac, pitchPoints, 1200.0),
+			new ArrayEnvelope(ac, pitchPoints, 600.0),
 			null,
 			0.0
 		));
@@ -348,7 +348,7 @@ function Synth(ac, output, fromObject) {
 				'sawtooth',
 				detune,
 				new ArrayEnvelope(ac, oscarGainPoints, 0.0),
-				new ArrayEnvelope(ac, pitchPoints, 1200.0),
+				new ArrayEnvelope(ac, pitchPoints, 600.0),
 				null,
 				phase
 			));
