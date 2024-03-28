@@ -67,6 +67,9 @@ const addOscBtn = document.querySelector('#addOscBtn');
 addOscBtn.onclick = () => noteManagerUi.addOsc();
 
 
+const addFxBtn = document.querySelector('#addFxBtn');
+addFxBtn.onclick = () => noteManagerUi.addFx();
+
 
 
 

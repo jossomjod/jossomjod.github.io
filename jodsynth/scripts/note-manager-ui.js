@@ -37,6 +37,7 @@ function NoteManagerUI(noteManager) {
 	this.octx1 = this.overlay1.getContext('2d');
 
 	this.currentSynthUi;
+	this.currentFxUi;
 
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
@@ -49,7 +50,7 @@ function NoteManagerUI(noteManager) {
 	this.noteHeight = this.pxPerTone;
 	this.newNoteDuration = 1;
 	this.isPlaying = () => noteManager.isPlaying;
-	this.autoScrollOnPlayback = true;
+	this.autoScrollOnPlayback = false;
 
 	this.primaryAction = 1;
 	this.secondaryAction = 2;
@@ -452,6 +453,9 @@ function NoteManagerUI(noteManager) {
 	this.addOsc = () => {
 		this.currentSynthUi?.addOsc();
 	}
+	this.addFx = () => {
+		this.currentFxUi?.addFx();
+	}
 
 	this.drawClear = (ctx = this.ctx) => {
 		ctx.fillStyle = jodColors.background;
@@ -551,8 +555,8 @@ function NoteManagerUI(noteManager) {
 		const gridX = this.pxPerBeat / visColsMult;
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = this.width / gridX;
-		const offsetRows = Math.ceil(this.scrollY / this.pxPerTone);
-		const offsetCols = Math.round(this.scrollX / this.pxPerBeat);
+		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone);
+		const offsetCols = Math.floor(-this.scrollX / gridX);
 		
 		// horizontal lines
 		ctx.beginPath();
@@ -582,7 +586,7 @@ function NoteManagerUI(noteManager) {
 		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleCols; i++) {
 			const x = i * gridX + this.scrollX % gridX;
-			const isBar = (i + offsetCols) % this.beatsPerBar === 0;
+			const isBar = ((i + offsetCols) % (this.beatsPerBar * visColsMult)) === 0;
 
 			if (isBar) {
 				ctx.stroke();

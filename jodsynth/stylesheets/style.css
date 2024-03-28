@@ -20,6 +20,8 @@
 }
 
 .fx-container, .global-fx-container {
+	display: flex;
+	gap: 20px;
 	margin: 20px;
 	background-color: #010a1d;
 }

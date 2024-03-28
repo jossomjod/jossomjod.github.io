@@ -140,8 +140,49 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 }
 
 
+
+
+/**
+ * @param {AudioContext} ac 
+ */
+function FilterEffect(ac, params = { frequency: 350.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
+	this.fxType = 'filter';
+	this.params = params;
+	this.input = new GainNode(ac, { gain: 1 });
+	this.filter = new BiquadFilterNode(ac, params);
+	console.log('dfjjhdfjhfd', this.filter);
+
+	this.connect = (destination) => {
+		this.input
+			.connect(this.filter)
+			.connect(destination);
+		return destination;
+	};
+
+	this.setParam = (param, value) => {
+		this.params[param] = value;
+		this.filter[param].setValueAtTime(value, ac.currentTime);
+	};
+
+	this.setType = (type) => {
+		this.params.type = type;
+		this.filter.type = type;
+	};
+
+	this.save = () => this.params;
+	this.load = (_params) => {
+		this.params = _params;
+		Object.entries(this.params).forEach(([key, value]) => this.filter[key].setValueAtTime?.(value, ac.currentTime));
+		this.filter.type = _params.type;
+	};
+}
+
+
+
 function effectFromType(ac, type, params) {
 	switch (type) {
+		case 'filter':
+			return new FilterEffect(ac, params);
 		case 'reverb':
 			return new ReverbEffect(ac, params);
 		default:
@@ -151,7 +192,8 @@ function effectFromType(ac, type, params) {
 
 function FxManager(ac, output, fromObject) {
 	this.input = new GainNode(ac, { gain: 1 });
-	this.fxChain = [new ReverbEffect(ac)];
+	this.output = output;
+	this.fxChain = [new FilterEffect(ac), new ReverbEffect(ac)];
 
 	this.connect = (destination) => {
 		let prev = this.input;
@@ -160,6 +202,18 @@ function FxManager(ac, output, fromObject) {
 			prev = fx;
 		});
 		prev.connect(destination);
+	};
+
+	this.addFx = (type, params) => {
+		const fx = effectFromType(ac, type, params);
+		this.fxChain.push(fx);
+		this.connect(this.output);
+		return { fx, index: this.fxChain.length - 1 };
+	};
+
+	this.removeFx = (index, newDestination) => {
+		this.fxChain.splice(index, 1);
+		this.connect(newDestination ?? this.output);
 	};
 
 	this.save = () => this.fxChain.reduce((obj, fx) => {
@@ -172,5 +226,5 @@ function FxManager(ac, output, fromObject) {
 	};
 
 	if (fromObject) this.load(fromObject);
-	if (output) this.connect(output);
+	if (this.output) this.connect(this.output);
 }
