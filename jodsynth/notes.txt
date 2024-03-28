@@ -41,7 +41,6 @@ mono-space
 
 
 note manager TODOs:
-- fix endlessly playing note bug
 - automation
   - per note
 	  - should initially be based on the synth envelopes
@@ -63,8 +62,11 @@ note manager TODOs:
 	- FIXED by workaround
 
 
-- some synth parameter inputs show incorrect values when loading a save or switching tracks
-  - affects jodnumb and detune (but not coarse)
+- some synth parameter inputs show incorrect values when loading a save or switching tracks   FIXED
+
+- playback of long notes sounds wrong      PRIORITY
+
+- grid renders bar and octave lines wrong when panned to negative coords
 
 ==================
 
