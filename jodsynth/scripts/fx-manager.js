@@ -128,7 +128,7 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 		});
 	};
 
-	this.save = () => this.params;
+	this.save = () => ({ params: this.params, fxType: this.fxType });
 	this.load = (_params) => {
 		this.params = _params;
 		this.wet.gain.setValueAtTime(this.params.wet, ac.currentTime);
@@ -150,7 +150,6 @@ function FilterEffect(ac, params = { frequency: 350.0, detune: 0.0, Q: 1, gain: 
 	this.params = params;
 	this.input = new GainNode(ac, { gain: 1 });
 	this.filter = new BiquadFilterNode(ac, params);
-	console.log('dfjjhdfjhfd', this.filter);
 
 	this.connect = (destination) => {
 		this.input
@@ -169,7 +168,7 @@ function FilterEffect(ac, params = { frequency: 350.0, detune: 0.0, Q: 1, gain: 
 		this.filter.type = type;
 	};
 
-	this.save = () => this.params;
+	this.save = () => ({ params: this.params, fxType: this.fxType });
 	this.load = (_params) => {
 		this.params = _params;
 		Object.entries(this.params).forEach(([key, value]) => this.filter[key].setValueAtTime?.(value, ac.currentTime));
@@ -190,7 +189,7 @@ function effectFromType(ac, type, params) {
 	}
 }
 
-function FxManager(ac, output, fromObject) {
+function FxManager(ac, output, fromArray) {
 	this.input = new GainNode(ac, { gain: 1 });
 	this.output = output;
 	this.fxChain = [new FilterEffect(ac), new ReverbEffect(ac)];
@@ -216,15 +215,12 @@ function FxManager(ac, output, fromObject) {
 		this.connect(newDestination ?? this.output);
 	};
 
-	this.save = () => this.fxChain.reduce((obj, fx) => {
-		obj[fx.fxType] = fx.save();
-		return obj;
-	}, {});
+	this.save = () => this.fxChain.map((fx) => fx.save());
 
-	this.load = (obj) => {
-		this.fxChain = Object.entries(obj).map(([type, params]) => effectFromType(ac, type, params));
+	this.load = (arr) => {
+		this.fxChain = arr.map(({fxType, params}) => effectFromType(ac, fxType, params));
 	};
 
-	if (fromObject) this.load(fromObject);
+	if (fromArray) this.load(fromArray);
 	if (this.output) this.connect(this.output);
 }
