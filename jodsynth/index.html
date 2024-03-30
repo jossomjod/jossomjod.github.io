@@ -17,6 +17,7 @@
 		<script src="custom-elements/jod-numb.element.js"></script>
 		<script src="scripts/synth.js"></script>
 		<script src="scripts/synth-ui.js"></script>
+		<script src="scripts/track-ui.js"></script>
 		<script src="scripts/fx-manager.js"></script>
 		<script src="scripts/fx-manager-ui.js"></script>
 		<script src="scripts/note-manager.js"></script>
@@ -42,21 +43,31 @@
 					</select>
 				</div>
 			</div>
-			<div class="tracker-container"></div>
-			<div class="synth-body">
-				<div class="global-fx-container">
-					<div>
-						<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
-						<label for="masterGain">Master Gain</label>
+
+			<div class="joddaw-body">
+				<div class="side-panel">
+					<div class="track-container"></div>
+					<button class="add-track-btn" id="addTrackBtn">+ Add track</button>
+				</div>
+
+				<div class="main-panel">
+					<div class="tracker-container"></div>
+					<div class="synth-body">
+						<div class="global-fx-container">
+							<div>
+								<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
+								<label for="masterGain">Master Gain</label>
+							</div>
+						</div>
+						<div class="fx-body">
+							<div class="fx-container"></div>
+							<button id="addFxBtn">+ Add effect</button>
+						</div>
+						<div class="oscillators-container"></div>
+						<div class="button-container">
+							<button id="addOscBtn">+ Add oscillator</button>
+						</div>
 					</div>
-				</div>
-				<div class="fx-body">
-					<div class="fx-container"></div>
-					<button id="addFxBtn">+ Add effect</button>
-				</div>
-				<div class="oscillators-container"></div>
-				<div class="button-container">
-					<button id="addOscBtn">+ Add oscillator</button>
 				</div>
 			</div>
 		</div>
@@ -149,13 +160,8 @@
 
 <template id="jodroll-template">
 	<div class="jodroll-container">
-		<div class="side-panel">
-			<div class="track-container"></div>
-			<button class="add-track-btn" id="addTrackBtn">+ Add track</button>
-		</div>
 		<div class="note-container">
 			<canvas id="jodroll-main-canvas" class="jodroll-canvas">invisible canvas wooo</canvas>
-			<canvas id="jodroll-overlay1" class="jodroll-canvas overlay">wooooooooo</canvas>
 		</div>
 	</div>
 </template>

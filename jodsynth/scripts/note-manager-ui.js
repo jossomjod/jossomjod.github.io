@@ -29,22 +29,19 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer = document.querySelector('.tracker-container');
 	this.jodrollTemplate = document.querySelector('#jodroll-template');
 	this.jodroll = this.jodrollTemplate.content.cloneNode(true);
-	this.trackContainer = this.jodroll.querySelector('.track-container');
-	this.addTrackBtn = this.jodroll.querySelector('#addTrackBtn');
+	this.trackContainer = document.querySelector('.track-container');
+	this.addTrackBtn = document.querySelector('#addTrackBtn');
 	this.canvas = this.jodroll.querySelector('#jodroll-main-canvas');
-	this.overlay1 = this.jodroll.querySelector('#jodroll-overlay1');
 	this.ctx = this.canvas.getContext('2d');
-	this.octx1 = this.overlay1.getContext('2d');
 
 	this.currentSynthUi;
 	this.currentFxUi;
 
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
-	this.trackContainerWidth = 200;
 	this.width = this.trackerContainer.width = window.innerWidth;
 	this.height = this.canvas.height = this.trackerContainer.height = 600;
-	this.canvas.width = this.width - this.trackContainerWidth;
+	this.canvas.width = this.width;
 	this.scrollX = 0;
 	this.scrollY = 0;
 	this.noteHeight = this.pxPerTone;
@@ -334,7 +331,7 @@ function NoteManagerUI(noteManager) {
 
 	this.resizeNoteBy = (note, t) => {
 		note.duration = t;
-		if (note.duration < 0) note.duration = 0;
+		if (note.duration < 0) note.duration = 0.01;
 	};
 
 	this.resizeNotesBy = (t) => { // FIXME
@@ -385,17 +382,9 @@ function NoteManagerUI(noteManager) {
 			this.trackContainer.removeChild(this.trackContainer.firstChild);
 		}
 		tracks.forEach((t) => {
-			const div = document.createElement('div');
-			div.innerHTML = t.name;
-			div.className = 'jodroll-track';
-			div.addEventListener('mousedown', (e) => {
-				e.stopPropagation();
-				e.preventDefault();
-				this.selectTrack(div, t);
-			});
+			const div = createTrackEntryUi(t, this);
 			this.trackContainer.appendChild(div);
 			if (t.active) {
-				div.className += ' active';
 				this.setSynthUi(t);
 			}
 		});
@@ -403,14 +392,7 @@ function NoteManagerUI(noteManager) {
 
 	this.addTrack = () => {
 		const track = noteManager.createTrack();
-		const div = document.createElement('div');
-		div.innerHTML = track.name;
-		div.className = 'jodroll-track';
-		div.addEventListener('mousedown', (e) => {
-			e.stopPropagation();
-			e.preventDefault();
-			this.selectTrack(div, track);
-		});
+		const div = createTrackEntryUi(track, this);
 		this.trackContainer.appendChild(div);
 		this.selectTrack(div, track);
 	};
@@ -424,6 +406,10 @@ function NoteManagerUI(noteManager) {
 	this.removeTrack = (track) => {
 		// TODO
 	};
+
+	this.toggleMuteTrack = (track) => {
+		track.muted = !track.muted;
+	}
 
 	this.selectTrack = (element, track) => {
 		this.trackContainer.childNodes.forEach((c) => c.className = 'jodroll-track');

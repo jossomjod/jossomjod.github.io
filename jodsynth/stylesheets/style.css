@@ -19,6 +19,14 @@
   border-radius: 4px;
 }
 
+.joddaw-body {
+	display: flex;
+}
+.main-panel {
+	display: flex;
+	flex-direction: column;
+}
+
 .fx-container, .global-fx-container {
 	display: flex;
 	gap: 20px;
@@ -71,6 +79,26 @@
 	height: 40px;
 	background-color: #35a;
 	z-index: 3;
+}
+
+.clickable {
+	background-color: #1c38b4;
+}
+
+.circle {
+	display: flex;
+	border-radius: 50%;
+	justify-content: center;
+	align-items: center;
+}
+
+.small {
+	width: 20px;
+	height: 20px;
+}
+
+.muted {
+	background-color: #fd3132;
 }
 
 .detune {

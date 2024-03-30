@@ -72,6 +72,7 @@ function FxUi(params, parent, rmCallback, titleText) {
 	this.container.appendChild(this.title);
 	this.container.appendChild(this.ctrlBox);
 	this.container.appendChild(this.rmBtn);
+	this.container.setAttribute('draggable', true);
 
 	this.params = params;
 	this.controls = [];
@@ -104,11 +105,11 @@ function createReverbFxUi(fx, parent, rmCallback, titleText) {
 function createFilterFxUi(fx, parent, rmCallback, titleText) {
 	const fxUi = new FxUi(fx.params, parent, rmCallback, titleText);
 	const controls = [
+		createParamSelect({ label: 'Type', param: 'type', value: fx.params.type, setter: fx.setType, options: filterTypeOptions }),
 		createParamControl({ label: 'Freq', param: 'frequency', type: 'range', value: fx.params.frequency, min: 10, max: 22050, step: 0.1 }, fx.setParam),
 		createParamControl({ label: 'Detune', param: 'detune', type: 'number', value: fx.params.detune, min: -2400, max: 2400, step: 1 }, fx.setParam),
 		createParamControl({ label: 'Q', param: 'Q', type: 'range', value: fx.params.Q, min: 0.0001, max: 1000 }, fx.setParam),
 		createParamControl({ label: 'Gain', param: 'gain', type: 'range', value: fx.params.gain, min: -40, max: 40 }, fx.setParam),
-		createParamSelect({ label: 'Type', param: 'type', value: fx.params.type, setter: fx.setType, options: filterTypeOptions }),
 	];
 	fxUi.setControls(controls);
 	return fxUi;
@@ -130,9 +131,12 @@ function FxManagerUi(fxManager) {
 	this.fxManager;
 	this.fxUis;
 
-	this.addFx = () => {
-		const {fx, index} = this.fxManager.addFx('reverb');
+	this.addFx = (type = 'filter') => {
+		const {fx, index} = this.fxManager.addFx(type);
 		this.fxUis.push(createFxUi(fx, this.container, () => this.rmCallback(index)));
+		this.fxUis[index].container.addEventListener('dragstart', (e) => {
+			e.dataTransfer.setData('text/plain', `${index}`);
+		});
 	};
 
 	this.rmCallback = (index) => {
