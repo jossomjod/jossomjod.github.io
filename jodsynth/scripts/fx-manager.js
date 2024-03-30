@@ -89,6 +89,14 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 		return destination;
 	};
 
+	this.disconnect = () => {
+		this.input.disconnect();
+		this.dry.disconnect();
+		this.wet.disconnect();
+		this.reverb.disconnect();
+		this.preDelay.disconnect();
+	};
+
 	this.setParam = (param, value) => {
 		this.params[param] = value;
 
@@ -158,6 +166,11 @@ function FilterEffect(ac, params = { frequency: 350.0, detune: 0.0, Q: 1, gain: 
 		return destination;
 	};
 
+	this.disconnect = () => {
+		this.input.disconnect();
+		this.filter.disconnect();
+	};
+
 	this.setParam = (param, value) => {
 		this.params[param] = value;
 		this.filter[param].setValueAtTime(value, ac.currentTime);
@@ -211,6 +224,9 @@ function FxManager(ac, output, fromArray) {
 	};
 
 	this.removeFx = (index, newDestination) => {
+		this.fxChain[index].disconnect();
+		Object.values(this.fxChain[index]).forEach((v) => delete v);
+		delete this.fxChain[index];
 		this.fxChain.splice(index, 1);
 		this.connect(newDestination ?? this.output);
 	};
@@ -219,8 +235,9 @@ function FxManager(ac, output, fromArray) {
 
 	this.load = (arr) => {
 		this.fxChain = arr.map(({fxType, params}) => effectFromType(ac, fxType, params));
+		if (this.output) this.connect(this.output);
 	};
 
 	if (fromArray) this.load(fromArray);
-	if (this.output) this.connect(this.output);
+	else if (this.output) this.connect(this.output);
 }
