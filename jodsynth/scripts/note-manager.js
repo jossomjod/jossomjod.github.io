@@ -20,13 +20,17 @@ function AutomationNode(time = 0, value = 0) {
 	this.value = value;
 }
 
-function Note(tone, start, dur, gain, gainNodes, pitchNodes) {
+function Note(tone, start, dur, gain, gainNodes, pitchNodes, automation) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
 	this.tone = tone || 24;
 	this.gain = gain || 1.0;
 	this.gainNodes = gainNodes || []; // AutomationNode[]
 	this.pitchNodes = pitchNodes || []; // AutomationNode[]
+	this.automation = automation || {
+		gain: gainNodes || [], // AutomationNode[]
+		pitch: pitchNodes || [], // AutomationNode[]
+	};
 }
 
 
@@ -47,6 +51,10 @@ function playNote (note, oscArr, ac, output, currentTime, bpm) {
 	osc.start(startTime);
 	osc.stop(endTime);
 	oscArr.push(osc);
+}
+
+function envelopeToAutomationNodes(envelope, duration) { // TODO
+	const {points, multiplier} = envelope;
 }
 
 /**
@@ -94,10 +102,10 @@ function NoteManager(ac, output) {
 	};
 
 
-	this.playTrack = (track, startTimeMs) => {
+	this.playTrack = (track, startTimeSec) => {
 		const oscs = [];
 		track.notes.forEach((n) => {
-			const startTime = startTimeMs + beatsToSeconds(n.startTime, this.bpm);
+			const startTime = startTimeSec + beatsToSeconds(n.startTime, this.bpm);
 			if (startTime < 0) return;
 			const duration = beatsToSeconds(n.duration, this.bpm);
 			const freq = toneToFreq(n.tone);

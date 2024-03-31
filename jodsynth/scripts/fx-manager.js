@@ -153,7 +153,7 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 /**
  * @param {AudioContext} ac 
  */
-function FilterEffect(ac, params = { frequency: 350.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
+function FilterEffect(ac, params = { frequency: 11025.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
 	this.fxType = 'filter';
 	this.params = params;
 	this.input = new GainNode(ac, { gain: 1 });

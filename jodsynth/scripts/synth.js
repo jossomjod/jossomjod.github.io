@@ -33,6 +33,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		prop.linearRampToValueAtTime(endValue, ac.currentTime + this.getRelease());
 	};
 
+	//TODO: use points passed in from note. Get those points from the env and cut out nodes that don't fit the note-length
 	this.schedulePlayback = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1) => {
 		if (!prop) return;
 		prop.setValueAtTime(base, startTime);
