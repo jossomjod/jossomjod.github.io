@@ -165,6 +165,12 @@ function NoteManager(ac, output) {
 
 	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
 
+	this.getEndTime = () => {
+		let kek = 0;
+		this.tracks.forEach((t) => t.notes.forEach((n) => kek = Math.max(kek, n.startTime + n.duration)));
+		return kek;
+	};
+
 	this.createTrack = () => {
 		const index = this.tracks.length + 1;
 		const track = { notes: [], name: 'Track ' + index, active: true, muted: false };
@@ -186,6 +192,18 @@ function NoteManager(ac, output) {
 
 	this.getStringableTracks = () => {
 		return this.tracks.map((t) => ({ ...t, synth: t.synth.save(), fx: t.fx.save() }));
+	};
+
+	this.save = () => {
+		return {
+			bpm: this.bpm,
+			tracks: this.getStringableTracks(),
+		};
+	};
+
+	this.load = (data) => {
+		this.bpm = data.bpm ?? 140;
+		this.loadTracks(data.tracks);
 	};
 
 	this.loadTracks = (tracks) => {

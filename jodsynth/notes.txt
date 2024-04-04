@@ -61,12 +61,13 @@ note manager TODOs:
 	- https://issues.chromium.org/issues/40940886
 	- FIXED by workaround
 
+- Chrome refuses to emit a keyup event every other time you press the ¨^~ key (Physical: "RightBracket")
 
 - some synth parameter inputs show incorrect values when loading a save or switching tracks   FIXED
 
 - playback of long notes sounds wrong      PRIORITY
 
-- grid renders bar and octave lines wrong when panned to negative coords
+- grid renders bar and octave lines wrong when panned to negative coords (positive scroll values)
 
 ==================
 

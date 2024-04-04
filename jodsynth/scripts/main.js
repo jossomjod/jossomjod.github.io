@@ -21,7 +21,7 @@ var upperKeys = [
 ];
 
 let octave = 2;
-let noteOffset = 2;
+let noteOffset = 3;
 
 
 var keyboardKeys = {};
@@ -59,47 +59,48 @@ var noteManager = new NoteManager(ac, noteManagerGain);
 
 var noteManagerUi = new NoteManagerUI(noteManager);
 
-noteManagerUi.render();
-noteManagerUi.renderTracks();
+noteManagerUi.renderAll();
 
 
 const addOscBtn = document.querySelector('#addOscBtn');
 addOscBtn.onclick = () => noteManagerUi.addOsc();
 
-
+const fxAddSelect = document.querySelector('#fxAddSelect');
 const addFxBtn = document.querySelector('#addFxBtn');
-addFxBtn.onclick = () => noteManagerUi.addFx();
-
-
-
+addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
 
 
 // SAVE / LOAD ---------------------------------
+const quickSaveName = 'joddaw-save-data';
 var saveNameInput = document.querySelector('#saveNameInput');
 var templateSelect = document.querySelector('#templateSelect');
+
+
+function parseTrackData(data) {
+	const parsed = JSON.parse(data);
+	return parsed.tracks ? parsed : { bpm: 140, tracks: parsed };
+}
 
 templateSelect.addEventListener('change', () => {
 	const index = +templateSelect.value;
 	const tracks = trackerTemplates[index]
 	if (!tracks) throw 'No template found for index' + index;
 	
-	noteManager.loadTracks(JSON.parse(tracks));
-	noteManagerUi.render();
-	noteManagerUi.renderTracks();
+	noteManager.load(parseTrackData(tracks));
+	noteManagerUi.renderAll();
 });
 
 function quickSave() {
-	const tracks = JSON.stringify(noteManager.getStringableTracks());
-	localStorage.setItem('tracks', tracks);
-	navigator.clipboard.writeText(tracks).then((v) => console.log('tracks copied to clipboard', v));
+	const data = JSON.stringify(noteManager.save());
+	localStorage.setItem(quickSaveName, data);
+	navigator.clipboard.writeText(data).then(() => console.log('data copied to clipboard'));
 }
 
 function quickLoad() {
-	const tracks = localStorage.getItem('tracks') ?? '[]';
-	noteManager.loadTracks(JSON.parse(tracks));
-	noteManagerUi.render();
-	noteManagerUi.renderTracks();
+	const data = localStorage.getItem(quickSaveName) ?? '[]';
+	noteManager.load(parseTrackData(data));
+	noteManagerUi.renderAll();
 }
 
 
@@ -108,13 +109,11 @@ function saveAll() {
 	if (!saveName) return;
 	console.log('Saving as ', saveName);
 
-	const data = {
-		tracks: noteManager.getStringableTracks(),
-	};
+	const data = noteManager.save();
 	const stringData = JSON.stringify(data);
 	if (saveName.length < 100) localStorage.setItem(saveName, stringData);
 	else saveNameInput.value = '';
-	navigator.clipboard.writeText(stringData).then((v) => console.log('data copied to clipboard', v));
+	navigator.clipboard.writeText(stringData).then(() => console.log('data copied to clipboard'));
 }
 
 function loadAll() {
@@ -123,12 +122,10 @@ function loadAll() {
 	console.log('Loading ', saveName);
 	
 	const dataString = localStorage.getItem(saveName) ?? saveName;
-	const data = JSON.parse(dataString);
-	console.log('load data:', data);
+	const data = parseTrackData(dataString);
 	if (data) {
-		noteManager.loadTracks(data.tracks);
-		noteManagerUi.render();
-		noteManagerUi.renderTracks();
+		noteManager.load(data);
+		noteManagerUi.renderAll();
 	}
 }
 
@@ -201,8 +198,6 @@ document.body.onkeydown = (e) => {
 			break;
 		case 172: // That key under Esc, left of 1, above Tab
 			noteManagerUi.toggleVisible();
-			break;
-		default:
 			break;
 	}
 	toggleKeys(e, true);

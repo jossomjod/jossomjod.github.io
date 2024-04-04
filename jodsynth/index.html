@@ -36,11 +36,16 @@
 					<button onclick="loadAll()">Load</button>
 					<select id="templateSelect">
 						<option value="0">Template: Empty</option>
-						<option value="1">Template: Trek</option>
-						<option value="2">Template: But How Goes It</option>
-						<option value="3">Template: But How Goes It 2</option>
-						<option value="4">Template: Trek 2</option>
+						<option value="1">Template: Trek 2</option>
+						<option value="2">Template: Bengagoro</option>
+						<option value="3">Template: But How Goes It</option>
+						<option value="4">Template: Par</option>
+						<option value="5">Template: Doku Dish</option>
 					</select>
+					<div>
+						<label for="bpmUi">BPM</label>
+						<input class="detune" id="bpmUi" type="number">
+					</div>
 				</div>
 			</div>
 
@@ -61,6 +66,10 @@
 						</div>
 						<div class="fx-body">
 							<div class="fx-container"></div>
+							<select id="fxAddSelect">
+								<option value="filter">Filter</option>
+								<option value="reverb">Reverb</option>
+							</select>
 							<button id="addFxBtn">+ Add effect</button>
 						</div>
 						<div class="oscillators-container"></div>

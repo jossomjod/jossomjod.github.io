@@ -14,11 +14,9 @@ class JodNumbElement extends HTMLElement {
 	changed = new Event('changed');
 
 	get value() {
-		//return this._value;
 		return this.getAttribute('value') ?? this.#value;
 	}
-	set value(v) { // this setter doesn't work because idk why
-		console.log('JODNUMB VALUE SETTER', value);
+	set value(v) {
 		this.#value = +v;
 		this.setAttribute('value', v ?? 0.0);
 		this.wrapper.textContent = this.#value.toFixed(5);
@@ -50,7 +48,7 @@ class JodNumbElement extends HTMLElement {
 	}
 
 	attributeChangedCallback(name, old, newVal) {
-		console.log('AUIOEWHIAUEH', name, old, newVal); // TODO
+		//console.log('AUIOEWHIAUEH', name, old, newVal); // TODO
 		//if (name === 'value') this.setValue(+newVal, { emitEvent: false });
 	}
 
@@ -99,6 +97,7 @@ class JodNumbElement extends HTMLElement {
 		});
 
 		document.addEventListener('mousemove', (e) => {
+			if (!e.buttons) this.dragging = 0;
 			if (this.dragging) {
 				const x = Math.abs(e.clientX - this.offsetX);
 				const y = e.clientY - this.offsetY;
@@ -112,17 +111,19 @@ class JodNumbElement extends HTMLElement {
 		});
 
 		const style = document.createElement("style");
-		style.textContent = `.wrapper {
-			padding: 5px;
-			min-width: 40px;
-			max-width: 100px;
-			min-height: 20px;
-			max-height: 40px;
-			background-color: #3c4a5b;
-			color: #cfdcff;
-			border: 1px solid #345;
-			border-radius: 5px;
-		}`;
+		style.textContent = `
+			.wrapper {
+				padding: 5px;
+				min-width: 40px;
+				max-width: 100px;
+				min-height: 20px;
+				max-height: 40px;
+				background-color: #3c4a5b;
+				color: #cfdcff;
+				border: 1px solid #345;
+				border-radius: 5px;
+			}
+		`;
 
 		this.shadowRoot.append(style, wrapper);
 	}

@@ -36,6 +36,32 @@ function createParamControl(param, setParam) {
 	return container;
 }
 
+/**
+ * @param {FxParam} param 
+ */
+function createParamJodnumb(param, setParam) {
+	const container = document.createElement('div');
+	const input = document.createElement('jod-numb');
+	const label = document.createElement('label');
+
+	container.appendChild(input);
+	container.appendChild(label);
+
+	label.innerText = param.label ?? 'Unnamed param';
+
+	input.setAttribute('min', param.min ?? 0);
+	input.setAttribute('max', param.max ?? 1);
+	input.setAttribute('speed', param.step ?? 0.01);
+	input.setAttribute('value', param.value ?? 1);
+	//input.value = param.value;
+
+	input.addEventListener('changed', () => {
+		setParam(param.param, +input.value);
+	});
+
+	return container;
+}
+
 
 function createParamSelect(param) {
 	const container = document.createElement('div');
@@ -64,15 +90,18 @@ function createParamSelect(param) {
 
 function FxUi(params, parent, rmCallback, titleText) {
 	this.container = document.createElement('div');
+	this.dragHandle = document.createElement('div');
 	this.ctrlBox = document.createElement('div');
 	this.title = document.createElement('h4');
 	this.title.innerText = titleText ?? 'Unnamed effect';
 	this.rmBtn = document.createElement('button');
 	this.rmBtn.innerText = 'DELET';
 	this.container.appendChild(this.title);
+	this.container.appendChild(this.dragHandle);
 	this.container.appendChild(this.ctrlBox);
 	this.container.appendChild(this.rmBtn);
-	this.container.setAttribute('draggable', true);
+	this.dragHandle.setAttribute('draggable', true);
+	this.dragHandle.className = 'drag-handle';
 
 	this.params = params;
 	this.controls = [];
@@ -106,9 +135,9 @@ function createFilterFxUi(fx, parent, rmCallback, titleText) {
 	const fxUi = new FxUi(fx.params, parent, rmCallback, titleText);
 	const controls = [
 		createParamSelect({ label: 'Type', param: 'type', value: fx.params.type, setter: fx.setType, options: filterTypeOptions }),
-		createParamControl({ label: 'Freq', param: 'frequency', type: 'range', value: fx.params.frequency, min: 10, max: 22050, step: 0.1 }, fx.setParam),
+		createParamJodnumb({ label: 'Freq', param: 'frequency', value: fx.params.frequency, min: 10, max: 22050, step: 10.0 }, fx.setParam),
 		createParamControl({ label: 'Detune', param: 'detune', type: 'number', value: fx.params.detune, min: -2400, max: 2400, step: 1 }, fx.setParam),
-		createParamControl({ label: 'Q', param: 'Q', type: 'range', value: fx.params.Q, min: 0.0001, max: 1000 }, fx.setParam),
+		createParamJodnumb({ label: 'Q', param: 'Q', value: fx.params.Q, min: 0.0001, max: 1000, step: 0.1 }, fx.setParam),
 		createParamControl({ label: 'Gain', param: 'gain', type: 'range', value: fx.params.gain, min: -40, max: 40 }, fx.setParam),
 	];
 	fxUi.setControls(controls);
@@ -126,12 +155,15 @@ function createFxUi(fx, parent, rmCallback) {
 	}
 }
 
+const fxTypes = ['filter', 'reverb'];
+
 function FxManagerUi(fxManager) {
 	this.container = document.querySelector('.fx-container');
 	this.fxManager;
 	this.fxUis;
 
-	this.addFx = (type = 'filter') => {
+	this.addFx = (type) => {
+		if (!fxTypes.includes(type)) return;
 		const {fx, index} = this.fxManager.addFx(type);
 		this.fxUis.push(createFxUi(fx, this.container, () => this.rmCallback(index)));
 		this.fxUis[index].container.addEventListener('dragstart', (e) => {

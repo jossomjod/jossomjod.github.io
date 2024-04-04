@@ -128,7 +128,8 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 		const gain = new GainNode(tailAc, { gain: 1 });
 
 		tailSource.connect(gain).connect(tailAc.destination);
-		gain.gain.linearRampToValueAtTime(0, tailAc.currentTime + reverbTime);
+		gain.gain.linearRampToValueAtTime(0.5, tailAc.currentTime + reverbTime * 0.3);
+		gain.gain.linearRampToValueAtTime(0.0, tailAc.currentTime + reverbTime);
 		tailSource.start();
 
 		tailAc.startRendering().then((buffer) => {
@@ -210,6 +211,7 @@ function FxManager(ac, output, fromArray) {
 	this.connect = (destination) => {
 		let prev = this.input;
 		this.fxChain.forEach((fx) => {
+			prev.disconnect();
 			prev.connect(fx.input);
 			prev = fx;
 		});

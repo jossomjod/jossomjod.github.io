@@ -31,6 +31,8 @@ function NoteManagerUI(noteManager) {
 	this.jodroll = this.jodrollTemplate.content.cloneNode(true);
 	this.trackContainer = document.querySelector('.track-container');
 	this.addTrackBtn = document.querySelector('#addTrackBtn');
+	this.bpmUi = document.querySelector('#bpmUi');
+	this.bpmUi.onchange = () => noteManager.bpm = this.bpmUi.value;
 	this.canvas = this.jodroll.querySelector('#jodroll-main-canvas');
 	this.ctx = this.canvas.getContext('2d');
 
@@ -39,7 +41,7 @@ function NoteManagerUI(noteManager) {
 
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
-	this.width = this.trackerContainer.width = window.innerWidth;
+	this.width = this.trackerContainer.width = window.innerWidth - 222;
 	this.height = this.canvas.height = this.trackerContainer.height = 600;
 	this.canvas.width = this.width;
 	this.scrollX = 0;
@@ -377,6 +379,12 @@ function NoteManagerUI(noteManager) {
 		else if (this.previewNoteId) noteManager.getSelectedTrack().synth.stop(this.previewNoteId);
 	};
 
+	this.renderAll = () => {
+		this.render();
+		this.renderTracks();
+		this.bpmUi.value = noteManager.bpm;
+	};
+
 	this.renderTracks = (tracks = noteManager.tracks) => {
 		while (this.trackContainer.firstChild) {
 			this.trackContainer.removeChild(this.trackContainer.firstChild);
@@ -439,8 +447,8 @@ function NoteManagerUI(noteManager) {
 	this.addOsc = () => {
 		this.currentSynthUi?.addOsc();
 	}
-	this.addFx = () => {
-		this.currentFxUi?.addFx();
+	this.addFx = (type) => {
+		this.currentFxUi?.addFx(type);
 	}
 
 	this.drawClear = (ctx = this.ctx) => {
