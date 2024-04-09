@@ -76,6 +76,7 @@ function NoteManagerUI(noteManager) {
 	this.areaSelectAABB = { ax: 0, ay: 0, bx: 0, by: 0 };
 
 	this.cursorX = 0;
+	this.cursorTime = 0;
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
@@ -167,6 +168,7 @@ function NoteManagerUI(noteManager) {
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
 		this.cursorX = realX;
+		this.cursorTime = this.xToTime(this.cursorX);
 
 		const scrollHack = +e.altKey * this.scrollAction; // alternative to middle mouse button
 		const fakeButtons = e.buttons | scrollHack;
@@ -367,9 +369,13 @@ function NoteManagerUI(noteManager) {
 	this.pasteNotes = () => {
 		const pastedNotes = JSON.parse(clipboard);
 		if (!pastedNotes?.length) return;
+		const sorted = pastedNotes.sort((a, b) => a.startTime - b.startTime);
+		let timeDiff = this.cursorTime - sorted[0].startTime;
+		if (this.snapX) timeDiff = this.snapToGridTime(timeDiff);
+		sorted.forEach((n) => n.startTime += timeDiff);
 		const track = noteManager.getSelectedTrack();
-		track.notes = track.notes.concat(pastedNotes);
-		this.selectedNotes = pastedNotes.map((p) => track.notes.indexOf(p));
+		track.notes = track.notes.concat(sorted);
+		this.selectedNotes = sorted.map((p) => track.notes.indexOf(p));
 		this.render();
 	};
 
