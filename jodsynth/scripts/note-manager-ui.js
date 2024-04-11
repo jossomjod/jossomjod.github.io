@@ -159,7 +159,7 @@ function NoteManagerUI(noteManager) {
 		}
 	});
 
-	this.trackerContainer.oncontextmenu = (e) => e.preventDefault();;
+	this.trackerContainer.oncontextmenu = (e) => e.preventDefault();
 
 	this.trackerContainer.addEventListener('mousemove', (e) => {
 		e.preventDefault();
@@ -646,7 +646,7 @@ function NoteManagerUI(noteManager) {
 		if (noteManager.isPlaying) {
 			noteManager.stopAll();
 		} else {
-			if (options.fromCursor) noteManager.playAll(this.xToTime(this.cursorX));
+			if (options.fromCursor) noteManager.playAll(this.cursorTime);
 			else noteManager.playAll();
 			this.playbackAnimationFrame();
 		}

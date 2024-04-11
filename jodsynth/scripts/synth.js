@@ -176,12 +176,14 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		// You have to make a new osc every time
 		const osc = new OscillatorNode(ac, { /* type: this.type, */ detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customeWave);
+		
+		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
 
-		gainNode.gain.value = this.gain;
+		gainNode.gain.value = gain;
 		osc.connect(gainNode);
 		osc.start(time);
 
-		this.gainEnvelope.start(gainNode.gain, 0.0, this.gain, time);
+		this.gainEnvelope.start(gainNode.gain, 0.0, gain, time);
 		this.pitchEnvelope.start(osc.detune, this.detune, 1200.0, time);
 
 		return osc;
@@ -197,11 +199,13 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customeWave);
 
-		gainNode.gain.value = this.gain;
+		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+
+		gainNode.gain.value = gain;
 		osc.connect(gainNode);
 		osc.start(startTime);
 
-		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, this.gain, startTime, duration);
+		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration);
 		this.pitchEnvelope.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration);
 
 		const endTime = startTime + duration;
@@ -228,21 +232,21 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 }
 
 
-var oscarGainPoints = [
+const oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.8 },
 	{ value: 0.0, time: 0.81 },
 ];
 
-var osmanGainPoints = [
+const osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
 	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.9 },
 	{ value: 0.0, time: 0.91 },
 ];
 
-var pitchPoints = [
+const pitchPoints = [
 	{ value: 0.0, time: 0.0 },
 	{ value: 0.0, time: 0.3 },
 	{ value: 0.0, time: 0.5 },
