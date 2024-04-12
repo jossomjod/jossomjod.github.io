@@ -62,7 +62,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		};
 		const sustain = this.points.at(-2);
 		if (sustain.time < duration) {
-			prop.linearRampToValueAtTime(sustain.value, endTime);
+			prop.linearRampToValueAtTime(base + sustain.value, endTime);
 		}
 		prop.linearRampToValueAtTime(endValue, endTime + this.getRelease());
 	};

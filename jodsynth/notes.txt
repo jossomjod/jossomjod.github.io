@@ -65,7 +65,7 @@ note manager TODOs:
 
 - some synth parameter inputs show incorrect values when loading a save or switching tracks   FIXED
 
-- playback of long notes sounds wrong      PRIORITY
+- playback of long notes sounds wrong      FIXED
 
 - grid renders bar and octave lines wrong when panned to negative coords (positive scroll values)
 
