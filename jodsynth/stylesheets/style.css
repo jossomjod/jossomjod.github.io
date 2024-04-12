@@ -82,6 +82,12 @@
 	z-index: 3;
 }
 
+.help-icon {
+	width: 26px;
+	height: 26px;
+	border: 2px solid #2977af;
+}
+
 .clickable {
 	background-color: #1c38b4;
 }
