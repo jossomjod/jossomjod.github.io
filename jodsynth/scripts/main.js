@@ -1,5 +1,6 @@
 console.log('Is secure context:', window.isSecureContext);
 
+
 const ac = new (window.AudioContext || window.webkitAudioContext);
 var clipboard;
 
@@ -104,8 +105,8 @@ function quickLoad() {
 }
 
 
-function saveAll() {
-	const saveName = saveNameInput.value;
+function saveAll(name) {
+	const saveName = name || saveNameInput.value;
 	if (!saveName) return;
 	console.log('Saving as ', saveName);
 
@@ -116,8 +117,8 @@ function saveAll() {
 	navigator.clipboard.writeText(stringData).then(() => console.log('data copied to clipboard'));
 }
 
-function loadAll() {
-	const saveName = saveNameInput.value || saveNameInput.innerHTML;
+function loadAll(name) {
+	const saveName = name || saveNameInput.value || saveNameInput.innerHTML;
 	if (!saveName) return;
 	console.log('Loading ', saveName);
 	
@@ -128,6 +129,10 @@ function loadAll() {
 		noteManagerUi.renderAll();
 	}
 }
+
+
+
+
 
 
 // EVENTS----------------------------------------------------------------------
@@ -180,6 +185,12 @@ document.body.onkeydown = (e) => {
 			break;
 		case 86: // V
 			if (e.ctrlKey) noteManagerUi.pasteNotes();
+			break;
+		case 83: // S
+			if (e.ctrlKey) quickSave();
+			break;
+		case 90: // Z
+			if (e.ctrlKey) quickLoad();
 			break;
 		case 114: // F3
 			noteManagerUi.snapX = !noteManagerUi.snapX;
