@@ -65,6 +65,7 @@ function NoteManagerUI(noteManager) {
 
 	this.clickedNoteIndex = -1;
 	this.clickedNote = null;
+	this.noteMinDuration = 0.01;
 	this.previewNoteId = null;
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
@@ -77,6 +78,7 @@ function NoteManagerUI(noteManager) {
 
 	this.cursorX = 0;
 	this.cursorTime = 0;
+	this.endTime = noteManager.getEndTime() || this.beatsPerBar;
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
@@ -123,6 +125,7 @@ function NoteManagerUI(noteManager) {
 					}
 
 					this.clickedNote = noteManager.getSelectedTrack().notes[this.clickedNoteIndex];
+					this.clickedNoteInitial = { ...this.clickedNote };
 					this.isResizing = this.checkResizeTrigger(this.clickedNote, realX);
 				} else {
 					if (this.snapY) realY = this.snapToGridY(realY);
@@ -150,7 +153,10 @@ function NoteManagerUI(noteManager) {
 				this.render();
 			}
 
-			if (this.clickedNote) this.newNoteDuration = this.clickedNote.duration;
+			if (this.clickedNote) {
+				this.newNoteDuration = this.clickedNote.duration;
+				this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
+			}
 
 			this.previewNote(false);
 			this.clickedNote = null;
@@ -334,13 +340,18 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.resizeNoteBy = (note, t) => {
-		note.duration = t;
-		if (note.duration < 0) note.duration = 0.01;
+		note.duration += t;
+		if (note.duration < 0) note.duration = this.noteMinDuration;
 	};
 
-	this.resizeNotesBy = (t) => { // FIXME
+	this.resizeNotesBy = (t) => {
 		const notes = noteManager.getSelectedTrack().notes;
-		this.selectedNotes.forEach((ni) => this.resizeNoteBy(notes[ni], t));
+		const initDur = this.clickedNote.duration;
+		const delta = t - initDur;
+
+		if (initDur <= this.noteMinDuration && delta < 0) return;
+
+		this.selectedNotes.forEach((ni) => this.resizeNoteBy(notes[ni], delta));
 		this.render();
 	};
 
@@ -389,6 +400,7 @@ function NoteManagerUI(noteManager) {
 		this.render();
 		this.renderTracks();
 		this.bpmUi.value = noteManager.bpm;
+		this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
 	};
 
 	this.renderTracks = (tracks = noteManager.tracks) => {
@@ -643,6 +655,10 @@ function NoteManagerUI(noteManager) {
 		this.drawCaret(caretPos);
 
 		if (noteManager.isPlaying) {
+			if (time >= this.endTime) {
+				noteManager.stopAll();
+				noteManager.playAll();
+			}
 			requestAnimationFrame(this.playbackAnimationFrame);
 		} else {
 			this.render();
