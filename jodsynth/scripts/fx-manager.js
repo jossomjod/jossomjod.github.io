@@ -205,8 +205,9 @@ function effectFromType(ac, type, params) {
 
 function FxManager(ac, output, fromArray) {
 	this.input = new GainNode(ac, { gain: 1 });
+	this.gain = new GainNode(ac, { gain: 1 });
 	this.output = output;
-	this.fxChain = [new FilterEffect(ac), new ReverbEffect(ac)];
+	this.fxChain = [];
 
 	this.connect = (destination) => {
 		let prev = this.input;
@@ -215,7 +216,8 @@ function FxManager(ac, output, fromArray) {
 			prev.connect(fx.input);
 			prev = fx;
 		});
-		prev.connect(destination);
+		prev.connect(this.gain);
+		this.gain.connect(destination);
 	};
 
 	this.addFx = (type, params) => {
@@ -227,6 +229,7 @@ function FxManager(ac, output, fromArray) {
 
 	this.removeFx = (index, newDestination) => {
 		this.fxChain[index].disconnect();
+		this.gain.disconnect();
 		Object.values(this.fxChain[index]).forEach((v) => delete v);
 		delete this.fxChain[index];
 		this.fxChain.splice(index, 1);

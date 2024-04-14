@@ -421,8 +421,15 @@ function NoteManagerUI(noteManager) {
 		// TODO
 	};
 
+	this.setTrackGain = (track, gain) => {
+		track.gain = gain;
+		track.fx.gain.gain.value = gain;
+		track.muted = false;
+	}
+
 	this.toggleMuteTrack = (track) => {
 		track.muted = !track.muted;
+		track.fx.gain.gain.value = track.muted ? 0.0 : track.gain ?? 1.0;
 	}
 
 	this.selectTrack = (element, track) => {

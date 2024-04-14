@@ -173,7 +173,7 @@ function NoteManager(ac, output) {
 
 	this.createTrack = () => {
 		const index = this.tracks.length + 1;
-		const track = { notes: [], name: 'Track ' + index, active: true, muted: false };
+		const track = { notes: [], name: 'Track ' + index, active: true, muted: false, gain: 1 };
 		track.fx = new FxManager(ac, output);
 		track.synth = new Synth(ac, track.fx.input);
 		this.tracks.push(track);
