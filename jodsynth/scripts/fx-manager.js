@@ -203,9 +203,9 @@ function effectFromType(ac, type, params) {
 	}
 }
 
-function FxManager(ac, output, fromArray) {
+function FxManager(ac, output, fromArray, gain = 1) {
 	this.input = new GainNode(ac, { gain: 1 });
-	this.gain = new GainNode(ac, { gain: 1 });
+	this.gain = new GainNode(ac, { gain });
 	this.output = output;
 	this.fxChain = [];
 

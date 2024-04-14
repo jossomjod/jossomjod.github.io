@@ -217,7 +217,7 @@ function NoteManager(ac, output) {
 			if (t.active) this.selectedTrack = i;
 
 			const track = t;
-			track.fx = new FxManager(ac, output, t.fx);
+			track.fx = new FxManager(ac, output, t.fx, t.gain);
 			track.synth = new Synth(ac, track.fx.input, t.synth);
 			return track;
 		});
