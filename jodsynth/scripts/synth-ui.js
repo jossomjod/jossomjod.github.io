@@ -322,8 +322,8 @@ function OscillatorUi(oscillator, container, name) {
 
 	
 
-	this.setGainRange = () => {
-		if (this.oscillator.mod === null || this.oscillator.modType > 0) {
+	this.setGainRange = () => { // TODO: prevent hearing damage without compromising functionality
+		if (this.oscillator.mod === null /* || this.oscillator.modType > 0 */) {
 			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
 			this.oscGainControl.max = 1.0;
 			this.oscGainControl.speed = 1.0;

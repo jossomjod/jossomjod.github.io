@@ -72,6 +72,7 @@ function NoteManager(ac, output) {
 	this.loopEnd = 4 * this.bpm;
 	this.isLooping = true;
 	this.intervalId = 0;
+	this.latestNoteStartTime = 0;
 
 	this.addNote = (startTime, tone, duration) => {
 		const synth = this.getSelectedTrack().synth.oscillators[0];
@@ -134,20 +135,26 @@ function NoteManager(ac, output) {
 	};
 
 	this.getNotesToPlay = (notes, start, end) => {
-		return notes.filter((n) => n.startTime >= start && n.startTime < end);
+		return notes.filter((n) => n.startTime > this.latestNoteStartTime && n.startTime < start + end);
 	};
 
-	this.playbackLoop = (startTimeBeats = 0) => {
-		const interval = 600;
+	this.playbackLoop = (startTimeBeats = 0) => { // FIXME: bpm change bug
+		const lookaheadBeats = 0.30
+		const intervalMs = 20;
+		this.latestNoteStartTime = -1;
+
 		this.isPlaying = true;
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
 		clearInterval(this.intervalId);
 		this.intervalId = setInterval(() => {
+			let latestTime = this.latestNoteStartTime;
+
 			this.tracks.forEach((t) => {
 				if (t.muted) return;
-				const notes = this.getNotesToPlay(t.notes, ac.currentTime - this.playbackStartTime, interval);
+				const notes = this.getNotesToPlay(t.notes, secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm), lookaheadBeats);
 				
 				notes.forEach((n) => {
+					latestTime = Math.max(n.startTime, latestTime);
 					const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
 					if (startTime < 0) return;
 					const duration = beatsToSeconds(n.duration, this.bpm);
@@ -155,7 +162,8 @@ function NoteManager(ac, output) {
 					t.synth.schedulePlayback({ startTime, duration, freq });
 				});
 			});
-		}, interval);
+			this.latestNoteStartTime = latestTime;
+		}, intervalMs);
 	}
 
 	this.stopPlaybackLoop = () => {
@@ -166,9 +174,9 @@ function NoteManager(ac, output) {
 	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
 
 	this.getEndTime = () => {
-		let kek = 0;
-		this.tracks.forEach((t) => t.notes.forEach((n) => kek = Math.max(kek, n.startTime + n.duration)));
-		return kek;
+		let time = 0;
+		this.tracks.forEach((t) => t.notes.forEach((n) => time = Math.max(time, n.startTime + n.duration)));
+		return time;
 	};
 
 	this.createTrack = () => {

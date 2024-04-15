@@ -656,8 +656,8 @@ function NoteManagerUI(noteManager) {
 
 		if (noteManager.isPlaying) {
 			if (time >= this.endTime) {
-				noteManager.stopAll();
-				noteManager.playAll();
+				noteManager.stopPlaybackLoop();
+				noteManager.playbackLoop();
 			}
 			requestAnimationFrame(this.playbackAnimationFrame);
 		} else {
@@ -667,10 +667,10 @@ function NoteManagerUI(noteManager) {
 
 	this.togglePlayback = (options) => {
 		if (noteManager.isPlaying) {
-			noteManager.stopAll();
+			noteManager.stopPlaybackLoop();
 		} else {
-			if (options.fromCursor) noteManager.playAll(this.cursorTime);
-			else noteManager.playAll();
+			if (options.fromCursor) noteManager.playbackLoop(this.cursorTime);
+			else noteManager.playbackLoop();
 			this.playbackAnimationFrame();
 		}
 	};
