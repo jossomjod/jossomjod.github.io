@@ -69,7 +69,7 @@ function NoteManager(ac, output) {
 	this.tracks = [];
 	this.selectedTrack = 0;
 	this.soloTrack = false;
-	this.loopEnd = 4 * this.bpm;
+	this.loopEnd = 4;
 	this.isLooping = true;
 	this.intervalId = 0;
 	this.latestNoteStartTime = 0;
@@ -139,7 +139,7 @@ function NoteManager(ac, output) {
 	};
 
 	this.playbackLoop = (startTimeBeats = 0) => { // FIXME: bpm change bug
-		const lookaheadBeats = 0.30
+		const lookaheadBeats = 0.1
 		const intervalMs = 20;
 		this.latestNoteStartTime = -1;
 
@@ -177,6 +177,10 @@ function NoteManager(ac, output) {
 		let time = 0;
 		this.tracks.forEach((t) => t.notes.forEach((n) => time = Math.max(time, n.startTime + n.duration)));
 		return time;
+	};
+
+	this.setBpm = (bpm) => {
+		this.bpm = bpm;
 	};
 
 	this.createTrack = () => {

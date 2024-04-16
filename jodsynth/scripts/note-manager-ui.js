@@ -32,7 +32,7 @@ function NoteManagerUI(noteManager) {
 	this.trackContainer = document.querySelector('.track-container');
 	this.addTrackBtn = document.querySelector('#addTrackBtn');
 	this.bpmUi = document.querySelector('#bpmUi');
-	this.bpmUi.onchange = () => noteManager.bpm = this.bpmUi.value;
+	this.bpmUi.onchange = () => noteManager.setBpm(this.bpmUi.value);
 	this.canvas = this.jodroll.querySelector('#jodroll-main-canvas');
 	this.ctx = this.canvas.getContext('2d');
 
