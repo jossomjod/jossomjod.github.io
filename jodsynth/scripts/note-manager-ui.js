@@ -441,7 +441,6 @@ function NoteManagerUI(noteManager) {
 
 	this.toggleMuteTrack = (track) => {
 		track.muted = !track.muted;
-		track.fx.gain.gain.value = track.muted ? 0.0 : track.gain ?? 1.0;
 	}
 
 	this.selectTrack = (element, track) => {
