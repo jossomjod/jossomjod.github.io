@@ -19,7 +19,22 @@
   border-radius: 4px;
 }
 
-.synth-container {
+.joddaw-body {
+	display: flex;
+}
+.main-panel {
+	display: flex;
+	flex-direction: column;
+}
+
+.fx-container, .global-fx-container {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 20px;
+	margin: 20px;
+	background-color: #010a1d;
+}
+.oscillators-container {
 	flex-grow: 1;
 	margin: 20px;
 	background-color: #010a1d;
@@ -65,6 +80,38 @@
 	height: 40px;
 	background-color: #35a;
 	z-index: 3;
+}
+
+.help-icon {
+	width: 26px;
+	height: 26px;
+	border: 2px solid #2977af;
+}
+
+.clickable {
+	background-color: #1c38b4;
+}
+
+.circle {
+	display: flex;
+	border-radius: 50%;
+	justify-content: center;
+	align-items: center;
+}
+
+.small {
+	width: 20px;
+	height: 20px;
+}
+
+.muted {
+	background-color: #fd3132;
+}
+
+.drag-handle {
+	width: 20px;
+	height: 20px;
+	background-color: #1c38b4;
 }
 
 .detune {

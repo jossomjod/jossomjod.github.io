@@ -204,6 +204,7 @@ function GainControlUI(oscillator, control) {
 	this.control = control;
 
 	this.control.value = this.oscillator.gain;
+	this.control.setAttribute('value', this.oscillator.gain + '');
 	this.control.addEventListener('changed', (e) => {
 		this.oscillator.gain = +this.control.value;
 	});
@@ -276,8 +277,9 @@ function OscillatorUi(oscillator, container, name) {
 	// DETUNE
 	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune'); // TODO: Use jodnumb
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
+	const coarse = Math.round(this.oscillator.detune / 100);
 	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
-	this.oscDetuneUI.value = 0.0;
+	this.oscDetuneUI.value = this.oscillator.detune - coarse * 100;
 	
 	this.oscDetuneInput = () => {
 		this.oscillator.detune = +this.oscCoarseUI.value * 100 + +this.oscDetuneUI.value;
@@ -320,8 +322,8 @@ function OscillatorUi(oscillator, container, name) {
 
 	
 
-	this.setGainRange = () => {
-		if (this.oscillator.mod === null || this.oscillator.modType > 0) {
+	this.setGainRange = () => { // TODO: prevent hearing damage without compromising functionality
+		if (this.oscillator.mod === null /* || this.oscillator.modType > 0 */) {
 			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
 			this.oscGainControl.max = 1.0;
 			this.oscGainControl.speed = 1.0;
@@ -336,10 +338,9 @@ function OscillatorUi(oscillator, container, name) {
 	this.setGainRange();
 }
 
-
 function SynthUi(synth) {
 	this.synth = synth;
-	this.container = document.querySelector('.synth-container');
+	this.container = document.querySelector('.oscillators-container');
 	this.template = document.querySelector('#oscillator-template');
 
 	this.oscillators = this.synth.oscillators.map((osc, i) => {

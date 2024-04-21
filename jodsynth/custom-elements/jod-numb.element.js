@@ -1,4 +1,6 @@
 class JodNumbElement extends HTMLElement {
+	static observedAttributes = ['value', 'speed', 'max', 'min'];
+
 	#value = 0;
 	lastValue = 0;
 	_max = 1;
@@ -12,11 +14,9 @@ class JodNumbElement extends HTMLElement {
 	changed = new Event('changed');
 
 	get value() {
-		//return this._value;
 		return this.getAttribute('value') ?? this.#value;
 	}
-	set value(v) { // this setter doesn't work because idk why
-		console.log('JODNUMB VALUE SETTER', value);
+	set value(v) {
 		this.#value = +v;
 		this.setAttribute('value', v ?? 0.0);
 		this.wrapper.textContent = this.#value.toFixed(5);
@@ -48,17 +48,21 @@ class JodNumbElement extends HTMLElement {
 	}
 
 	attributeChangedCallback(name, old, newVal) {
-		console.log('AUIOEWHIAUEH', name, old, newVal);
+		//console.log('AUIOEWHIAUEH', name, old, newVal); // TODO
+		//if (name === 'value') this.setValue(+newVal, { emitEvent: false });
 	}
 
-	setValue = (value) => {
+	setValue = (value, options = { emitEvent: true }) => {
 		this.#value = value;
-		this.wrapper.textContent = this.#value.toFixed(5);
-		this.dispatchEvent(this.changed);
+		this.wrapper.textContent = value.toFixed(5);
+		if (options.emitEvent) this.dispatchEvent(this.changed);
 	}
 
 	constructor() {
 		super();
+	}
+
+	connectedCallback() {
 		this.attachShadow({ mode: 'open' });
 
 		this._min = +(this.getAttribute('min') ?? 0);
@@ -72,7 +76,6 @@ class JodNumbElement extends HTMLElement {
 		wrapper.textContent = this.#value;
 
 		wrapper.addEventListener('mousedown', (e) => {
-			console.log('MOUSEDOWN on JOD NUMB', e);
 			e.preventDefault();
 			e.stopPropagation();
 			switch (e.buttons) {
@@ -94,6 +97,7 @@ class JodNumbElement extends HTMLElement {
 		});
 
 		document.addEventListener('mousemove', (e) => {
+			if (!e.buttons) this.dragging = 0;
 			if (this.dragging) {
 				const x = Math.abs(e.clientX - this.offsetX);
 				const y = e.clientY - this.offsetY;
@@ -103,22 +107,23 @@ class JodNumbElement extends HTMLElement {
 				value = value < this._min ? this._min : value > this._max ? this._max : value;
 				this.setValue(value);
 				this.value = value;
-				console.log('oaeijfouaj', this.value);
 			}
 		});
 
 		const style = document.createElement("style");
-		style.textContent = `.wrapper {
-			padding: 5px;
-			min-width: 40px;
-			max-width: 100px;
-			min-height: 20px;
-			max-height: 40px;
-			background-color: #3c4a5b;
-			color: #cfdcff;
-			border: 1px solid #345;
-			border-radius: 5px;
-		}`;
+		style.textContent = `
+			.wrapper {
+				padding: 5px;
+				min-width: 40px;
+				max-width: 100px;
+				min-height: 20px;
+				max-height: 40px;
+				background-color: #3c4a5b;
+				color: #cfdcff;
+				border: 1px solid #345;
+				border-radius: 5px;
+			}
+		`;
 
 		this.shadowRoot.append(style, wrapper);
 	}

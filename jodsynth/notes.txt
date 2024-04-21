@@ -41,8 +41,37 @@ mono-space
 
 
 note manager TODOs:
-- fix endlessly playing note bug
 - automation
+  - per note
+	  - should initially be based on the synth envelopes
+	- per track
+	  - it should be possible to choose a default value to use when playing on the keyboard
+		- when moving a note, the preview sound should go through the effect with the value at the note start time
+	- global
+	  - bpm, master gain
+
+
+====== BUGS ======
+
+- notes sometimes get stuck and play endlessly when playing on the keyboard
+  - never happens in Firefox, happens often in Chrome and Edge
+	- steps to reproduce:
+	  - press key -> press other key -> release first key while still holding second key
+	- releasing the first key causes the second key to be pressed again wtf???
+	- https://issues.chromium.org/issues/40940886
+	- FIXED by workaround
+
+- Chrome refuses to emit a keyup event every other time you press the ¨^~ key (Physical: "RightBracket")
+
+- some synth parameter inputs show incorrect values when loading a save or switching tracks   FIXED
+
+- playback of long notes sounds wrong      FIXED
+
+- grid renders bar and octave lines wrong when panned to negative coords (positive scroll values)
+
+==================
+
+
 
 
 Notes on PeriodicWave:

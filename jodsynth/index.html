@@ -15,10 +15,13 @@
 		<script src="scripts/functions.js"></script>
 		<script src="scripts/templates.js"></script>
 		<script src="custom-elements/jod-numb.element.js"></script>
-		<script src="scripts/note-manager.js"></script>
-		<script src="scripts/note-manager-ui.js"></script>
 		<script src="scripts/synth.js"></script>
 		<script src="scripts/synth-ui.js"></script>
+		<script src="scripts/track-ui.js"></script>
+		<script src="scripts/fx-manager.js"></script>
+		<script src="scripts/fx-manager-ui.js"></script>
+		<script src="scripts/note-manager.js"></script>
+		<script src="scripts/note-manager-ui.js"></script>
 		<script src="scripts/ui.js"></script>
 		<title>JODSynth</title>
 	</head>
@@ -33,24 +36,47 @@
 					<button onclick="loadAll()">Load</button>
 					<select id="templateSelect">
 						<option value="0">Template: Empty</option>
-						<option value="1">Template: Trek</option>
+						<option value="1">Template: Trek 2</option>
+						<option value="2">Template: Bengagoro</option>
+						<option value="3">Template: Doku Dish</option>
+						<option value="4">Template: Jurobit</option>
 					</select>
 				</div>
-			</div>
-			<div class="tracker-container"></div>
-			<div class="synth-body">
-				<div class="synth-container">
-					<div>
-						<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
-						<label for="masterGain">Master Gain</label>
-					</div>
-					<div>
-						<input type="range" id="reverbGain" name="reverbGain" min="0" max="1" step="0.01">
-						<label for="reverbGain">Reverb Gain</label>
-					</div>
+				<div>
+					<label for="bpmUi">BPM</label>
+					<input class="detune" id="bpmUi" type="number">
 				</div>
-				<div class="button-container">
-					<button id="addOscBtn">+ Add oscillator</button>
+				<div class="circle clickable help-icon end">?</div>
+			</div>
+
+			<div class="joddaw-body">
+				<div class="side-panel">
+					<div class="track-container"></div>
+					<button class="add-track-btn" id="addTrackBtn">+ Add track</button>
+				</div>
+
+				<div class="main-panel">
+					<div class="tracker-container"></div>
+					<div class="synth-body">
+						<div class="global-fx-container">
+							<div>
+								<input type="range" id="masterGain" name="masterGain" min="0" max="1" step="0.01">
+								<label for="masterGain">Master Gain</label>
+							</div>
+						</div>
+						<div class="fx-body">
+							<div class="fx-container"></div>
+							<select id="fxAddSelect">
+								<option value="filter">Filter</option>
+								<option value="reverb">Reverb</option>
+							</select>
+							<button id="addFxBtn">+ Add effect</button>
+						</div>
+						<div class="oscillators-container"></div>
+						<div class="button-container">
+							<button id="addOscBtn">+ Add oscillator</button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -58,6 +84,11 @@
 	</body>
 </html>
 
+<template id="fx-template">
+	<div class="fx-contents">
+		
+	</div>
+</template>
 
 <template id="oscillator-template">
 	<div class="oscillator-container">
@@ -138,13 +169,8 @@
 
 <template id="jodroll-template">
 	<div class="jodroll-container">
-		<div class="side-panel">
-			<div class="track-container"></div>
-			<button class="add-track-btn" id="addTrackBtn">+ Add track</button>
-		</div>
 		<div class="note-container">
 			<canvas id="jodroll-main-canvas" class="jodroll-canvas">invisible canvas wooo</canvas>
-			<canvas id="jodroll-overlay1" class="jodroll-canvas overlay">wooooooooo</canvas>
 		</div>
 	</div>
 </template>

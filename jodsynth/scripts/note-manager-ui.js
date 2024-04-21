@@ -19,31 +19,37 @@ const jodColors = {
 	resizeHandle: '#99c9ff',
 	fadedNote: '#6699ff3c',
 	fadedResizeHandle: '#99c9ff6c',
+	automationBox: '#387f6caa',
+	automationNode: '#fca372',
+	automationLine: '#3afa8c99',
+	releaseBox: '#386e62aa',
 };
 
-function NoteManagerUI(noteManager, previewSynth) {
+function NoteManagerUI(noteManager) {
 	this.trackerContainer = document.querySelector('.tracker-container');
 	this.jodrollTemplate = document.querySelector('#jodroll-template');
 	this.jodroll = this.jodrollTemplate.content.cloneNode(true);
-	this.trackContainer = this.jodroll.querySelector('.track-container');
-	this.addTrackBtn = this.jodroll.querySelector('#addTrackBtn');
+	this.trackContainer = document.querySelector('.track-container');
+	this.addTrackBtn = document.querySelector('#addTrackBtn');
+	this.bpmUi = document.querySelector('#bpmUi');
+	this.bpmUi.onchange = () => noteManager.setBpm(this.bpmUi.value);
 	this.canvas = this.jodroll.querySelector('#jodroll-main-canvas');
-	this.overlay1 = this.jodroll.querySelector('#jodroll-overlay1');
 	this.ctx = this.canvas.getContext('2d');
-	this.octx1 = this.overlay1.getContext('2d');
 
 	this.currentSynthUi;
+	this.currentFxUi;
 
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
-	this.width = this.trackerContainer.width = window.innerWidth;
+	this.width = this.trackerContainer.width = window.innerWidth - 222;
 	this.height = this.canvas.height = this.trackerContainer.height = 600;
-	this.canvas.width = this.width - 100;
+	this.canvas.width = this.width;
 	this.scrollX = 0;
 	this.scrollY = 0;
 	this.noteHeight = this.pxPerTone;
 	this.newNoteDuration = 1;
 	this.isPlaying = () => noteManager.isPlaying;
+	this.autoScrollOnPlayback = false;
 
 	this.primaryAction = 1;
 	this.secondaryAction = 2;
@@ -59,15 +65,20 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 	this.clickedNoteIndex = -1;
 	this.clickedNote = null;
+	this.noteMinDuration = 0.01;
 	this.previewNoteId = null;
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
+	this.automationBoxHeight = 70;
+	this.automationMode = false;
 
 	this.selectedNotes = [];
 	this.isSelectingArea = false;
 	this.areaSelectAABB = { ax: 0, ay: 0, bx: 0, by: 0 };
 
 	this.cursorX = 0;
+	this.cursorTime = 0;
+	this.endTime = noteManager.getEndTime() || this.beatsPerBar;
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
@@ -114,6 +125,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 					}
 
 					this.clickedNote = noteManager.getSelectedTrack().notes[this.clickedNoteIndex];
+					this.clickedNoteInitial = { ...this.clickedNote };
 					this.isResizing = this.checkResizeTrigger(this.clickedNote, realX);
 				} else {
 					if (this.snapY) realY = this.snapToGridY(realY);
@@ -141,7 +153,10 @@ function NoteManagerUI(noteManager, previewSynth) {
 				this.render();
 			}
 
-			if (this.clickedNote) this.newNoteDuration = this.clickedNote.duration;
+			if (this.clickedNote) {
+				this.newNoteDuration = this.clickedNote.duration;
+				this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
+			}
 
 			this.previewNote(false);
 			this.clickedNote = null;
@@ -150,7 +165,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		}
 	});
 
-	this.trackerContainer.oncontextmenu = (e) => e.preventDefault();;
+	this.trackerContainer.oncontextmenu = (e) => e.preventDefault();
 
 	this.trackerContainer.addEventListener('mousemove', (e) => {
 		e.preventDefault();
@@ -159,6 +174,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
 		this.cursorX = realX;
+		this.cursorTime = this.xToTime(this.cursorX);
 
 		const scrollHack = +e.altKey * this.scrollAction; // alternative to middle mouse button
 		const fakeButtons = e.buttons | scrollHack;
@@ -199,11 +215,13 @@ function NoteManagerUI(noteManager, previewSynth) {
 	});
 
 
-	this.trackerContainer.addEventListener('wheel', (e) => { // TODO: zoom on cursor
+	this.trackerContainer.addEventListener('wheel', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.25;
+		const cursorTime = this.xToTime(this.cursorX);
+		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
 		this.gridSizeX = this.pxPerBeat;
+		this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
 		this.render();
 	});
 	
@@ -322,18 +340,33 @@ function NoteManagerUI(noteManager, previewSynth) {
 	};
 
 	this.resizeNoteBy = (note, t) => {
-		note.duration = t;
-		if (note.duration < 0) note.duration = 0;
+		note.duration += t;
+		if (note.duration < 0) note.duration = this.noteMinDuration;
 	};
 
-	this.resizeNotesBy = (t) => { // FIXME
+	this.resizeNotesBy = (t) => {
 		const notes = noteManager.getSelectedTrack().notes;
-		this.selectedNotes.forEach((ni) => this.resizeNoteBy(notes[ni], t));
+		const initDur = this.clickedNote.duration;
+		const delta = t - initDur;
+
+		if (initDur <= this.noteMinDuration && delta < 0) return;
+
+		this.selectedNotes.forEach((ni) => this.resizeNoteBy(notes[ni], delta));
 		this.render();
 	};
 
 	this.deleteNote = (index) => {
 		noteManager.getSelectedTrack().notes.splice(index, 1);
+		this.selectedNotes = [];
+		this.render();
+	};
+
+	this.deleteSelectedNotes = () => {
+		const notes = noteManager.getSelectedTrack().notes;
+		this.selectedNotes.forEach((si) => {
+			delete notes[si];
+		});
+		noteManager.getSelectedTrack().notes = notes.filter((n) => n);
 		this.selectedNotes = [];
 		this.render();
 	};
@@ -347,9 +380,13 @@ function NoteManagerUI(noteManager, previewSynth) {
 	this.pasteNotes = () => {
 		const pastedNotes = JSON.parse(clipboard);
 		if (!pastedNotes?.length) return;
+		const sorted = pastedNotes.sort((a, b) => a.startTime - b.startTime);
+		let timeDiff = this.cursorTime - sorted[0].startTime;
+		if (this.snapX) timeDiff = this.snapToGridTime(timeDiff);
+		sorted.forEach((n) => n.startTime += timeDiff);
 		const track = noteManager.getSelectedTrack();
-		track.notes = track.notes.concat(pastedNotes);
-		this.selectedNotes = pastedNotes.map((p) => track.notes.indexOf(p));
+		track.notes = track.notes.concat(sorted);
+		this.selectedNotes = sorted.map((p) => track.notes.indexOf(p));
 		this.render();
 	};
 
@@ -359,22 +396,21 @@ function NoteManagerUI(noteManager, previewSynth) {
 		else if (this.previewNoteId) noteManager.getSelectedTrack().synth.stop(this.previewNoteId);
 	};
 
+	this.renderAll = () => {
+		this.render();
+		this.renderTracks();
+		this.bpmUi.value = noteManager.bpm;
+		this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
+	};
+
 	this.renderTracks = (tracks = noteManager.tracks) => {
 		while (this.trackContainer.firstChild) {
 			this.trackContainer.removeChild(this.trackContainer.firstChild);
 		}
 		tracks.forEach((t) => {
-			const div = document.createElement('div');
-			div.innerHTML = t.name;
-			div.className = 'jodroll-track';
-			div.addEventListener('mousedown', (e) => {
-				e.stopPropagation();
-				e.preventDefault();
-				this.selectTrack(div, t);
-			});
+			const div = createTrackEntryUi(t, this);
 			this.trackContainer.appendChild(div);
 			if (t.active) {
-				div.className += ' active';
 				this.setSynthUi(t);
 			}
 		});
@@ -382,14 +418,7 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 	this.addTrack = () => {
 		const track = noteManager.createTrack();
-		const div = document.createElement('div');
-		div.innerHTML = track.name;
-		div.className = 'jodroll-track';
-		div.addEventListener('mousedown', (e) => {
-			e.stopPropagation();
-			e.preventDefault();
-			this.selectTrack(div, track);
-		});
+		const div = createTrackEntryUi(track, this);
 		this.trackContainer.appendChild(div);
 		this.selectTrack(div, track);
 	};
@@ -404,6 +433,16 @@ function NoteManagerUI(noteManager, previewSynth) {
 		// TODO
 	};
 
+	this.setTrackGain = (track, gain) => {
+		track.gain = gain;
+		track.fx.gain.gain.value = gain;
+		track.muted = false;
+	}
+
+	this.toggleMuteTrack = (track) => {
+		track.muted = !track.muted;
+	}
+
 	this.selectTrack = (element, track) => {
 		this.trackContainer.childNodes.forEach((c) => c.className = 'jodroll-track');
 		noteManager.selectTrack(track);
@@ -414,15 +453,26 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 	this.setSynthUi = (track) => {
 		if (this.currentSynthUi) {
-			const container = document.querySelector('.synth-container');
+			const container = document.querySelector('.oscillators-container');
 			while (container.firstChild) container.removeChild(container.firstChild);
 			delete this.currentSynthUi;
 		}
 		this.currentSynthUi = new SynthUi(track.synth);
+
+
+		if (this.currentFxUi) {
+			const container = document.querySelector('.fx-container');
+			while (container.firstChild) container.removeChild(container.firstChild);
+			delete this.currentFxUi;
+		}
+		this.currentFxUi = new FxManagerUi(track.fx);
 	};
 
 	this.addOsc = () => {
 		this.currentSynthUi?.addOsc();
+	}
+	this.addFx = (type) => {
+		this.currentFxUi?.addFx(type);
 	}
 
 	this.drawClear = (ctx = this.ctx) => {
@@ -444,13 +494,54 @@ function NoteManagerUI(noteManager, previewSynth) {
 		this.ctx.fillRect(x + w - r * 0.5, y, r, h);
 	};
 
+	this.drawCircle = (x, y, r, color = jodColors.automationNode) => {
+		this.ctx.fillStyle = color;
+		this.ctx.beginPath();
+		this.ctx.arc(x, y, r, 0, Math.PI * 2);
+		this.ctx.fill();
+	}
+
+	this.drawNoteAutomation = (
+		note,
+		nodes,
+		boxColor = jodColors.automationBox,
+		nodeColor = jodColors.automationNode,
+		lineColor = jodColors.automationLine
+	) => {
+		const x = this.timeToX(note.startTime);
+		const y = this.toneToY(note.tone) + this.automationBoxHeight * 0.5;
+		const w = note.duration * this.pxPerBeat;
+		const h = -this.automationBoxHeight;
+		this.ctx.fillStyle = boxColor;
+		this.ctx.fillRect(x, y, w, h);
+
+		if (!nodes?.length) return;
+
+		// Release box
+		const releaseW = (nodes.at(-1).time ?? 0) * this.pxPerBeat;
+		this.ctx.fillStyle = jodColors.releaseBox;
+		this.ctx.fillRect(x + w, y, releaseW, h);
+
+		// Automation nodes
+		nodes.forEach((n) => {
+			//if (n.time > note.duration) // TODO
+			const nx = this.timeToX(note.startTime + n.time);
+			const ny = y + n.value * -this.automationBoxHeight;
+			this.drawCircle(nx, ny, 7, nodeColor);
+		});
+	};
+
 	this.drawNotes = (notes = noteManager.getSelectedTrack().notes, color = jodColors.note, resizeColor = jodColors.resizeHandle) => {
 		notes.forEach((n, i) => {
 			if (this.timeToX(n.startTime + n.duration) < 0.0) return;
 			if (this.timeToX(n.startTime) > this.width) return;
-			const kek = notes === noteManager.getSelectedTrack().notes;
-			if (kek && this.selectedNotes.find((s) => s === i) !== undefined) this.drawNote(n, jodColors.selectedNote, resizeColor);
-			else this.drawNote(n, color, resizeColor);
+			if (this.automationMode) {
+				this.drawNoteAutomation(n, n.gainNodes);
+			} else {
+				const isSelected = notes === noteManager.getSelectedTrack().notes;
+				if (isSelected && this.selectedNotes.some((s) => s === i)) this.drawNote(n, jodColors.selectedNote, resizeColor);
+				else this.drawNote(n, color, resizeColor);
+			}
 		});
 	};
 
@@ -478,17 +569,19 @@ function NoteManagerUI(noteManager, previewSynth) {
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
-		const gridX = this.pxPerBeat / Math.round(2 * this.pxPerBeat / 30);
+		const visColsMult = 1 + Math.floor(this.pxPerBeat / 30);
+		const gridX = this.pxPerBeat / visColsMult;
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = this.width / gridX;
-		const offsetRows = Math.ceil(this.scrollY / this.pxPerTone);
+		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone);
+		const offsetCols = Math.floor(-this.scrollX / gridX);
 		
 		// horizontal lines
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleRows; i++) {
 			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
-			const isOctave = (i + offsetRows) % 12 === 0;
+			const isOctave = (i - offsetRows) % 12 === 0;
 
 			if (isOctave) {
 				ctx.stroke();
@@ -511,8 +604,21 @@ function NoteManagerUI(noteManager, previewSynth) {
 		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleCols; i++) {
 			const x = i * gridX + this.scrollX % gridX;
+			const isBar = ((i + offsetCols) % (this.beatsPerBar * visColsMult)) === 0;
+
+			if (isBar) {
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.strokeStyle = jodColors.gridBar;
+			}
 			ctx.moveTo(x, 0);
 			ctx.lineTo(x, this.height);
+
+			if (isBar) {
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.strokeStyle = jodColors.gridLine;
+			}
 		}
 		ctx.stroke();
 
@@ -543,10 +649,15 @@ function NoteManagerUI(noteManager, previewSynth) {
 		const time = noteManager.getCurrentTime();
 		const caretPos = this.timeToX(time);
 		
+		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.pxPerBeat;// + this.width * 0.5;
 		this.render();
 		this.drawCaret(caretPos);
 
 		if (noteManager.isPlaying) {
+			if (time >= this.endTime) {
+				noteManager.stopPlaybackLoop();
+				noteManager.playbackLoop();
+			}
 			requestAnimationFrame(this.playbackAnimationFrame);
 		} else {
 			this.render();
@@ -555,11 +666,10 @@ function NoteManagerUI(noteManager, previewSynth) {
 
 	this.togglePlayback = (options) => {
 		if (noteManager.isPlaying) {
-			noteManager.stopAll();
-			//noteManager.stopPlaybackLoop();
+			noteManager.stopPlaybackLoop();
 		} else {
-			if (options.fromCursor) noteManager.playAll(this.xToTime(this.cursorX));
-			else noteManager.playAll();
+			if (options.fromCursor) noteManager.playbackLoop(this.cursorTime);
+			else noteManager.playbackLoop();
 			this.playbackAnimationFrame();
 		}
 	};

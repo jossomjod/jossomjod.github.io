@@ -15,12 +15,24 @@ function secondsToBeats(sec, bpm) {
 	return bpm * sec / 60;
 }
 
-function Note(tone, start, dur) {
+function AutomationNode(time = 0, value = 0) {
+	this.time = time;
+	this.value = value;
+}
+
+function Note(tone, start, dur, gain, gainNodes, pitchNodes, automation) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
 	this.tone = tone || 24;
-	this.gain = 1.0;
+	this.gain = gain || 1.0;
+	this.gainNodes = gainNodes || []; // AutomationNode[]
+	this.pitchNodes = pitchNodes || []; // AutomationNode[]
+	this.automation = automation || {
+		gain: gainNodes || [], // AutomationNode[]
+		pitch: pitchNodes || [], // AutomationNode[]
+	};
 }
+
 
 /**
  * @param {Note} note
@@ -41,27 +53,31 @@ function playNote (note, oscArr, ac, output, currentTime, bpm) {
 	oscArr.push(osc);
 }
 
+function envelopeToAutomationNodes(envelope, duration) { // TODO
+	const {points, multiplier} = envelope;
+}
+
 /**
  * @param {AudioContext} ac
  * @param {AudioNode} output
  */
-function NoteManager(ac, output, synth) {
+function NoteManager(ac, output) {
 	this.bpm = 140;
-	this.notes = [];
 	this.isPlaying = false;
 	this.playbackStartTime = 0;
 	this.activeOscillators = [];
-	this.synth = synth; // TODO: more synths
 	this.tracks = [];
 	this.selectedTrack = 0;
 	this.soloTrack = false;
-	this.loopEnd = 4 * this.bpm;
+	this.loopEnd = 4;
 	this.isLooping = true;
 	this.intervalId = 0;
+	this.latestNoteStartTime = 0;
 
 	this.addNote = (startTime, tone, duration) => {
+		const synth = this.getSelectedTrack().synth.oscillators[0];
 		if (startTime < 0) startTime = 0;
-		const newNote = new Note(tone, startTime, duration);
+		const newNote = new Note(tone, startTime, duration, 1, synth.gainEnvelope.points.slice(), synth.pitchEnvelope.points.slice());
 		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
 	};
@@ -87,10 +103,10 @@ function NoteManager(ac, output, synth) {
 	};
 
 
-	this.playTrack = (track, startTimeMs) => {
+	this.playTrack = (track, startTimeSec) => {
 		const oscs = [];
 		track.notes.forEach((n) => {
-			const startTime = startTimeMs + beatsToSeconds(n.startTime, this.bpm);
+			const startTime = startTimeSec + beatsToSeconds(n.startTime, this.bpm);
 			if (startTime < 0) return;
 			const duration = beatsToSeconds(n.duration, this.bpm);
 			const freq = toneToFreq(n.tone);
@@ -119,20 +135,26 @@ function NoteManager(ac, output, synth) {
 	};
 
 	this.getNotesToPlay = (notes, start, end) => {
-		return notes.filter((n) => n.startTime >= start && n.startTime < end);
+		return notes.filter((n) => n.startTime > this.latestNoteStartTime && n.startTime < start + end);
 	};
 
-	this.playbackLoop = (startTimeBeats = 0) => {
-		const interval = 600;
+	this.playbackLoop = (startTimeBeats = 0) => { // FIXME: bpm change bug
+		const lookaheadBeats = 0.1
+		const intervalMs = 20;
+		this.latestNoteStartTime = -1;
+
 		this.isPlaying = true;
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
 		clearInterval(this.intervalId);
 		this.intervalId = setInterval(() => {
+			let latestTime = this.latestNoteStartTime;
+
 			this.tracks.forEach((t) => {
 				if (t.muted) return;
-				const notes = this.getNotesToPlay(t.notes, ac.currentTime - this.playbackStartTime, interval);
+				const notes = this.getNotesToPlay(t.notes, secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm), lookaheadBeats);
 				
 				notes.forEach((n) => {
+					latestTime = Math.max(n.startTime, latestTime);
 					const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
 					if (startTime < 0) return;
 					const duration = beatsToSeconds(n.duration, this.bpm);
@@ -140,7 +162,8 @@ function NoteManager(ac, output, synth) {
 					t.synth.schedulePlayback({ startTime, duration, freq });
 				});
 			});
-		}, interval);
+			this.latestNoteStartTime = latestTime;
+		}, intervalMs);
 	}
 
 	this.stopPlaybackLoop = () => {
@@ -150,9 +173,21 @@ function NoteManager(ac, output, synth) {
 
 	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
 
+	this.getEndTime = () => {
+		let time = 0;
+		this.tracks.forEach((t) => t.notes.forEach((n) => time = Math.max(time, n.startTime + n.duration)));
+		return time;
+	};
+
+	this.setBpm = (bpm) => {
+		this.bpm = bpm;
+	};
+
 	this.createTrack = () => {
 		const index = this.tracks.length + 1;
-		const track = { synth: new Synth(ac, output), notes: [], name: 'Track ' + index, active: true, muted: false };
+		const track = { notes: [], name: 'Track ' + index, active: true, muted: false, gain: 1 };
+		track.fx = new FxManager(ac, output);
+		track.synth = new Synth(ac, track.fx.input);
 		this.tracks.push(track);
 		return track;
 	};
@@ -168,7 +203,19 @@ function NoteManager(ac, output, synth) {
 	};
 
 	this.getStringableTracks = () => {
-		return this.tracks.map((t) => ({ ...t, synth: t.synth.save() }));
+		return this.tracks.map((t) => ({ ...t, synth: t.synth.save(), fx: t.fx.save() }));
+	};
+
+	this.save = () => {
+		return {
+			bpm: this.bpm,
+			tracks: this.getStringableTracks(),
+		};
+	};
+
+	this.load = (data) => {
+		this.bpm = data.bpm ?? 140;
+		this.loadTracks(data.tracks);
 	};
 
 	this.loadTracks = (tracks) => {
@@ -180,7 +227,11 @@ function NoteManager(ac, output, synth) {
 		}
 		this.tracks = tracks.map((t, i) => {
 			if (t.active) this.selectedTrack = i;
-			return ({ ...t, synth: new Synth(ac, output, t.synth) });
+
+			const track = t;
+			track.fx = new FxManager(ac, output, t.fx, t.gain);
+			track.synth = new Synth(ac, track.fx.input, t.synth);
+			return track;
 		});
 	};
 }

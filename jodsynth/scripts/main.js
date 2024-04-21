@@ -1,70 +1,7 @@
+console.log('Is secure context:', window.isSecureContext);
+
+
 const ac = new (window.AudioContext || window.webkitAudioContext);
-
-
-
-
-// REVERB EXPERIMENTS
-
-// Buffer
-const bufferSize = ac.sampleRate * 1.0;
-const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
-const bufL = buford.getChannelData(0);
-const bufR = buford.getChannelData(1);
-for (let i = 0; i < bufferSize; i++) {
-	bufL[i] = Math.random() * 2 - 1;
-	bufR[i] = Math.random() * 2 - 1;
-}
-
-const convolo = ac.createConvolver();
-convolo.buffer = buford;
-
-const reverbGain = new GainNode(ac, { value: 1.0 });
-
-
-const reverbGainUI = document.querySelector('#reverbGain');
-reverbGainUI.value = reverbGain.gain.value;
-reverbGainUI.addEventListener('input', () => {
-	reverbGain.gain.value = reverbGainUI.value;
-});
-
-
-// MASTER Gain
-
-const masterGain = ac.createGain();
-masterGain.connect(ac.destination);
-masterGain.gain.value = 0.2;
-
-const masterGainUI = document.querySelector('#masterGain');
-masterGainUI.value = masterGain.gain.value;
-masterGainUI.addEventListener('input', () => {
-	masterGain.gain.value = masterGainUI.value;
-});
-
-
-const synth = new Synth(ac);
-
-const synthGain = ac.createGain();
-synthGain.gain.value = 1.0;
-
-synth.connect(masterGain);
-
-synth.connect(convolo).connect(reverbGain).connect(synthGain).connect(masterGain);
-
-
-const masterDelay = ac.createDelay(2);
-masterDelay.delayTime.value = 0.4;
-const masterDelayFeedback = ac.createGain();
-masterDelayFeedback.gain.value = 0.16;
-
-if (true) { // Delay
-synthGain
-	.connect(masterDelay)
-	.connect(masterDelayFeedback)
-	.connect(masterDelay)
-	.connect(masterGain);
-}
-
-
 var clipboard;
 
 var keys = {
@@ -85,18 +22,31 @@ var upperKeys = [
 ];
 
 let octave = 2;
-let noteOffset = 2;
+let noteOffset = 3;
 
 
 var keyboardKeys = {};
 
 function generateKeyDict() {
-	lowerKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i });
-	upperKeys.forEach((k, i) => keyboardKeys[k] = { synth: new Synth(ac, masterGain), down: false, id: null, index: i + 13 });
+	lowerKeys.forEach((k, i) => keyboardKeys[k] = { down: false, id: null, index: i });
+	upperKeys.forEach((k, i) => keyboardKeys[k] = { down: false, id: null, index: i + 13 });
 }
 generateKeyDict();
 
 
+
+
+// MASTER Gain
+
+const masterGain = ac.createGain();
+masterGain.connect(ac.destination);
+masterGain.gain.value = 0.2;
+
+const masterGainUI = document.querySelector('#masterGain');
+masterGainUI.value = masterGain.gain.value;
+masterGainUI.addEventListener('input', () => {
+	masterGain.gain.value = masterGainUI.value;
+});
 
 
 
@@ -106,78 +56,83 @@ const noteManagerGain = ac.createGain();
 noteManagerGain.gain.value = 1.0;
 noteManagerGain.connect(masterGain);
 
-var noteManager = new NoteManager(ac, noteManagerGain, synth);
+var noteManager = new NoteManager(ac, noteManagerGain);
 
-var noteManagerUi = new NoteManagerUI(noteManager, synth);
+var noteManagerUi = new NoteManagerUI(noteManager);
 
-noteManagerUi.render();
+noteManagerUi.renderAll();
 
 
 const addOscBtn = document.querySelector('#addOscBtn');
 addOscBtn.onclick = () => noteManagerUi.addOsc();
 
-
-
-
+const fxAddSelect = document.querySelector('#fxAddSelect');
+const addFxBtn = document.querySelector('#addFxBtn');
+addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
 
 
 // SAVE / LOAD ---------------------------------
+const quickSaveName = 'joddaw-save-data';
 var saveNameInput = document.querySelector('#saveNameInput');
 var templateSelect = document.querySelector('#templateSelect');
+
+
+function parseTrackData(data) {
+	const parsed = JSON.parse(data);
+	return parsed.tracks ? parsed : { bpm: 140, tracks: parsed };
+}
 
 templateSelect.addEventListener('change', () => {
 	const index = +templateSelect.value;
 	const tracks = trackerTemplates[index]
 	if (!tracks) throw 'No template found for index' + index;
 	
-	noteManager.loadTracks(JSON.parse(tracks));
-	noteManagerUi.render();
-	noteManagerUi.renderTracks();
+	noteManager.load(parseTrackData(tracks));
+	noteManagerUi.renderAll();
 });
 
 function quickSave() {
-	const tracks = JSON.stringify(noteManager.getStringableTracks());
-	localStorage.setItem('tracks', tracks);
-	navigator.clipboard.writeText(tracks).then((v) => console.log('tracks copied to clipboard', v));
+	const data = JSON.stringify(noteManager.save());
+	localStorage.setItem(quickSaveName, data);
+	navigator.clipboard.writeText(data).then(() => console.log('data copied to clipboard'));
 }
 
 function quickLoad() {
-	const tracks = localStorage.getItem('tracks') ?? '[]';
-	noteManager.loadTracks(JSON.parse(tracks));
-	noteManagerUi.render();
-	noteManagerUi.renderTracks();
+	const data = localStorage.getItem(quickSaveName) ?? '[]';
+	noteManager.load(parseTrackData(data));
+	noteManagerUi.renderAll();
 }
 
-// TODO: save synth preset
-function saveAll() {
-	const saveName = saveNameInput.value;
+
+function saveAll(name) {
+	const saveName = name || saveNameInput.value;
 	if (!saveName) return;
 	console.log('Saving as ', saveName);
 
-	const data = {
-		tracks: noteManager.getStringableTracks(),
-	};
+	const data = noteManager.save();
 	const stringData = JSON.stringify(data);
 	if (saveName.length < 100) localStorage.setItem(saveName, stringData);
 	else saveNameInput.value = '';
-	navigator.clipboard.writeText(stringData).then((v) => console.log('data copied to clipboard', v));
+	navigator.clipboard.writeText(stringData).then(() => console.log('data copied to clipboard'));
 }
 
-function loadAll() {
-	const saveName = saveNameInput.value || saveNameInput.innerHTML;
+function loadAll(name) {
+	const saveName = name || saveNameInput.value || saveNameInput.innerHTML;
 	if (!saveName) return;
 	console.log('Loading ', saveName);
 	
 	const dataString = localStorage.getItem(saveName) ?? saveName;
-	const data = JSON.parse(dataString);
-	console.log('load data:', data);
+	const data = parseTrackData(dataString);
 	if (data) {
-		noteManager.loadTracks(data.tracks);
-		noteManagerUi.render();
-		noteManagerUi.renderTracks();
+		noteManager.load(data);
+		noteManagerUi.renderAll();
 	}
 }
+
+
+
+
 
 
 // EVENTS----------------------------------------------------------------------
@@ -200,9 +155,13 @@ topBar.onkeyup = (e) => {
 // KEY STUFF
 
 document.body.onkeydown = (e) => {
-	if (e.repeat) return;
+	if (e.repeat || e.isComposing || e.which === 229) return;
 	e.preventDefault();
 	switch (e.which) {
+		case 9: // tab
+			noteManagerUi.automationMode = !noteManagerUi.automationMode;
+			noteManagerUi.render();
+			break;
 		case 32: // space
 			noteManagerUi.togglePlayback({ fromCursor: keys.ctrl });
 			break;
@@ -218,17 +177,29 @@ document.body.onkeydown = (e) => {
 		case 36: // Home
 			noteOffset++;
 			break;
+		case 46: // Delete
+			noteManagerUi.deleteSelectedNotes();
+			break;
 		case 67: // C
 			if (e.ctrlKey) noteManagerUi.copyNotes();
 			break;
 		case 86: // V
 			if (e.ctrlKey) noteManagerUi.pasteNotes();
 			break;
+		case 83: // S
+			if (e.ctrlKey) quickSave();
+			break;
+		case 90: // Z
+			if (e.ctrlKey) quickLoad();
+			break;
 		case 114: // F3
 			noteManagerUi.snapX = !noteManagerUi.snapX;
 			break;
 		case 115: // F4
 			noteManagerUi.snapY = !noteManagerUi.snapY;
+			break;
+		case 118: // F7
+			noteManagerUi.autoScrollOnPlayback = !noteManagerUi.autoScrollOnPlayback;
 			break;
 		case 119: // F8
 			quickSave();
@@ -238,8 +209,6 @@ document.body.onkeydown = (e) => {
 			break;
 		case 172: // That key under Esc, left of 1, above Tab
 			noteManagerUi.toggleVisible();
-			break;
-		default:
 			break;
 	}
 	toggleKeys(e, true);
@@ -269,13 +238,13 @@ function toggleKeys(e, bool) {
 			keys.ctrl = bool;
 			break;
 		default:
-			console.log('Key event - physical:', e.code, 'which:', e.which);
+			//console.log('Key event - physical:', e.code, 'which:', e.which);
 			break;
 	}
 	if (e.ctrlKey) return;
 
 	const key = keyboardKeys[e.code];
-	if (key) {
+	if (key && key.down !== bool) {
 		key.down = bool;
 		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
 		else noteManager.getSelectedTrack().synth.stop(key.id);

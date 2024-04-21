@@ -36,4 +36,9 @@ button:hover, a:hover {
 .top-bar {
 	display: flex;
 	gap: 5px;
+	align-items: center;
+}
+
+.top-bar .end {
+	justify-self: end;
 }
