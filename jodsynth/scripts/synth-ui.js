@@ -311,6 +311,14 @@ function OscillatorUi(oscillator, container, name) {
 	});
 
 
+	// PAN
+	this.oscPanUI = this.oscUi.querySelector('#oscPan');
+	this.oscPanUI.value = '' + this.oscillator.pan;
+	this.oscPanUI.addEventListener('input', () => {
+		this.oscillator.pan = +this.oscPanUI.value;
+	});
+
+
 	this.oscGainEnvelope = this.oscUi.querySelector('#oscGainEnvelope');
 	this.oscPitchEnvelope = this.oscUi.querySelector('#oscPitchEnvelope');
 	

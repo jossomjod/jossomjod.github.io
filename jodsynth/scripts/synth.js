@@ -159,6 +159,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.name = '';
 	this.phase = phase;
 	this.customeWave;
+	this.pan = 0.0;
 
 	this.setWave = (waveform) => {
 		this.type = waveform;
@@ -171,7 +172,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		this.customeWave = getPeriodicWave(ac, this.type, this.phase);
 	}
 
-	this.start = (frequency, gainNode, time = ac.currentTime) => {
+	this.start = (frequency, gainNode, panner, time = ac.currentTime) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
 		// You have to make a new osc every time
 		const osc = new OscillatorNode(ac, { /* type: this.type, */ detune: this.detune, frequency: freq });
@@ -180,7 +181,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
 
 		gainNode.gain.value = gain;
-		osc.connect(gainNode);
+		osc.connect(panner).connect(gainNode);
 		osc.start(time);
 
 		this.gainEnvelope.start(gainNode.gain, 0.0, gain, time);
@@ -194,7 +195,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.stop(time + this.gainEnvelope.getRelease());
 	}
 
-	this.schedulePlayback = (frequency, gainNode, startTime = ac.currentTime, duration = 1) => {
+	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customeWave);
@@ -202,7 +203,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
 
 		gainNode.gain.value = gain;
-		osc.connect(gainNode);
+		osc.connect(panner).connect(gainNode);
 		osc.start(startTime);
 
 		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration);
@@ -286,7 +287,8 @@ function Synth(ac, output, fromObject) {
 	this.start = (freq) => {
 		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
-			const oscillator = osc.start(freq, gain);
+			const pan = new StereoPannerNode(ac, { pan: osc.pan });
+			const oscillator = osc.start(freq, gain, pan);
 			return { gain, oscillator };
 		});
 
@@ -313,7 +315,8 @@ function Synth(ac, output, fromObject) {
 	this.schedulePlayback = ({ startTime, duration, freq }) => {
 		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
-			const oscillator = osc.schedulePlayback(freq, gain, startTime, duration);
+			const pan = new StereoPannerNode(ac, { pan: osc.pan });
+			const oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
 			return { gain, oscillator };
 		});
 
