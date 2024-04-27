@@ -649,7 +649,7 @@ function NoteManagerUI(noteManager) {
 		const time = noteManager.getCurrentTime();
 		const caretPos = this.timeToX(time);
 		
-		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.pxPerBeat;// + this.width * 0.5;
+		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.2;
 		this.render();
 		this.drawCaret(caretPos);
 
