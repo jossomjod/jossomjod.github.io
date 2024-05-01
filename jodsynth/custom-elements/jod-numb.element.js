@@ -126,6 +126,7 @@ class JodNumbElement extends HTMLElement {
 		`;
 
 		this.shadowRoot.append(style, wrapper);
+		this.setValue(this.#value);
 	}
 }
 
