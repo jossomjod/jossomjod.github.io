@@ -94,7 +94,10 @@ function NoteManagerUI(noteManager) {
 		const tone = this.yToTone(realY); // TODO: use time and tone instead of x and y as much as possible
 		const snappedTone = this.snapToGridTone(tone);
 
-		switch (e.buttons) {
+		switch (e.buttons | +this.automationMode * 8) {
+			case this.primaryAction | 8:
+				console.log('OAJEPFIOJAPO');
+				break;
 			case this.primaryAction:
 				if (this.clickedNote) this.previewNote(false);
 				this.clickedNoteIndex = this.getNoteIndexAtPos(realX, realY);
@@ -108,10 +111,8 @@ function NoteManagerUI(noteManager) {
 						break;
 					}
 
-					this.areaSelectAABB.ax = realX;
-					this.areaSelectAABB.ay = realY;
-					this.areaSelectAABB.bx = realX;
-					this.areaSelectAABB.by = realY;
+					this.areaSelectAABB.ax = this.areaSelectAABB.bx = realX;
+					this.areaSelectAABB.ay = this.areaSelectAABB.by = realY;
 					this.isSelectingArea = true;
 					break;
 				}
@@ -274,6 +275,28 @@ function NoteManagerUI(noteManager) {
 			const nt = n.tone;
 			return time > t && time < d && tone < nt && tone > (nt - 1);
 		});
+	};
+
+	this.getAutomationNodeAtPos = (x, y) => {
+		const time = this.xToTime(x);
+		const tone = this.yToTone(y);
+		const noteIndex = noteManager.getSelectedTrack().notes.findIndex((n) => {
+
+
+			const x = this.timeToX(n.startTime);
+			const y = this.toneToY(n.tone) + this.automationBoxHeight * 0.5;
+			const w = note.duration * this.pxPerBeat;
+			const h = -this.automationBoxHeight;
+			// TODO
+
+
+			const t = n.startTime;
+			const d = t + n.duration + n.automation.gain.at(-1).time;
+			const nt = n.tone;
+			return time > t && time < d && tone < nt && tone > (nt - 1);
+		});
+
+		return { noteIndex };
 	};
 
 	this.getNoteIndexAtPos = (x, y) => {

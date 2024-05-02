@@ -53,8 +53,12 @@ function playNote (note, oscArr, ac, output, currentTime, bpm) {
 	oscArr.push(osc);
 }
 
-function envelopeToAutomationNodes(envelope, duration) { // TODO
+function envelopeToAutomationNodes(envelope, duration) {
 	const {points, multiplier} = envelope;
+	return points.map((p) => {
+		// TODO
+		return new AutomationNode(p.time, p.value);
+	});
 }
 
 /**
@@ -77,31 +81,12 @@ function NoteManager(ac, output) {
 	this.addNote = (startTime, tone, duration) => {
 		const synth = this.getSelectedTrack().synth.oscillators[0];
 		if (startTime < 0) startTime = 0;
-		const newNote = new Note(tone, startTime, duration, 1, synth.gainEnvelope.points.slice(), synth.pitchEnvelope.points.slice());
+		const gainNodes = envelopeToAutomationNodes(synth.gainEnvelope, duration);
+		const pitchNodes = envelopeToAutomationNodes(synth.pitchEnvelope, duration);
+		const newNote = new Note(tone, startTime, duration, 1, gainNodes, pitchNodes);
 		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
 	};
-
-	/** @deprecated */
-	this.play = (startTime = 0) => {
-		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTime, this.bpm);
-		this.isPlaying = true;
-		this.getSelectedTrack().notes.forEach((n) => {
-			const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
-			if (startTime < 0) return;
-			const duration = beatsToSeconds(n.duration, this.bpm);
-			const freq = toneToFreq(n.tone);
-			this.activeOscillators.push(this.getSelectedTrack().synth.schedulePlayback({ startTime, duration, freq }));
-		});
-	};
-
-	/** @deprecated */
-	this.stop = () => {
-		this.isPlaying = false;
-		this.activeOscillators.forEach((osc) => this.getSelectedTrack().synth.stop(osc));
-		this.activeOscillators = [];
-	};
-
 
 	this.playTrack = (track, startTimeSec) => {
 		const oscs = [];
@@ -160,7 +145,7 @@ function NoteManager(ac, output) {
 					if (startTime < 0) return;
 					const duration = beatsToSeconds(n.duration, this.bpm);
 					const freq = toneToFreq(n.tone);
-					t.synth.schedulePlayback({ startTime, duration, freq });
+					t.synth.schedulePlayback({ startTime, duration, freq, automation: n.automation });
 				});
 			});
 			this.latestNoteStartTime = latestTime;

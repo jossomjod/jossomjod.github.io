@@ -34,24 +34,25 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 	};
 
 	//TODO: use points passed in from note. Get those points from the env and cut out nodes that don't fit the note-length
-	this.schedulePlayback = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1) => {
+	this.schedulePlaybackOld = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1, nodes) => {
 		if (!prop) return;
 		prop.setValueAtTime(base, startTime);
 
+		const points = nodes ?? this.points;
 		const endTime = startTime + duration;
-		const endValue = base + this.points.at(-1).value * this.multiplier;
+		const endValue = base + points.at(-1).value * this.multiplier;
 
 		let prevVal = base;
 
 /* 
-		const pts = this.points.filter((p, i) => p.time < duration && i !== this.points.length - 1);
+		const pts = oints.filter((p, i) => p.time < duration && i !== points.length - 1);
 		pts.forEach((p) => {
 			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
 		}); */
 
 
-		for (let i = 0; i < this.points.length-1; i++) {
-			const p = this.points[i];
+		for (let i = 0; i < points.length-1; i++) {
+			const p = points[i];
 			if (p.time >= duration) {
 				const endVal = lerp(p.value, prevVal, (p.time - duration) / duration);
 				prop.linearRampToValueAtTime(base + endVal * mult, endTime);
@@ -60,11 +61,21 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
 			prevVal = p.value;
 		};
-		const sustain = this.points.at(-2);
+		const sustain = points.at(-2);
 		if (sustain.time < duration) {
 			prop.linearRampToValueAtTime(base + sustain.value, endTime);
 		}
 		prop.linearRampToValueAtTime(endValue, endTime + this.getRelease());
+	};
+
+
+	
+	this.schedulePlayback = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1, nodes) => {
+		if (!prop) return;
+		prop.setValueAtTime(base, startTime);
+
+		const points = nodes ?? this.points;
+		points.forEach((p) => prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time));
 	};
 }
 
@@ -195,7 +206,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.stop(time + this.gainEnvelope.getRelease());
 	}
 
-	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1) => {
+	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customeWave);
@@ -206,8 +217,8 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.connect(panner).connect(gainNode);
 		osc.start(startTime);
 
-		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration);
-		this.pitchEnvelope.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration);
+		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration, automation?.gain);
+		this.pitchEnvelope.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration, automation?.pitch);
 
 		const endTime = startTime + duration;
 		osc.stop(endTime + this.gainEnvelope.getRelease());
@@ -312,11 +323,11 @@ function Synth(ac, output, fromObject) {
 		});
 	};
 
-	this.schedulePlayback = ({ startTime, duration, freq }) => {
+	this.schedulePlayback = ({ startTime, duration, freq, automation }) => {
 		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
+			const oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration, automation);
 			return { gain, oscillator };
 		});
 
