@@ -387,6 +387,7 @@ function NoteManagerUI(noteManager) {
 		const track = noteManager.getSelectedTrack();
 		track.notes = track.notes.concat(sorted);
 		this.selectedNotes = sorted.map((p) => track.notes.indexOf(p));
+		this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
 		this.render();
 	};
 
@@ -655,7 +656,6 @@ function NoteManagerUI(noteManager) {
 
 		if (noteManager.isPlaying) {
 			if (time >= this.endTime) {
-				noteManager.stopPlaybackLoop();
 				noteManager.playbackLoop();
 			}
 			requestAnimationFrame(this.playbackAnimationFrame);

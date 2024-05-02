@@ -141,10 +141,11 @@ function NoteManager(ac, output) {
 	this.playbackLoop = (startTimeBeats = 0) => { // FIXME: bpm change bug
 		const lookaheadBeats = 0.1
 		const intervalMs = 20;
-		this.latestNoteStartTime = -1;
-
-		this.isPlaying = true;
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
+		this.latestNoteStartTime = -1;
+		if (this.isPlaying) return;
+		this.isPlaying = true;
+
 		clearInterval(this.intervalId);
 		this.intervalId = setInterval(() => {
 			let latestTime = this.latestNoteStartTime;
