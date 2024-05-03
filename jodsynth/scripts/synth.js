@@ -34,11 +34,11 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 	};
 
 	//TODO: use points passed in from note. Get those points from the env and cut out nodes that don't fit the note-length
-	this.schedulePlaybackOld = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1, nodes) => {
+	this.schedulePlaybackOld = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1) => {
 		if (!prop) return;
 		prop.setValueAtTime(base, startTime);
 
-		const points = nodes ?? this.points;
+		const points = this.points;
 		const endTime = startTime + duration;
 		const endValue = base + points.at(-1).value * this.multiplier;
 
@@ -74,6 +74,10 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		if (!prop) return;
 		prop.setValueAtTime(base, startTime);
 
+		if (!nodes) {
+			this.schedulePlaybackOld(prop, base, mult, startTime, duration);
+			return;
+		}
 		const points = nodes ?? this.points;
 		points.forEach((p) => prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time));
 	};
@@ -218,7 +222,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.start(startTime);
 
 		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration, automation?.gain);
-		this.pitchEnvelope.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration, automation?.pitch);
+		this.pitchEnvelope.schedulePlaybackOld(osc.detune, this.detune, 1200.0, startTime, duration);
 
 		const endTime = startTime + duration;
 		osc.stop(endTime + this.gainEnvelope.getRelease());
