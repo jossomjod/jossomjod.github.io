@@ -90,6 +90,7 @@ templateSelect.addEventListener('change', () => {
 	
 	noteManager.load(parseTrackData(tracks));
 	noteManagerUi.renderAll();
+	document.activeElement.blur();
 });
 
 function quickSave() {
@@ -146,8 +147,18 @@ synthBody.oncontextmenu = (e) => {
 
 topBar.onkeydown = (e) => {
 	e.stopPropagation();
+	switch (e.which) {
+		case 32: // space
+			e.preventDefault();
+			document.activeElement.blur();
+			noteManagerUi.togglePlayback({ fromCursor: keys.ctrl });
+	}
 };
 topBar.onkeyup = (e) => {
+	e.stopPropagation();
+};
+
+saveNameInput.onkeydown = (e) => {
 	e.stopPropagation();
 };
 
