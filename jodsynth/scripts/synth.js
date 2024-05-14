@@ -7,8 +7,9 @@ function EnvelopePoint(value, time) {
 /**
 * points: { value: number, time: number }[]
 */
-function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
+function ArrayEnvelope(ac, points = [], multiplier = 1.0, release = [{ time: 0.1, value: 0 }]) {
 	this.points = points.slice();
+	this.release = release.slice();
 	this.multiplier = multiplier;
 
 	this.getRelease = () => this.points.at(-1).time - this.points.at(-2).time;
@@ -70,7 +71,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 
 
 	
-	this.schedulePlayback = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1, nodes) => {
+	this.schedulePlayback = (prop, base = 0.0, mult = this.multiplier, startTime = ac.currentTime, duration = 1, nodes, releaseNodes) => {
 		if (!prop) return;
 		prop.setValueAtTime(base, startTime);
 
@@ -78,8 +79,10 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 			this.schedulePlaybackOld(prop, base, mult, startTime, duration);
 			return;
 		}
+		const endTime = startTime + duration;
 		const points = nodes ?? this.points;
 		points.forEach((p) => prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time));
+		releaseNodes?.forEach((p) => prop.linearRampToValueAtTime(base + p.value * mult, endTime + p.time));
 	};
 }
 
@@ -221,7 +224,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.connect(panner).connect(gainNode);
 		osc.start(startTime);
 
-		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration, automation?.gain);
+		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration, automation?.gain, releaseNodes?.gain);
 		this.pitchEnvelope.schedulePlaybackOld(osc.detune, this.detune, 1200.0, startTime, duration);
 
 		const endTime = startTime + duration;

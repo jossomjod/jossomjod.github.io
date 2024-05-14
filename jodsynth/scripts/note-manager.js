@@ -20,7 +20,7 @@ function AutomationNode(time = 0, value = 0) {
 	this.value = value;
 }
 
-function Note(tone, start, dur, gain, gainNodes, pitchNodes, automation) {
+function Note(tone, start, dur, gain, gainNodes, pitchNodes, automation, release) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
 	this.tone = tone || 24;
@@ -28,8 +28,12 @@ function Note(tone, start, dur, gain, gainNodes, pitchNodes, automation) {
 	this.gainNodes = gainNodes || []; // AutomationNode[]
 	this.pitchNodes = pitchNodes || []; // AutomationNode[]
 	this.automation = automation || {
-		gain: gainNodes || [], // AutomationNode[]
-		pitch: pitchNodes || [], // AutomationNode[]
+		gain: gainNodes || [{ time: 0.001, value: 1 }], // AutomationNode[]
+		pitch: pitchNodes || [{ time: 0, value: 0 }], // AutomationNode[]
+	};
+	this.release = release || {
+		gain: [{ time: 0.004, value: 0 }], // AutomationNode[]
+		pitch: [{ time: 0.3, value: 0 }], // AutomationNode[]
 	};
 }
 
@@ -53,11 +57,11 @@ function playNote (note, oscArr, ac, output, currentTime, bpm) {
 	oscArr.push(osc);
 }
 
-function envelopeToAutomationNodes(envelope, duration) {
+function envelopeToAutomationNodes(envelope, duration, bpm) {
 	const {points, multiplier} = envelope;
 	return points.map((p) => {
 		// TODO
-		return new AutomationNode(p.time, p.value);
+		return new AutomationNode(secondsToBeats(p.time, bpm), p.value);
 	});
 }
 
