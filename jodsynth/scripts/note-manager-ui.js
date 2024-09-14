@@ -528,6 +528,7 @@ function NoteManagerUI(noteManager) {
 	this.drawNoteAutomation = (
 		note,
 		nodes,
+		release,
 		boxColor = jodColors.automationBox,
 		nodeColor = jodColors.automationNode,
 		lineColor = jodColors.automationLine
@@ -560,7 +561,7 @@ function NoteManagerUI(noteManager) {
 			if (this.timeToX(n.startTime + n.duration) < 0.0) return;
 			if (this.timeToX(n.startTime) > this.width) return;
 			if (this.automationMode) {
-				this.drawNoteAutomation(n, n.gainNodes);
+				this.drawNoteAutomation(n, n.automation.gain, n.release.gain);
 			} else {
 				const isSelected = notes === noteManager.getSelectedTrack().notes;
 				if (isSelected && this.selectedNotes.some((s) => s === i)) this.drawNote(n, jodColors.selectedNote, resizeColor);

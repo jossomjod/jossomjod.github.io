@@ -73,6 +73,7 @@ addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
 
 // SAVE / LOAD ---------------------------------
+const saveVersion = '1.0';
 const quickSaveName = 'joddaw-save-data';
 var saveNameInput = document.querySelector('#saveNameInput');
 var templateSelect = document.querySelector('#templateSelect');

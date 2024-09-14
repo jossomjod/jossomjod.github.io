@@ -20,21 +20,22 @@ function AutomationNode(time = 0, value = 0) {
 	this.value = value;
 }
 
-function Note(tone, start, dur, gain, gainNodes, pitchNodes, automation, release) {
+function Note(tone, start, dur, gain, automation, release) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
 	this.tone = tone || 24;
 	this.gain = gain || 1.0;
-	this.gainNodes = gainNodes || []; // AutomationNode[]
-	this.pitchNodes = pitchNodes || []; // AutomationNode[]
 	this.automation = automation || {
-		gain: gainNodes || [{ time: 0.001, value: 1 }], // AutomationNode[]
-		pitch: pitchNodes || [{ time: 0, value: 0 }], // AutomationNode[]
+		gain: [{ time: 0.001, value: 1 }], // AutomationNode[]
+		pitch: [{ time: 0, value: 0 }], // AutomationNode[]
 	};
 	this.release = release || {
-		gain: [{ time: 0.004, value: 0 }], // AutomationNode[]
+		gain: [{ time: 0.003, value: 0 }], // AutomationNode[]
 		pitch: [{ time: 0.3, value: 0 }], // AutomationNode[]
 	};
+	this.oscAutomation = [
+		{ gain: [] }
+	];
 }
 
 
@@ -58,7 +59,11 @@ function playNote (note, oscArr, ac, output, currentTime, bpm) {
 }
 
 function envelopeToAutomationNodes(envelope, duration, bpm) {
-	const {points, multiplier} = envelope;
+	const {points, release, multiplier} = envelope;
+
+	//TODO
+	// 
+
 	return points.map((p) => {
 		// TODO
 		return new AutomationNode(secondsToBeats(p.time, bpm), p.value);
@@ -83,11 +88,8 @@ function NoteManager(ac, output) {
 	this.latestNoteStartTime = 0;
 
 	this.addNote = (startTime, tone, duration) => {
-		const synth = this.getSelectedTrack().synth.oscillators[0];
 		if (startTime < 0) startTime = 0;
-		const gainNodes = envelopeToAutomationNodes(synth.gainEnvelope, duration);
-		const pitchNodes = envelopeToAutomationNodes(synth.pitchEnvelope, duration);
-		const newNote = new Note(tone, startTime, duration, 1, gainNodes, pitchNodes);
+		const newNote = new Note(tone, startTime, duration, 1);
 		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
 	};
@@ -149,7 +151,7 @@ function NoteManager(ac, output) {
 					if (startTime < 0) return;
 					const duration = beatsToSeconds(n.duration, this.bpm);
 					const freq = toneToFreq(n.tone);
-					t.synth.schedulePlayback({ startTime, duration, freq, automation: n.automation });
+					t.synth.schedulePlayback({ startTime, duration, freq, automation: n.automation, release: n.release });
 				});
 			});
 			this.latestNoteStartTime = latestTime;

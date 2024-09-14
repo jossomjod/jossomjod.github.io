@@ -29,9 +29,9 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0, release = [{ time: 0.1
 	// Call this when ending a note. prop must be an AudioParam.
 	this.stop = (prop, base = 0.0) => {
 		if (!prop) return;
-		const endValue = base + this.points.at(-1).value * this.multiplier;
+		const endValue = base + this.release.at(-1).value * this.multiplier;
 		prop.cancelScheduledValues(ac.currentTime);
-		prop.linearRampToValueAtTime(endValue, ac.currentTime + this.getRelease());
+		prop.linearRampToValueAtTime(endValue, ac.currentTime + this.release.at(-1).time);
 	};
 
 	//TODO: use points passed in from note. Get those points from the env and cut out nodes that don't fit the note-length
@@ -213,7 +213,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.stop(time + this.gainEnvelope.getRelease());
 	}
 
-	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation) => {
+	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, release) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customeWave);
@@ -224,7 +224,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.connect(panner).connect(gainNode);
 		osc.start(startTime);
 
-		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration, automation?.gain, releaseNodes?.gain);
+		this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration, automation?.gain, release?.gain);
 		this.pitchEnvelope.schedulePlaybackOld(osc.detune, this.detune, 1200.0, startTime, duration);
 
 		const endTime = startTime + duration;
@@ -330,11 +330,11 @@ function Synth(ac, output, fromObject) {
 		});
 	};
 
-	this.schedulePlayback = ({ startTime, duration, freq, automation }) => {
+	this.schedulePlayback = ({ startTime, duration, freq, automation, release }) => {
 		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration, automation);
+			const oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration, automation, release);
 			return { gain, oscillator };
 		});
 
