@@ -76,7 +76,36 @@ addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 const quickSaveName = 'joddaw-save-data';
 var saveNameInput = document.querySelector('#saveNameInput');
 var templateSelect = document.querySelector('#templateSelect');
+var saveSelect = document.querySelector('#saveSelect');
 
+
+
+saveSelect.addEventListener('change', () => {
+	const name = saveSelect.value;
+	loadAll(name);
+	document.activeElement.blur();
+});
+
+
+function getSaveNameList() {
+	const list = [];
+	for (let i = 0; i < localStorage.length; i++) {
+		list.push(localStorage.key(i));
+	}
+	return list;
+}
+
+function generateSaveSelectOptions() {
+	saveSelect.replaceChildren();
+	const saveNames = getSaveNameList();
+	saveNames.forEach((n) => {
+		const option = document.createElement('option');
+		option.value = n;
+		option.innerText = n;
+		saveSelect.appendChild(option);
+	});
+}
+generateSaveSelectOptions();
 
 function parseTrackData(data) {
 	const parsed = JSON.parse(data);
@@ -116,6 +145,8 @@ function saveAll(name) {
 	if (saveName.length < 100) localStorage.setItem(saveName, stringData);
 	else saveNameInput.value = '';
 	navigator.clipboard.writeText(stringData).then(() => console.log('data copied to clipboard'));
+
+	generateSaveSelectOptions();
 }
 
 function loadAll(name) {
@@ -174,7 +205,7 @@ document.body.onkeydown = (e) => {
 			noteManagerUi.render();
 			break;
 		case 32: // space
-			noteManagerUi.togglePlayback({ fromCursor: keys.ctrl });
+			noteManagerUi.togglePlayback({ fromCursor: e.ctrlKey || e.shiftKey });
 			break;
 		case 33: // pgup
 			octave++;
