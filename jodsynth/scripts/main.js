@@ -90,7 +90,8 @@ saveSelect.addEventListener('change', () => {
 function getSaveNameList() {
 	const list = [];
 	for (let i = 0; i < localStorage.length; i++) {
-		list.push(localStorage.key(i));
+		const name = localStorage.key(i);
+		if (name !== quickSaveName) list.push(name);
 	}
 	return list;
 }
