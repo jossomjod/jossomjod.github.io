@@ -83,6 +83,7 @@ var saveSelect = document.querySelector('#saveSelect');
 saveSelect.addEventListener('change', () => {
 	const name = saveSelect.value;
 	loadAll(name);
+	saveNameInput.value = name;
 	document.activeElement.blur();
 });
 
@@ -96,15 +97,16 @@ function getSaveNameList() {
 	return list;
 }
 
-function generateSaveSelectOptions() {
-	saveSelect.replaceChildren();
-	const saveNames = getSaveNameList();
-	saveNames.forEach((n) => {
+function generateSaveSelectOptions(selectValue) {
+	const value = selectValue ?? saveSelect.value;
+	const optionNodes = getSaveNameList().map((n) => {
 		const option = document.createElement('option');
 		option.value = n;
 		option.innerText = n;
-		saveSelect.appendChild(option);
+		return option;
 	});
+	saveSelect.replaceChildren(...optionNodes);
+	saveSelect.value = value;
 }
 generateSaveSelectOptions();
 
