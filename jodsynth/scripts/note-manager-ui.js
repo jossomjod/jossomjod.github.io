@@ -25,6 +25,24 @@ const jodColors = {
 	releaseBox: '#386e62aa',
 };
 
+
+class TimelineUI {
+	rect;
+	color = '#212436';
+	backgroundColor = '#111111';
+
+	/** @param {Rect} rect  */
+	constructor(rect) {
+		this.rect = rect;
+	}
+
+	/** @param {CanvasRenderingContext2D} ctx  */
+	draw(ctx) {
+		// TODO
+	}
+}
+
+
 function NoteManagerUI(noteManager) {
 	this.trackerContainer = document.querySelector('.tracker-container');
 	this.jodrollTemplate = document.querySelector('#jodroll-template');
