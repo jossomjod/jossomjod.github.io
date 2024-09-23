@@ -19,6 +19,7 @@ const jodColors = {
 	resizeHandle: '#99c9ff',
 	fadedNote: '#6699ff3c',
 	fadedResizeHandle: '#99c9ff6c',
+	fadedSelectedNote: '#7c42e176',
 	automationBox: '#387f6caa',
 	automationNode: '#fca372',
 	automationLine: '#3afa8c99',
@@ -31,14 +32,77 @@ class TimelineUI {
 	color = '#212436';
 	backgroundColor = '#111111';
 
+	selectionRange = { start: 0, end: 0 };
+	isSelecting = 0; // 1: ctrl, 2: ctrl + shift
+	selectionColor = '#31426f53';
+
 	/** @param {Rect} rect  */
 	constructor(rect) {
 		this.rect = rect;
 	}
 
+	isPointInside(_x, y) { // currently the x pos and width always matches the canvas
+		return y > this.rect.y && y < this.rect.y + this.rect.h;
+	}
+
+	startSelecting(posX, all) {
+		posX /= this.rect.w;
+		this.isSelecting = 1 + all;
+		this.selectionRange.start = posX;
+		this.selectionRange.end = posX;
+	}
+
+	updateSelection(posX) {
+		this.selectionRange.end = posX / this.rect.w;
+	}
+
+	endSelecting(posX) {
+		this.isSelecting = 0;
+		this.selectionRange.end = posX / this.rect.w;
+	}
+
 	/** @param {CanvasRenderingContext2D} ctx  */
-	draw(ctx) {
-		// TODO
+	draw(ctx, scrollX, pxPerBeat, endTime, tracks) {
+		const { x, y, w, h } = this.rect;
+		ctx.fillStyle = this.backgroundColor;
+		ctx.fillRect(x, y, w, h);
+
+		const left = (-scrollX / (endTime * pxPerBeat)) * w;
+		const width = w * w / (pxPerBeat * endTime);
+
+		ctx.fillStyle = this.color;
+		ctx.fillRect(left, y, width, h);
+
+		tracks.forEach((t) => t.notes.forEach((n) => {
+			const nx = w * n.startTime / endTime;
+			const ny = y + (h - n.tone);
+			const nw = w * n.duration / endTime;
+			ctx.fillStyle = jodColors.note;
+			ctx.fillRect(nx, ny, nw, 1);
+		}));
+
+		if (this.isSelecting) this.drawSelectionBox(ctx);
+	}
+
+	/** 
+	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {number} pos A number between 0 and 1, where 1 is the end time.
+	 */
+	drawCaret(ctx, pos) {
+		const x = this.rect.w * pos;
+		ctx.beginPath();
+		ctx.strokeStyle = jodColors.caret;
+		ctx.moveTo(x, this.rect.y);
+		ctx.lineTo(x, this.rect.y + this.rect.h);
+		ctx.stroke();
+	}
+
+	/** @param {CanvasRenderingContext2D} ctx  */
+	drawSelectionBox(ctx) {
+		const { y, w, h } = this.rect;
+		const { start, end } = this.selectionRange;
+		ctx.fillStyle = this.selectionColor;
+		ctx.fillRect(w * start, y, w * (end - start), h);
 	}
 }
 
@@ -60,7 +124,7 @@ function NoteManagerUI(noteManager) {
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
 	this.width = this.trackerContainer.width = window.innerWidth - 222;
-	this.height = this.canvas.height = this.trackerContainer.height = 600;
+	this.height = this.canvas.height = this.trackerContainer.height = 700;
 	this.canvas.width = this.width;
 	this.scrollX = 0;
 	this.scrollY = 0;
@@ -72,6 +136,7 @@ function NoteManagerUI(noteManager) {
 	this.primaryAction = 1;
 	this.secondaryAction = 2;
 	this.scrollAction = 4;
+	this.timeLineAction = 8;
 
 	this.beatsPerBar = 4; // the top number in the time signature
 	this.beatDivisor = 4; // the bottom number in the time signature
@@ -81,7 +146,6 @@ function NoteManagerUI(noteManager) {
 	this.snapX = true;
 	this.snapY = true;
 
-	this.clickedNoteIndex = -1;
 	this.clickedNote = null;
 	this.noteMinDuration = 0.01;
 	this.previewNoteId = null;
@@ -92,11 +156,16 @@ function NoteManagerUI(noteManager) {
 
 	this.selectedNotes = [];
 	this.isSelectingArea = false;
+	this.isSelectingAllTracks = false;
 	this.areaSelectAABB = { ax: 0, ay: 0, bx: 0, by: 0 };
 
 	this.cursorX = 0;
 	this.cursorTime = 0;
 	this.endTime = noteManager.getEndTime() || this.beatsPerBar;
+
+	this.timeLine = new TimelineUI({ x: 0, y: this.height - 100, w: this.width, h: 100 });
+	this.timeLineClicked = false;
+
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
@@ -106,22 +175,27 @@ function NoteManagerUI(noteManager) {
 		const rect = this.canvas.getBoundingClientRect();
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
-		
-		const time = this.xToTime(realX);
-		const snappedTime = this.snapToGridTime(time);
-		const tone = this.yToTone(realY); // TODO: use time and tone instead of x and y as much as possible
-		const snappedTone = this.snapToGridTone(tone);
+
+		this.timeLineClicked = this.timeLine.isPointInside(realX, e.y - rect.top);
 
 		switch (e.buttons) {
 			case this.primaryAction:
 				if (this.clickedNote) this.previewNote(false);
-				this.clickedNoteIndex = this.getNoteIndexAtPos(realX, realY);
+				if (this.timeLineClicked) {
+					if (e.ctrlKey) {
+						this.timeLine.startSelecting(realX, e.shiftKey);
+						break;
+					}
+					this.scrollToAbsolute(realX);
+					break;
+				}
+				const clickedNote = this.getNoteAtPos(realX, realY);
 
 				if (e.ctrlKey) {
-					if (this.clickedNoteIndex > -1) {
-						const idx = this.selectedNotes.findIndex((s) => s === this.clickedNoteIndex);
+					if (clickedNote) {
+						const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 						if (idx > -1) this.selectedNotes.splice(idx, 1);
-						else this.selectedNotes.push(this.clickedNoteIndex);
+						else this.selectedNotes.push(clickedNote);
 						this.render();
 						break;
 					}
@@ -130,58 +204,84 @@ function NoteManagerUI(noteManager) {
 					this.areaSelectAABB.ay = realY;
 					this.areaSelectAABB.bx = realX;
 					this.areaSelectAABB.by = realY;
-					this.isSelectingArea = true;
+
+					if (e.shiftKey) this.isSelectingAllTracks = true;
+					else this.isSelectingArea = true;
 					break;
 				}
 
-
-				if (this.clickedNoteIndex > -1) {
-					const idx = this.selectedNotes.findIndex((s) => s === this.clickedNoteIndex);
+				if (clickedNote) {
+					const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 					if (idx === -1) {
-						this.selectedNotes = [this.clickedNoteIndex];
+						this.selectedNotes = [clickedNote];
 						this.render();
 					}
 
-					this.clickedNote = noteManager.getSelectedTrack().notes[this.clickedNoteIndex];
+					this.clickedNote = clickedNote;
 					this.clickedNoteInitial = { ...this.clickedNote };
 					this.isResizing = this.checkResizeTrigger(this.clickedNote, realX);
 				} else {
 					if (this.snapY) realY = this.snapToGridY(realY);
 					if (this.snapX) realX = this.snapToGridX(realX);
 					this.addNote(realX, realY);
-					this.selectedNotes = [this.clickedNoteIndex];
+					this.selectedNotes = [this.clickedNote];
 					this.render();
 				}
 				this.previewNote(true);
 				break;
 			case this.secondaryAction:
+				if (this.timeLineClicked) {
+					this.togglePlayback({ fromTime: this.endTime * realX / this.timeLine.rect.w });
+					break;
+				}
 				const index = this.getNoteIndexAtPos(realX, realY);
 				if (index > -1) this.deleteNote(index);
 				break;
 		}
 	});
-	this.trackerContainer.addEventListener('mouseup', (e) => {
+
+	this.onMouseUpOrEnter = (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 		
 		if (~e.buttons & this.primaryAction) {
 			if (this.isSelectingArea) {
 				this.isSelectingArea = false;
-				this.selectedNotes = this.getNoteIndicesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
+				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.render();
 			}
+			else if (this.isSelectingAllTracks) {
+				this.isSelectingAllTracks = false;
+				this.selectedNotes = this.getAllNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
+				this.render();
+			}
+			else if (this.timeLine.isSelecting) {
+				const allTracks = this.timeLine.isSelecting > 1;
+				this.timeLine.endSelecting(this.cursorX);
 
-			if (this.clickedNote) {
+				const { start, end } = this.timeLine.selectionRange;
+				const ax = this.timeToX(start * this.endTime);
+				const bx = this.timeToX(end * this.endTime);
+				const func = allTracks ? this.getAllNotesInAABB : this.getNotesInAABB;
+				this.selectedNotes = func(ax, -9999, bx, 9999);
+				this.render();
+			}
+			else if (this.clickedNote) {
 				this.newNoteDuration = this.clickedNote.duration;
+				const et = this.endTime;
 				this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
+				if (et !== this.endTime) this.render();
 			}
 
 			this.previewNote(false);
 			this.clickedNote = null;
-			this.clickedNoteIndex = -1;
 			this.isResizing = false;
+			this.timeLineClicked = false;
 		}
-	});
+	};
+
+	this.trackerContainer.addEventListener('mouseup', this.onMouseUpOrEnter);
+	this.trackerContainer.addEventListener('mouseenter', this.onMouseUpOrEnter);
 
 	this.trackerContainer.oncontextmenu = (e) => e.preventDefault();
 
@@ -194,15 +294,24 @@ function NoteManagerUI(noteManager) {
 		this.cursorX = realX;
 		this.cursorTime = this.xToTime(this.cursorX);
 
+		const timeLineClicked = +this.timeLine.isPointInside(realX, e.y - rect.top) * this.timeLineAction;
 		const scrollHack = +e.altKey * this.scrollAction; // alternative to middle mouse button
-		const fakeButtons = e.buttons | scrollHack;
+		const fakeButtons = e.buttons | scrollHack | timeLineClicked;
 
 		switch (fakeButtons) {
 			case this.primaryAction:
+				if (this.timeLineClicked) {
+					if (this.timeLine.isSelecting) {
+						this.timeLine.updateSelection(realX);
+						this.drawTimeLine();
+					}
+					else this.scrollToAbsolute(realX);
+					break;
+				}
 				if (this.snapX) realX = this.snapToGridX(realX);
 				if (this.snapY) realY = this.snapToGridY(realY);
 
-				if (this.isSelectingArea) {
+				if (this.isSelectingArea || this.isSelectingAllTracks) {
 					this.areaSelectAABB.bx = realX;
 					this.areaSelectAABB.by = realY;
 					this.render();
@@ -216,7 +325,7 @@ function NoteManagerUI(noteManager) {
 						break;
 					}
 					const dTone = this.yToTone(realY) - this.clickedNote.tone;
-					this.moveNotesBy(dTime, dTone);
+					this.moveSelectedNotesBy(dTime, dTone);
 					this.previewNoteId.forEach((pn) => pn.oscillator.frequency.value = toneToFreq(this.clickedNote.tone));
 				}
 				break;
@@ -225,9 +334,18 @@ function NoteManagerUI(noteManager) {
 				if (index > -1) this.deleteNote(index);
 				break;
 			case this.scrollAction:
+			case this.scrollAction | this.timeLineAction:
 				this.scrollX += e.movementX;
 				this.scrollY -= e.movementY;
 				this.render();
+				break;
+			case this.timeLineAction | this.primaryAction:
+				if (this.clickedNote) break;
+				if (this.timeLine.isSelecting) {
+					this.timeLine.updateSelection(realX);
+					this.drawTimeLine();
+				}
+				else this.scrollToAbsolute(realX);
 				break;
 		}
 	});
@@ -283,6 +401,12 @@ function NoteManagerUI(noteManager) {
 		return Math.floor(t / this.pxPerTone) * this.pxPerTone;
 	};
 
+	this.scrollToAbsolute = (x) => {
+		const w = this.timeLine.rect.w;
+		this.scrollX = -(x / w) * this.endTime * this.pxPerBeat + w * 0.5;
+		this.render();
+	};
+
 	this.getNoteAtPos = (x, y) => {
 		const time = this.xToTime(x);
 		const tone = this.yToTone(y);
@@ -309,6 +433,50 @@ function NoteManagerUI(noteManager) {
 		return Math.abs(realX - endX) < this.resizeTriggerSize;
 	};
 
+	this.getNotesInTimeAABB = (aX, aY, bX, bY) => {
+		const ax = Math.min(aX, bX);
+		const ay = Math.min(aY, bY);
+		const bx = Math.max(aX, bX);
+		const by = Math.max(aY, bY);
+
+		return noteManager.getSelectedTrack().notes.filter((n) => {
+			const t = n.startTime;
+			const d = t + n.duration;
+			const nt = n.tone;
+			return d > ax && t < bx && nt >= ay && nt <= by;
+		});
+	};
+
+	this.getNotesInAABB = (aX, aY, bX, bY) => {
+		const ax = this.xToTime(Math.min(aX, bX));
+		const ay = this.yToTone(Math.min(aY, bY));
+		const bx = this.xToTime(Math.max(aX, bX));
+		const by = this.yToTone(Math.max(aY, bY));
+
+		return noteManager.getSelectedTrack().notes.filter((n) => {
+			const t = n.startTime;
+			const d = t + n.duration;
+			const nt = n.tone;
+			return d > ax && t < bx && nt >= ay && nt <= by;
+		});
+	};
+
+	this.getAllNotesInAABB = (aX, aY, bX, bY) => {
+		const ax = this.xToTime(Math.min(aX, bX));
+		const ay = this.yToTone(Math.min(aY, bY));
+		const bx = this.xToTime(Math.max(aX, bX));
+		const by = this.yToTone(Math.max(aY, bY));
+		const arr = [];
+
+		noteManager.tracks.forEach((t) => arr.push(...t.notes.filter((n) => {
+			const t = n.startTime;
+			const d = t + n.duration;
+			const nt = n.tone;
+			return d > ax && t < bx && nt >= ay && nt <= by;
+		})));
+		return arr;
+	};
+
 	this.getNoteIndicesInAABB = (aX, aY, bX, bY) => {
 		const ax = this.xToTime(Math.min(aX, bX));
 		const ay = this.yToTone(Math.min(aY, bY));
@@ -324,12 +492,25 @@ function NoteManagerUI(noteManager) {
 		}).filter((i) => i !== null);
 	};
 
+	this.getAllNotes = () => {
+		return [].concat(...noteManager.tracks.map((t) => t.notes));
+	};
+
+	this.selectAllNotes = () => {
+		this.selectedNotes = this.getAllNotes();
+		this.render();
+	};
+
+	this.selectAllNotesInTrack = (track = noteManager.getSelectedTrack()) => {
+		this.selectedNotes = track.notes;
+		this.render();
+	};
+
 	this.addNote = (x, y) => {
 		const time = this.xToTime(x);
 		const tone = this.yToTone(y);
 		const duration = this.newNoteDuration;
 		this.clickedNote = noteManager.addNote(time, tone, duration);
-		this.clickedNoteIndex = noteManager.getSelectedTrack().notes.length - 1;
 	};
 
 	this.moveNote = (note, x, y) => {
@@ -345,14 +526,15 @@ function NoteManagerUI(noteManager) {
 		note.tone += dTone;
 	};
 
-	this.moveNotesBy = (dTime, dTone) => {
-		const notes = noteManager.getSelectedTrack().notes;
-		this.selectedNotes.forEach((ni) => this.moveNoteBy(notes[ni], dTime, dTone));
-		const earlyNotes = this.selectedNotes.filter((ni) => notes[ni].startTime < 0);
+	this.moveSelectedNotesBy = (dTime, dTone) => {
+		const notes = this.selectedNotes;
+		notes.forEach((n) => this.moveNoteBy(n, dTime, dTone));
+
+		const earlyNotes = notes.filter((n) => n.startTime < 0);
 		if (earlyNotes.length) {
 			let earliestTime = 0;
-			earlyNotes.forEach((ni) => earliestTime = Math.min(notes[ni].startTime, earliestTime));
-			this.selectedNotes.forEach((ni) => this.moveNoteBy(notes[ni], -earliestTime, 0));
+			earlyNotes.forEach((n) => earliestTime = Math.min(n.startTime, earliestTime));
+			notes.forEach((n) => this.moveNoteBy(n, -earliestTime, 0));
 		}
 		this.render();
 	};
@@ -363,13 +545,12 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.resizeNotesBy = (t) => {
-		const notes = noteManager.getSelectedTrack().notes;
 		const initDur = this.clickedNote.duration;
 		const delta = t - initDur;
 
 		if (initDur <= this.noteMinDuration && delta < 0) return;
 
-		this.selectedNotes.forEach((ni) => this.resizeNoteBy(notes[ni], delta));
+		this.selectedNotes?.forEach((n) => this.resizeNoteBy(n, delta));
 		this.render();
 	};
 
@@ -380,31 +561,48 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.deleteSelectedNotes = () => {
-		const notes = noteManager.getSelectedTrack().notes;
-		this.selectedNotes.forEach((si) => {
-			delete notes[si];
-		});
-		noteManager.getSelectedTrack().notes = notes.filter((n) => n);
+		noteManager.tracks.forEach((t) => t.notes = t.notes.filter((n) => !this.selectedNotes.find((s) => s === n)));
 		this.selectedNotes = [];
 		this.render();
 	};
 
 	this.copyNotes = (notes = this.selectedNotes) => {
-		const realNotes = noteManager.getSelectedTrack().notes;
-		const noteArr = notes.map((i) => realNotes[i]);
-		clipboard = JSON.stringify(noteArr);
+		const tracks = noteManager.tracks.map((t) => t.notes.filter((tn) => notes?.find((sn) => tn === sn)));
+		const selectedTrack = noteManager.getSelectedTrack();
+		const selectedTrackIndex = noteManager.tracks.findIndex((t) => t === selectedTrack);
+		const copyData = { tracks, selectedTrackIndex };
+		clipboard = JSON.stringify(copyData);
 	};
 
 	this.pasteNotes = () => {
-		const pastedNotes = JSON.parse(clipboard);
-		if (!pastedNotes?.length) return;
-		const sorted = pastedNotes.sort((a, b) => a.startTime - b.startTime);
+		const data = JSON.parse(clipboard);
+		const tracks = data?.tracks;
+		if (!tracks?.length) return;
+		if (tracks.length !== noteManager.tracks.length) console.warn('Mismatch between tracks and pasted data');
+
+		this.selectedNotes = [];
+
+		const track = noteManager.getSelectedTrack();
+		const mainNotes = tracks[data.selectedTrackIndex];
+		if (!mainNotes?.length) throw new Error('Bro y\'all deadass be tryna paste nada');
+		const sorted = mainNotes.sort((a, b) => a.startTime - b.startTime);
+
 		let timeDiff = this.cursorTime - sorted[0].startTime;
 		if (this.snapX) timeDiff = this.snapToGridTime(timeDiff);
+
 		sorted.forEach((n) => n.startTime += timeDiff);
-		const track = noteManager.getSelectedTrack();
 		track.notes = track.notes.concat(sorted);
-		this.selectedNotes = sorted.map((p) => track.notes.indexOf(p));
+		this.selectedNotes.push(...sorted);
+
+		noteManager.tracks.forEach((t, i) => {
+			const isMain = i === data.selectedTrackIndex;
+			if (!tracks[i].length || isMain) return;
+			const sorted = tracks[i].sort((a, b) => a.startTime - b.startTime);
+			sorted.forEach((n) => n.startTime += timeDiff);
+			t.notes = t.notes.concat(sorted);
+			this.selectedNotes.push(...sorted);
+		});
+
 		this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
 		this.render();
 	};
@@ -416,16 +614,14 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.renderAll = () => {
+		this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
+		this.bpmUi.value = noteManager.bpm;
 		this.render();
 		this.renderTracks();
-		this.bpmUi.value = noteManager.bpm;
-		this.endTime = Math.ceil(noteManager.getEndTime() / this.beatsPerBar) * this.beatsPerBar;
 	};
 
 	this.renderTracks = (tracks = noteManager.tracks) => {
-		while (this.trackContainer.firstChild) {
-			this.trackContainer.removeChild(this.trackContainer.firstChild);
-		}
+		this.trackContainer.replaceChildren();
 		tracks.forEach((t) => {
 			const div = createTrackEntryUi(t, this);
 			this.trackContainer.appendChild(div);
@@ -510,7 +706,7 @@ function NoteManagerUI(noteManager) {
 		this.ctx.fillRect(x, y, w, h);
 
 		this.ctx.fillStyle = resizeColor;
-		this.ctx.fillRect(x + w - r * 0.5, y, r, h);
+		this.ctx.fillRect(x + w - r, y, r, h);
 	};
 
 	this.drawCircle = (x, y, r, color = jodColors.automationNode) => {
@@ -558,7 +754,8 @@ function NoteManagerUI(noteManager) {
 				this.drawNoteAutomation(n, n.gainNodes);
 			} else {
 				const isSelected = notes === noteManager.getSelectedTrack().notes;
-				if (isSelected && this.selectedNotes.some((s) => s === i)) this.drawNote(n, jodColors.selectedNote, resizeColor);
+				const selectedColor = isSelected ? jodColors.selectedNote : jodColors.fadedSelectedNote;
+				if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor);
 				else this.drawNote(n, color, resizeColor);
 			}
 		});
@@ -584,7 +781,12 @@ function NoteManagerUI(noteManager) {
 		this.drawClear();
 		this.drawGrid();
 		this.drawAllTracks();
-		if (this.isSelectingArea) this.drawAABB(this.areaSelectAABB);
+		if (this.isSelectingArea || this.isSelectingAllTracks) this.drawAABB(this.areaSelectAABB);
+		this.drawTimeLine();
+	};
+
+	this.drawTimeLine = () => {
+		this.timeLine.draw(this.ctx, this.scrollX, this.pxPerBeat, this.endTime, noteManager.tracks);
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
@@ -660,7 +862,7 @@ function NoteManagerUI(noteManager) {
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.caret;
 		ctx.moveTo(x, 0);
-		ctx.lineTo(x, this.height);
+		ctx.lineTo(x, this.height - this.timeLine.rect.h);
 		ctx.stroke();
 	};
 
@@ -671,6 +873,7 @@ function NoteManagerUI(noteManager) {
 		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.2;
 		this.render();
 		this.drawCaret(caretPos);
+		this.timeLine.drawCaret(this.ctx, time / this.endTime);
 
 		if (noteManager.isPlaying) {
 			if (time >= this.endTime) {
@@ -686,7 +889,8 @@ function NoteManagerUI(noteManager) {
 		if (noteManager.isPlaying) {
 			noteManager.stopPlaybackLoop();
 		} else {
-			if (options.fromCursor) noteManager.playbackLoop(this.cursorTime);
+			if (options.fromTime) noteManager.playbackLoop(options.fromTime);
+			else if (options.fromCursor) noteManager.playbackLoop(this.cursorTime);
 			else noteManager.playbackLoop();
 			this.playbackAnimationFrame();
 		}

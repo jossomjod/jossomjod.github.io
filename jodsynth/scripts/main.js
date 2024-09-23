@@ -168,6 +168,17 @@ function loadAll(name) {
 
 
 
+// MISC UI STUFF ig ------------------------------------------------------
+
+
+var helpBox = document.querySelector('#help-box');
+function toggleHelp() {
+	helpBox.classList.toggle('invisible');
+}
+
+
+
+
 
 
 // EVENTS----------------------------------------------------------------------
@@ -225,6 +236,10 @@ document.body.onkeydown = (e) => {
 		case 46: // Delete
 			noteManagerUi.deleteSelectedNotes();
 			break;
+		case 65: // A
+			if (e.ctrlKey && e.shiftKey) noteManagerUi.selectAllNotes();
+			else if (e.ctrlKey) noteManagerUi.selectAllNotesInTrack();
+			break;
 		case 67: // C
 			if (e.ctrlKey) noteManagerUi.copyNotes();
 			break;
@@ -252,7 +267,10 @@ document.body.onkeydown = (e) => {
 		case 120: // F9
 			quickLoad();
 			break;
-		case 172: // That key under Esc, left of 1, above Tab
+	}
+
+	switch (e.code) {
+		case 'Backquote':
 			noteManagerUi.toggleVisible();
 			break;
 	}
@@ -287,6 +305,7 @@ function toggleKeys(e, bool) {
 			break;
 	}
 	if (e.ctrlKey) return;
+	if (e.code === 'BracketRight') return; // Chrome really hates this key on Nordic keyboard layouts :(
 
 	const key = keyboardKeys[e.code];
 	if (key && key.down !== bool) {

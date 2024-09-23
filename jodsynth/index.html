@@ -50,7 +50,55 @@
 					<label for="bpmUi">BPM</label>
 					<input class="detune" id="bpmUi" type="number">
 				</div>
-				<div class="circle clickable help-icon end">?</div>
+				<div>
+					<div onclick="toggleHelp()" class="circle clickable help-icon end">?</div>
+					<div id="help-box" class="help-box invisible">
+						<h1>How to use</h1>
+						<p>
+							You can play notes by pressing keys on the keyboard.<br>
+							Z, X, C, V, etc are like the white keys on a piano.<br>
+							S, D, G, H, J, etc are like the black keys.<br>
+							Q, W, E, etc are an octave up from there.<br>
+							You'll figure out the rest, I'm sure.
+						</p>
+						<p>
+							Pageup/Pagedown changes the base octave.<br>
+							Home/End adjusts the note offset<br>
+						</p>
+						<p>
+							Click the "Tracker" button to open/close the tracker.<br>
+							Place notes by clicking in the grid. Resize notes with the handle on the right.<br>
+							Remove notes by right-clicking on them.<br>
+							Hold down the middle mouse button (the mouse wheel) and move the mouse to pan. Scroll to zoom.<br>
+							<br>
+							Each track has its own synth and notes.<br>
+							You can add new tracks and switch between them from the panel on the left.
+						</p>
+						<p>
+							Use F3 and F4 to toggle snapping to the grid horizontally or vertically.<br>
+							Space to toggle playback, Ctrl + space to play from the cursor. Right-click the overview in the bottom to play from there.<br><br>
+							Ctrl + click and drag to select every note in an area in the current track.<br>
+							Ctrl + Shift + click and drag to select every note in an area in every track.<br>
+							Area select also works in the overview.<br>
+							Ctrl + A to select all notes in the current track.<br>
+							Ctrl + Shift + A to select all notes in all tracks.<br>
+							Press Delete to delete all selected notes.<br>
+							Copy / paste selected notes with Ctrl + C / Ctrl + V
+						</p>
+						<p>
+							The save system is currently a bit experimental and unconventional.<br>
+							Clicking "Save" stores the current tracks and synths locally on your device under the name specified in the text input.<br>
+							This will also copy the saved data to the clipboard so you can paste it into a text file.<br>
+							To load the saved data, type in the name you saved it under and click "Load", or just select it from the project list.<br>
+							Alternatively, you can paste the saved data directly into the save name field and click "Load".<br>
+							You can also quick-save / quick-load with F8 / F9 or Ctrl + S / Ctrl + Z<br>
+							Quick-saving overwrites the previous quick-save, and is not a reliable means of long-term storage.
+						</p>
+						<p>
+							You may experience performance issues in Firefox.<br>Chrome and Edge should work fine.
+						</p>
+					</div>
+				</div>
 			</div>
 
 			<div class="joddaw-body">

@@ -18,14 +18,14 @@
 	<p>Here is some stuff I have made:</p>
 	<div class="portfolio-element">
 		<div class="description">
-			<h2>#1: Some fancy shader art.</h2>
+			<h2>Some fancy shader art.</h2>
 			<p>Might not work on some older hardware.</p>
 			<a href="shady_shaders.html">Shady Shaders</a>
 		</div>
 	</div>
 	<div class="portfolio-element">
 		<div class="description">
-			<h2>#2: A unique piano roll for making music.</h2>
+			<h2>Piano Roll 2 - A unique piano roll for making music.</h2>
 			<p>Instead of traditional notes there are pitch automation nodes (represented by circles connected by lines). A single note can have many automation nodes.<br>
 			The idea is to allow automating synth- and effect parameters for individual notes. Technically, you <i>can</i> do this in most existing DAWs, but you'd have to create a bunch of extra tracks, most of them with only a few notes each, and to make changes and additions you would have to scroll a hundred miles and click through a thousand menus.
 			</p>
@@ -60,7 +60,7 @@
 	</div>
 	<div class="portfolio-element">
 		<div class="description">
-			<h2>#3: Tic-Tac-Two</h2>
+			<h2>Tic-Tac-Two</h2>
 			<p>It's like tic-tac-toe, but better.<br>
 			Instead of placing new crosses or circles until someone wins, you place only three pieces each, then keep moving them, one by one, to new positions, until someone wins.<br>A simple rule-change that makes the game much more interesting.</p>
 			<p>Made with the Godot game engine.</p>
@@ -73,38 +73,21 @@
 	</div>
 	<div class="portfolio-element">
 		<div class="description">
-			<h2>#4: JODSynth</h2>
-			<p>An FM synth that doesn't have a <span class="crazy">crazy</span> wierd UI, so it can actually be used by humans.</p>
-			<p>Ok, maybe it's a little <span class="crazy crazy2">crazy</span>, but it's not anywhere near as bad as Dexed :p</p>
-			<p>And it's a work in progress. Both UI and functionality.</p>
+			<h2>JODDAW - An innovative Digital Audio Workstation (WIP)</h2>
+			<p>A digital audio workstation written in javascript. Click the (?) to see the controls.</p>
 			<p>
-				You can play notes by pressing keys on the keyboard.<br>
-				Z, X, C, V, etc are like the white keys on a piano.<br>
-				S, D, G, H, J, etc are like the black keys.<br>
-				Q, W, E, etc are an octave up from there.<br>
-				You'll figure out the rest, I'm sure.
+				Like other DAWs, the JODDAW has instrument tracks where notes can be arranged.<br>
+				Unlike other DAWs, all the notes from all the tracks are shown in the same piano-roll, giving an excellent overview of all notes.
+				It will eventually be possible to automate pitch and volume on a per-note basis, just like in piano roll 2.
+			</p>
+			<p>The JODDAW is built around the JODSynth, a powerful FM synth with an unlimited number of oscillators.</p>
+			<p>
+				The JODSynth was born out of frustration with all the clunky, limited, FM synths out there.<br>
+				It seems to be a requirement for all of them to have a <span class="crazy">crazy</span> wierd UI.<br>
+				To be fair, my own UI is a bit wierd right now :P
 			</p>
 			<p>
-				Pageup/Pagedown changes the base octave.<br>
-				Home/End adjusts the note offset<br>
-			</p>
-			<p>
-				UPDATE: Now includes a <span class="dance">multi-track</span> piano roll,<br>
-				which is much more betterer than the old Piano roll 2 <span class="roll">😁</span>
-			</p>
-			<p>
-				Use F3 and F4 to toggle snapping to the grid.<br>
-				Space to toggle playback, Ctrl + space to play from the cursor.<br>
-				Ctrl + click and drag to select every note in an area.
-			</p>
-			<p>
-				Clicking "Save" stores the current tracks and synths locally on your device under the name specified.<br>
-				This will also copy the saved data to the clipboard so you can paste it into a text file.<br>
-				To load the saved data, type in the name you saved it under and click "Load".<br>
-				Alternatively, you can paste the saved data directly into the save name field and click "Load".<br>
-				You can also quick-save / quick-load with F8 / F9<br>
-			</p>
-			<p>
+				This is a work in progress. The UI will likely change a lot in the future.<br>
 				You may experience performance issues in Firefox.<br>Chrome and Edge should work fine.
 			</p>
 			<a href="jodsynth/index.html">JODSynth</a>
