@@ -79,11 +79,17 @@ var templateSelect = document.querySelector('#templateSelect');
 var saveSelect = document.querySelector('#saveSelect');
 
 
-
 saveSelect.addEventListener('change', () => {
-	const name = saveSelect.value;
-	loadAll(name);
+	let name = saveSelect.value;
+	if (name) {
+		try {
+			loadAll(name);
+		} catch {
+			name = 'ERROR';
+		}
+	}
 	saveNameInput.value = name;
+	templateSelect.value = 0;
 	document.activeElement.blur();
 });
 
@@ -122,6 +128,7 @@ templateSelect.addEventListener('change', () => {
 	
 	noteManager.load(parseTrackData(tracks));
 	noteManagerUi.renderAll();
+	saveNameInput.value = saveSelect.value = null;
 	document.activeElement.blur();
 });
 
