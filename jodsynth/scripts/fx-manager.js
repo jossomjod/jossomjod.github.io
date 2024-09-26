@@ -69,7 +69,7 @@ function setupReverb() {
 /**
  * @param {AudioContext} ac 
  */
-function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dry: 0.5 }) {
+function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.22, wet: 0.5, dry: 0.5 }) {
 	this.fxType = 'reverb';
 	this.params = params;
 	this.reverb = ac.createConvolver();
@@ -78,8 +78,15 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 	this.preDelay = ac.createDelay(1);
 	this.input = new GainNode(ac, { gain: 1 });
 	this.timeOutId;
+	this.destination;
 
 	this.connect = (destination) => {
+		this.destination = destination;
+
+		if (this.params.bypass) {
+			this.input.connect(destination);
+			return destination;
+		}
 		this.input.connect(this.dry).connect(destination);
 		this.input
 			.connect(this.preDelay)
@@ -97,10 +104,18 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 		this.preDelay.disconnect();
 	};
 
+	this.refreshConnection = () => {
+		this.disconnect();
+		this.connect(this.destination);
+	}
+
 	this.setParam = (param, value) => {
 		this.params[param] = value;
 
 		switch (param) {
+			case 'bypass':
+				this.refreshConnection();
+				break;
 			case 'preDelay':
 				this.preDelay.delayTime.setValueAtTime(this.params.preDelay, ac.currentTime);
 				break;
@@ -154,13 +169,20 @@ function ReverbEffect(ac, params = { reverbTime: 2, preDelay: 0.22, wet: 0.5, dr
 /**
  * @param {AudioContext} ac 
  */
-function FilterEffect(ac, params = { frequency: 11025.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
+function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
 	this.fxType = 'filter';
 	this.params = params;
 	this.input = new GainNode(ac, { gain: 1 });
 	this.filter = new BiquadFilterNode(ac, params);
+	this.destination;
 
 	this.connect = (destination) => {
+		this.destination = destination;
+
+		if (this.params.bypass) {
+			this.input.connect(destination);
+			return destination;
+		}
 		this.input
 			.connect(this.filter)
 			.connect(destination);
@@ -172,7 +194,17 @@ function FilterEffect(ac, params = { frequency: 11025.0, detune: 0.0, Q: 1, gain
 		this.filter.disconnect();
 	};
 
+	this.refreshConnection = () => {
+		this.disconnect();
+		this.connect(this.destination);
+	};
+
 	this.setParam = (param, value) => {
+		if (param === 'bypass') {
+			this.params.bypass = value;
+			this.refreshConnection();
+			return;
+		}
 		this.params[param] = value;
 		this.filter[param].setValueAtTime(value, ac.currentTime);
 	};

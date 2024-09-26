@@ -88,6 +88,29 @@ function createParamSelect(param) {
 	return container;
 }
 
+/**
+ * @param {FxParam} param 
+ */
+function createParamCheckbox(param, setParam) {
+	const container = document.createElement('div');
+	const input = document.createElement('input');
+	const label = document.createElement('label');
+
+	container.appendChild(input);
+	container.appendChild(label);
+
+	label.innerText = param.label ?? 'Unnamed param';
+
+	input.setAttribute('type', 'checkbox');
+	input.checked = param.value;
+
+	input.addEventListener('input', () => {
+		setParam(param.param, input.checked);
+	});
+
+	return container;
+}
+
 function FxUi(params, parent, rmCallback, titleText) {
 	this.container = document.createElement('div');
 	this.dragHandle = document.createElement('div');
@@ -126,6 +149,7 @@ function createReverbFxUi(fx, parent, rmCallback, titleText) {
 		createParamControl({ label: 'Wet', param: 'wet', type: 'range', value: fx.params.wet, min: 0, max: 1 }, fx.setParam),
 		createParamControl({ label: 'Dry', param: 'dry', type: 'range', value: fx.params.dry, min: 0, max: 1 }, fx.setParam),
 		createParamControl({ label: 'Reverb time', param: 'reverbTime', type: 'range', value: fx.params.reverbTime, min: 0.1, max: 5 }, fx.setParam),
+		createParamCheckbox({ label: 'Bypass', param: 'bypass', value: fx.params.bypass }, fx.setParam),
 	];
 	fxUi.setControls(controls);
 	return fxUi;
@@ -139,6 +163,7 @@ function createFilterFxUi(fx, parent, rmCallback, titleText) {
 		createParamControl({ label: 'Detune', param: 'detune', type: 'number', value: fx.params.detune, min: -2400, max: 2400, step: 1 }, fx.setParam),
 		createParamJodnumb({ label: 'Q', param: 'Q', value: fx.params.Q, min: 0.0001, max: 1000, step: 0.1 }, fx.setParam),
 		createParamControl({ label: 'Gain', param: 'gain', type: 'range', value: fx.params.gain, min: -40, max: 40 }, fx.setParam),
+		createParamCheckbox({ label: 'Bypass', param: 'bypass', value: fx.params.bypass }, fx.setParam),
 	];
 	fxUi.setControls(controls);
 	return fxUi;
