@@ -4,6 +4,10 @@ console.log('Is secure context:', window.isSecureContext);
 const ac = new (window.AudioContext || window.webkitAudioContext);
 var clipboard;
 
+var jodConfiguration = {
+	animations: true,
+};
+
 var keys = {
 	left: false,
 	up: false,
@@ -47,6 +51,31 @@ masterGainUI.value = masterGain.gain.value;
 masterGainUI.addEventListener('input', () => {
 	masterGain.gain.value = masterGainUI.value;
 });
+
+
+
+// CONFIGURATION
+
+
+const animationsCheckbox = document.querySelector('#animationsCheckbox');
+animationsCheckbox.onchange = () => jodConfiguration.animations = this.animationsCheckbox.checked;
+
+
+
+
+// OVERLAY
+
+var jodOverlay = document.querySelector('#jodOverlay');
+
+function openOverlay(onClose = () => null) {
+	jodOverlay.classList.toggle('invisible', false);
+	
+}
+
+
+
+
+
 
 
 

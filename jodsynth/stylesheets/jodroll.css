@@ -17,6 +17,7 @@
 	justify-content: space-between;
 	align-items: center;
   width: 180px;
+	height: 46px;
   padding: 10px;
 	border-bottom: 1px solid #113388;
 	background-color: #376cf3;
@@ -35,10 +36,53 @@
   max-height: 700px;
   min-height: 700px;
   flex-grow: 1;
-  background-color: red;
+  background-color: palevioletred;
+}
+
+.context-menu {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	z-index: 999;
+}
+
+.context-menu-option {
+	height: 3em;
+	min-width: 100px;
+	margin: 0;
+	padding: 10px;
+}
+
+.track-name-editor {
+	position: absolute;
+	height: 38px;
+	margin-left: -8px;
+}
+.track-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-height: 100%;
+	width: 60px;
+	font-size: smaller;
 }
 
 .jodroll-canvas {
   width: 100%;
   height: 100%;
+}
+
+.side-panel .wide {
+	width: 100%;
+}
+
+.checkbox-container {
+	margin: 10px;
+}
+
+.muted {
+	background-color: #fd3132;
+}
+
+.muted:hover {
+	background-color: #ff5656;
 }

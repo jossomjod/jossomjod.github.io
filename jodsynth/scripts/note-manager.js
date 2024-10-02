@@ -73,6 +73,7 @@ function NoteManager(ac, output) {
 	this.isLooping = true;
 	this.intervalId = 0;
 	this.latestNoteStartTime = 0;
+	this.onNoteScheduled = (currentTrackIndex, startsIn, duration, isTrackActive) => null; // set in UI
 
 	this.addNote = (startTime, tone, duration) => {
 		const synth = this.getSelectedTrack().synth.oscillators[0];
@@ -150,7 +151,7 @@ function NoteManager(ac, output) {
 		this.intervalId = setInterval(() => {
 			let latestTime = this.latestNoteStartTime;
 
-			this.tracks.forEach((t) => {
+			this.tracks.forEach((t, i) => {
 				if (t.muted) return;
 				const notes = this.getNotesToPlay(t.notes, secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm), lookaheadBeats);
 				
@@ -161,6 +162,9 @@ function NoteManager(ac, output) {
 					const duration = beatsToSeconds(n.duration, this.bpm);
 					const freq = toneToFreq(n.tone);
 					t.synth.schedulePlayback({ startTime, duration, freq });
+					
+					const delay = (startTime - ac.currentTime) * 1000;
+					this.onNoteScheduled(i, delay, duration * 1000, this.selectedTrack === i);
 				});
 			});
 			this.latestNoteStartTime = latestTime;
@@ -193,13 +197,29 @@ function NoteManager(ac, output) {
 		return track;
 	};
 
+	this.deleteTrack = (index) => {
+		const track = this.tracks[index];
+		if (!track) throw 'Can\'t delete track because it doesn\'t exist';
+		if (this.tracks.length === 1) throw 'You really should not remove the only remaining track';
+		
+		this.tracks.splice(index, 1);
+		if (index <= this.selectedTrack) this.selectedTrack = Math.max(0, this.selectedTrack - 1);
+		this.selectTrackByIndex(this.selectedTrack);
+	};
+
 	this.selectTrack = (track) => {
-		this.tracks[this.selectedTrack].active = false;
-		track.active = true;
-		this.selectedTrack = this.tracks.indexOf(track);
+		this.selectedTrack = Math.max(0, this.tracks.indexOf(track));
+		this.tracks.forEach((t, i) => t.active = i === this.selectedTrack);
+	};
+
+	this.selectTrackByIndex = (index) => {
+		if (index < 0) throw 'NOPE.';
+		this.tracks.forEach((t, i) => t.active = i === index);
+		this.selectedTrack = index;
 	};
 
 	this.getSelectedTrack = () => {
+		if (!this.tracks[this.selectedTrack]) this.selectedTrack = 0;
 		return this.tracks[this.selectedTrack];
 	};
 

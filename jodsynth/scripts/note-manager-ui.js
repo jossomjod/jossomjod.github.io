@@ -5,6 +5,12 @@ function Rect(x, y, w, h) {
 	this.h = h || 0;
 }
 
+const EModes = {
+	notes: 0,
+	pitchAutomation: 1,
+	automation: 2,
+};
+
 const jodColors = {
 	background: '#000000',
 	caret: '#c7bc8f',
@@ -152,7 +158,7 @@ function NoteManagerUI(noteManager) {
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
 	this.automationBoxHeight = 70;
-	this.automationMode = false;
+	this.mode = EModes.notes;
 
 	this.selectedNotes = [];
 	this.isSelectingArea = false;
@@ -621,31 +627,49 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.renderTracks = (tracks = noteManager.tracks) => {
-		this.trackContainer.replaceChildren();
-		tracks.forEach((t) => {
+		const trackElements = tracks.map((t) => {
 			const div = createTrackEntryUi(t, this);
-			this.trackContainer.appendChild(div);
-			if (t.active) {
+			console.log('renderTracks, active', t.active);
+			if (t === noteManager.getSelectedTrack()) {
+				console.log('renderTracks, track === getSelectedTrack()');
+
 				this.setSynthUi(t);
 			}
+			if (t.active) {
+				console.log('div active class', div.classList.contains('active'));
+				console.log('noteman selected', noteManager.selectedTrack);
+			}
+			return div;
 		});
+		this.trackContainer.replaceChildren(...trackElements);
 	};
 
 	this.addTrack = () => {
 		const track = noteManager.createTrack();
 		const div = createTrackEntryUi(track, this);
 		this.trackContainer.appendChild(div);
-		this.selectTrack(div, track);
+		this.selectTrack(div, track); 
 	};
 	
-	this.addTrackBtn.addEventListener('mousedown', (e) => {
+	this.addTrackBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
 		e.preventDefault();
 		this.addTrack();
 	});
 
-	this.removeTrack = (track) => {
-		// TODO
+	this.deleteTrack = (track) => {
+		const index = noteManager.tracks.indexOf(track);
+		if (index < 0) throw 'wtf kindofa track u tryna delet bro';
+		const isBruh = noteManager.tracks[index].active;
+		noteManager.deleteTrack(index);
+		this.renderTracks();
+		console.log('IDX b4 settimeout', noteManager.selectedTrack);
+		setTimeout(() => {
+			const idx = noteManager.selectedTrack;
+			console.log('IDX', idx);
+			this.selectTrack(this.trackContainer.childNodes[idx], noteManager.tracks[idx]);
+			//this.getTrackElement(noteManager.selectedTrack)?.classList.toggle('active', true);
+		}, 0);
 	};
 
 	this.setTrackGain = (track, gain) => {
@@ -659,11 +683,20 @@ function NoteManagerUI(noteManager) {
 	}
 
 	this.selectTrack = (element, track) => {
-		this.trackContainer.childNodes.forEach((c) => c.className = 'jodroll-track');
+		this.trackContainer.childNodes.forEach((c) => c.classList.toggle('active', false));
 		noteManager.selectTrack(track);
 		this.render();
 		this.setSynthUi(track);
-		element.className += ' active';
+		element.classList.toggle('active', true);
+	};
+
+	this.setTrackName = (track, name) => {
+		track.name = name;
+		this.renderTracks();
+	};
+
+	this.getTrackElement = (idx) => {
+		return this.trackContainer.childNodes.item(idx);
 	};
 
 	this.setSynthUi = (track) => {
@@ -716,6 +749,30 @@ function NoteManagerUI(noteManager) {
 		this.ctx.fill();
 	}
 
+	// TODO
+	this.drawPitchAutomation = (
+		note,
+		nodes,
+		nodeColor = jodColors.automationNode,
+		lineColor = jodColors.automationLine
+	) => {
+		const x = this.timeToX(note.startTime);
+		const y = this.toneToY(note.tone);
+		const w = note.duration * this.pxPerBeat;
+		const h = this.noteHeight;
+		this.ctx.fillStyle = jodColors.note;
+		this.ctx.fillRect(x, y, w, h);
+
+		if (!nodes?.length) return;
+
+		nodes.forEach((n) => {
+			//if (n.time > note.duration) // TODO
+			const nx = this.timeToX(note.startTime + n.time);
+			const ny = y + n.value * -this.automationBoxHeight;
+			this.drawCircle(nx, ny, 7, nodeColor);
+		});
+	};
+
 	this.drawNoteAutomation = (
 		note,
 		nodes,
@@ -747,10 +804,10 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawNotes = (notes = noteManager.getSelectedTrack().notes, color = jodColors.note, resizeColor = jodColors.resizeHandle) => {
-		notes.forEach((n, i) => {
+		notes.forEach((n) => {
 			if (this.timeToX(n.startTime + n.duration) < 0.0) return;
 			if (this.timeToX(n.startTime) > this.width) return;
-			if (this.automationMode) {
+			if (this.mode === 2) {
 				this.drawNoteAutomation(n, n.gainNodes);
 			} else {
 				const isSelected = notes === noteManager.getSelectedTrack().notes;
@@ -896,6 +953,14 @@ function NoteManagerUI(noteManager) {
 		}
 	};
 
+	this.onNoteScheduled = (trackIndex, startsIn, duration, isTrackActive) => {
+		if (!jodConfiguration.animations) return;
+		const element = this.getTrackElement(trackIndex);
+		const strength = 8;
+		playTrackAnimation(element, startsIn, duration, isTrackActive);
+		element.shaker?.shake(duration, strength);
+	};
+
 	this.visible = true;
 	this.toggleVisible = (visible = !this.visible) => {
 		this.visible = visible;
@@ -904,4 +969,6 @@ function NoteManagerUI(noteManager) {
 	};
 	this.toggleVisible();
 	this.addTrack();
+
+	noteManager.onNoteScheduled = this.onNoteScheduled;
 }

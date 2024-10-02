@@ -37,6 +37,8 @@ button:hover, a:hover {
 	display: flex;
 	gap: 5px;
 	align-items: center;
+	padding: 2px 0;
+	margin-bottom: 10px;
 }
 
 .top-bar .end {

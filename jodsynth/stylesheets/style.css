@@ -5,6 +5,14 @@
 	height: 100%;
 }
 
+.jod-overlay {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background-color: #0000001f;
+	z-index: 99;
+}
+
 .save-form {
 	display: flex;
 	gap: 10px;
@@ -124,10 +132,6 @@
 .small {
 	width: 20px;
 	height: 20px;
-}
-
-.muted {
-	background-color: #fd3132;
 }
 
 .drag-handle {
