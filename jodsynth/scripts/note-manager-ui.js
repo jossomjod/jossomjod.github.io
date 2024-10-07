@@ -577,11 +577,11 @@ function NoteManagerUI(noteManager) {
 		const selectedTrack = noteManager.getSelectedTrack();
 		const selectedTrackIndex = noteManager.tracks.findIndex((t) => t === selectedTrack);
 		const copyData = { tracks, selectedTrackIndex };
-		clipboard = JSON.stringify(copyData);
+		saveNotesToClipboard(copyData);
 	};
 
 	this.pasteNotes = () => {
-		const data = JSON.parse(clipboard);
+		const data = getNotesFromClipboard();
 		const tracks = data?.tracks;
 		if (!tracks?.length) return;
 		if (tracks.length !== noteManager.tracks.length) console.warn('Mismatch between tracks and pasted data');

@@ -2,7 +2,24 @@ console.log('Is secure context:', window.isSecureContext);
 
 
 const ac = new (window.AudioContext || window.webkitAudioContext);
-var clipboard;
+var clipboard = {
+	notes: '',
+	synth: '',
+};
+
+function saveNotesToClipboard(notes) {
+	clipboard.notes = JSON.stringify(notes);
+}
+function getNotesFromClipboard() {
+	return JSON.parse(clipboard.notes ?? '{}');
+}
+
+function saveSynthToClipboard(synth) {
+	clipboard.synth = JSON.stringify(synth);
+}
+function getSynthFromClipboard() {
+	return JSON.parse(clipboard.synth ?? '{}');
+}
 
 var jodConfiguration = {
 	animations: true,
@@ -341,7 +358,7 @@ function toggleKeys(e, bool) {
 			break;
 	}
 	if (e.ctrlKey) return;
-	if (e.code === 'BracketRight') return; // Chrome really hates this key on Nordic keyboard layouts :(
+	//if (e.code === 'BracketRight') return; // Chrome really hates this key on Nordic keyboard layouts :(
 
 	const key = keyboardKeys[e.code];
 	if (key && key.down !== bool) {

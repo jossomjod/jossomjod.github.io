@@ -350,10 +350,20 @@ function SynthUi(synth) {
 	this.synth = synth;
 	this.container = document.querySelector('.oscillators-container');
 	this.template = document.querySelector('#oscillator-template');
+	this.buttons = {
+		copy: document.querySelector('#synth-copy-btn'),
+		paste: document.querySelector('#synth-paste-btn'),
+	};
+	this.oscillators;
 
-	this.oscillators = this.synth.oscillators.map((osc, i) => {
-		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
-	});
+	this.buttons.copy.onclick = () => {
+		saveSynthToClipboard(this.synth.save());
+	};
+	this.buttons.paste.onclick = () => {
+		this.synth.load(getSynthFromClipboard());
+		this.container.replaceChildren();
+		this.init();
+	};
 
 	this.addOsc = () => {
 		const len = this.synth.addOsc();
@@ -379,5 +389,12 @@ function SynthUi(synth) {
 			o.updateModulateOptions([ none, ...options ]);
 		});
 	};
-	this.updateModulateOptions();
+
+	this.init = () => {
+		this.oscillators = this.synth.oscillators.map((osc, i) => {
+			return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
+		});
+		this.updateModulateOptions();
+	};
+	this.init();
 }
