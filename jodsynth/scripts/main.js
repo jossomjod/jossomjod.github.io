@@ -119,7 +119,7 @@ addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
 
 // SAVE / LOAD ---------------------------------
-const quickSaveName = 'joddaw-save-data';
+
 var saveNameInput = document.querySelector('#saveNameInput');
 var templateSelect = document.querySelector('#templateSelect');
 var saveSelect = document.querySelector('#saveSelect');
@@ -139,19 +139,9 @@ saveSelect.addEventListener('change', () => {
 	document.activeElement.blur();
 });
 
-
-function getSaveNameList() {
-	const list = [];
-	for (let i = 0; i < localStorage.length; i++) {
-		const name = localStorage.key(i);
-		if (name !== quickSaveName) list.push(name);
-	}
-	return list;
-}
-
 function generateSaveSelectOptions(selectValue) {
 	const value = selectValue ?? saveSelect.value;
-	const optionNodes = getSaveNameList().map((n) => {
+	const optionNodes = SaveManager.getSaveNames().map((n) => {
 		const option = document.createElement('option');
 		option.value = n;
 		option.innerText = n;
@@ -162,31 +152,23 @@ function generateSaveSelectOptions(selectValue) {
 }
 generateSaveSelectOptions();
 
-function parseTrackData(data) {
-	const parsed = JSON.parse(data);
-	return parsed.tracks ? parsed : { bpm: 140, tracks: parsed };
-}
-
 templateSelect.addEventListener('change', () => {
 	const index = +templateSelect.value;
 	const tracks = trackerTemplates[index]
 	if (!tracks) throw 'No template found for index' + index;
 	
-	noteManager.load(parseTrackData(tracks));
+	noteManager.load(SaveManager.parseTrackData(tracks));
 	noteManagerUi.renderAll();
 	saveNameInput.value = saveSelect.value = null;
 	document.activeElement.blur();
 });
 
 function quickSave() {
-	const data = JSON.stringify(noteManager.save());
-	localStorage.setItem(quickSaveName, data);
-	navigator.clipboard.writeText(data).then(() => console.log('data copied to clipboard'));
+	SaveManager.quickSave(noteManager.save());
 }
 
 function quickLoad() {
-	const data = localStorage.getItem(quickSaveName) ?? '[]';
-	noteManager.load(parseTrackData(data));
+	noteManager.load(SaveManager.quickLoad());
 	noteManagerUi.renderAll();
 }
 
@@ -194,13 +176,10 @@ function quickLoad() {
 function saveAll(name) {
 	const saveName = name || saveNameInput.value;
 	if (!saveName) return;
-	console.log('Saving as ', saveName);
 
 	const data = noteManager.save();
-	const stringData = JSON.stringify(data);
-	if (saveName.length < 100) localStorage.setItem(saveName, stringData);
+	if (saveName.length < 100) SaveManager.saveAll(data, saveName);
 	else saveNameInput.value = '';
-	navigator.clipboard.writeText(stringData).then(() => console.log('data copied to clipboard'));
 
 	generateSaveSelectOptions();
 }
@@ -208,10 +187,8 @@ function saveAll(name) {
 function loadAll(name) {
 	const saveName = name || saveNameInput.value || saveNameInput.innerHTML;
 	if (!saveName) return;
-	console.log('Loading ', saveName);
 	
-	const dataString = localStorage.getItem(saveName) ?? saveName;
-	const data = parseTrackData(dataString);
+	const data = SaveManager.loadAll(saveName);
 	if (data) {
 		noteManager.load(data);
 		noteManagerUi.renderAll();

@@ -350,19 +350,28 @@ function SynthUi(synth) {
 	this.synth = synth;
 	this.container = document.querySelector('.oscillators-container');
 	this.template = document.querySelector('#oscillator-template');
-	this.buttons = {
+	this.controls = {
 		copy: document.querySelector('#synth-copy-btn'),
 		paste: document.querySelector('#synth-paste-btn'),
+		save: document.querySelector('#synth-save-btn'),
+		presetSelect: document.querySelector('#synth-preset-select'),
 	};
 	this.oscillators;
 
-	this.buttons.copy.onclick = () => {
+	this.controls.copy.onclick = () => {
 		saveSynthToClipboard(this.synth.save());
 	};
-	this.buttons.paste.onclick = () => {
+	this.controls.paste.onclick = () => {
 		this.synth.load(getSynthFromClipboard());
 		this.container.replaceChildren();
 		this.init();
+	};
+	this.controls.save.onclick = () => {
+		// TODO: open name dialog
+	};
+	this.controls.presetSelect.onchange = () => {
+		const value = this.controls.presetSelect.value;
+		// TODO: load selected preset
 	};
 
 	this.addOsc = () => {
@@ -390,11 +399,23 @@ function SynthUi(synth) {
 		});
 	};
 
+	this.setPresetOptions = () => {
+		const names = SaveManager.getSynthPresetNames();
+		const options = names.map((n) => {
+			const option = document.createElement('option');
+			option.value = n;
+			option.innerHTML = n;
+			return option;
+		});
+		this.controls.presetSelect.replaceChildren(options);
+	};
+
 	this.init = () => {
 		this.oscillators = this.synth.oscillators.map((osc, i) => {
 			return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
 		});
 		this.updateModulateOptions();
+		this.setPresetOptions();
 	};
 	this.init();
 }

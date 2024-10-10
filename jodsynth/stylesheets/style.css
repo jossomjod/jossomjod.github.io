@@ -34,7 +34,7 @@
   border-radius: 4px;
 }
 
-.joddaw-body {
+.joddaw-body, .synth-toolbar {
 	display: flex;
 }
 .main-panel {
@@ -49,6 +49,11 @@
 	margin: 20px;
 	background-color: #010a1d;
 }
+
+.synth-toolbar {
+	gap: 5px;
+}
+
 .oscillators-container {
 	flex-grow: 1;
 	margin: 20px;
