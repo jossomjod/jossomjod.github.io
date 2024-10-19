@@ -3,6 +3,10 @@ class SaveManager {
 	static metaDataName = 'joddaw-meta-data';
 	static synthPresetPrefix = 'joddaw-synth-preset:';
 	static prefixSeparator = ':';
+
+	static autoSaveName = 'joddaw-auto-save';
+	static autoSaves = [];
+	static maxAutoSaves = 10;
 	
 	static getSaveNameList() {
 		const list = [];
@@ -28,6 +32,20 @@ class SaveManager {
 	static parseTrackData(data) {
 		const parsed = JSON.parse(data);
 		return parsed.tracks ? parsed : { bpm: 140, tracks: parsed }; // for backwards compatibility
+	}
+	
+	// TODO
+	static autoSave(saveData) {
+		const data = JSON.stringify(saveData);
+		const arrLen = this.autoSaves.unshift(data);
+		if (arrLen > this.maxAutoSaves) this.autoSaves.pop();
+		localStorage.setItem(this.autoSaveName, data);
+		console.log('Project auto-saved');
+	}
+	
+	static loadAutoSave() {
+		const data = this.autoSaves[0] ?? localStorage.getItem(this.autoSaveName) ?? '[]';
+		return this.parseTrackData(data);
 	}
 	
 	static quickSave(saveData) {
@@ -75,6 +93,6 @@ class SaveManager {
 		console.log('Loading preset ', saveName);
 		
 		const dataString = localStorage.getItem(saveName) ?? saveName;
-		return this.parseTrackData(dataString);
+		return JSON.parse(dataString);
 	}
 }

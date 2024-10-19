@@ -47,12 +47,14 @@
 						<option value="3">Template: Doku Dish</option>
 						<option value="4">Template: Jurobit</option>
 						<option value="5">Template: Salmon</option>
+						<option value="6">Template: Par</option>
 					</select>
 				</div>
 				<div>
 					<label for="bpmUi">BPM</label>
 					<input class="detune" id="bpmUi" type="number">
 				</div>
+				<button id="toggleLoopingBtn">Loop</button>
 				<div>
 					<div onclick="toggleHelp()" class="circle clickable help-icon end">?</div>
 					<div id="help-box" class="help-box invisible">
@@ -87,6 +89,12 @@
 							Ctrl + Shift + A to select all notes in all tracks.<br>
 							Press Delete to delete all selected notes.<br>
 							Copy / paste selected notes with Ctrl + C / Ctrl + V
+						</p>
+						<p>
+							Shift + click to place a loop start point.<br>
+							Shift + right-click to place a loop end point<br>
+							Toggle looping with Ctrl + L, or by clicking the loop-button.<br>
+							When looping is enabled, the song will play only between the loop points.
 						</p>
 						<p>
 							The save system is currently a bit experimental and unconventional.<br>

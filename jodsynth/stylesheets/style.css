@@ -34,6 +34,12 @@
   border-radius: 4px;
 }
 
+.name-editor {
+	position: absolute;
+	margin: -21px 0 0 -100px;
+	height: 50px;
+}
+
 .joddaw-body, .synth-toolbar {
 	display: flex;
 }
@@ -157,4 +163,8 @@
 }
 .invisible {
 	display: none;
+}
+
+button.active {
+	background-color: #58c34a;
 }

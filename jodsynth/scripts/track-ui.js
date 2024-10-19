@@ -74,13 +74,13 @@ function createTrackEntryUi(track, trackHandler) {
 	const gain = document.createElement('jod-numb');
 	const muteBtn = document.createElement('button');
 	const nameEditor = createTrackNameEditor(label, track, trackHandler);
-	div.replaceChildren(nameEditor, label, gain, muteBtn);
+	div.append(nameEditor, label, gain, muteBtn);
 
 	div.shaker = new Shaker(div, 400, 10);
 	
+	div.id = 'track-entry-' + track.id;
 	div.classList.add('jodroll-track');
 	if (track.active) div.classList.add('active');
-	console.log('WTF????', track.active, div.className);
 
 	div.addEventListener('click', (e) => {
 		e.stopPropagation();

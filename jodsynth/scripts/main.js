@@ -273,6 +273,9 @@ document.body.onkeydown = (e) => {
 		case 67: // C
 			if (e.ctrlKey) noteManagerUi.copyNotes();
 			break;
+		case 76: // L
+			if (e.ctrlKey) noteManagerUi.toggleLooping();
+			break;
 		case 86: // V
 			if (e.ctrlKey) noteManagerUi.pasteNotes();
 			break;

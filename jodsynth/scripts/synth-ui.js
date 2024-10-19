@@ -361,17 +361,39 @@ function SynthUi(synth) {
 	this.controls.copy.onclick = () => {
 		saveSynthToClipboard(this.synth.save());
 	};
+
 	this.controls.paste.onclick = () => {
 		this.synth.load(getSynthFromClipboard());
 		this.container.replaceChildren();
 		this.init();
 	};
+	
 	this.controls.save.onclick = () => {
-		// TODO: open name dialog
+		const input = document.createElement('input');
+		input.classList.add('name-editor', 'text-input');
+		input.onblur = () => input.remove();
+		input.onkeydown = (e) => {
+			e.stopPropagation();
+			if (e.code === 'Escape') input.blur();
+			if (e.code !== 'Enter' || !input.value) return;
+			SaveManager.saveSynthPreset(this.synth.save(), input.value);
+			this.setPresetOptions(input.value);
+			input.blur()
+		};
+		this.controls.save.appendChild(input);
+		input.focus();
 	};
+
 	this.controls.presetSelect.onchange = () => {
 		const value = this.controls.presetSelect.value;
-		// TODO: load selected preset
+		if (value === 'reset') {
+			this.synth.applyPreset(null);
+		} else {
+			const preset = SaveManager.loadSynthPreset(value);
+			this.synth.load(preset);
+		}
+		this.container.replaceChildren();
+		this.init();
 	};
 
 	this.addOsc = () => {
@@ -399,15 +421,21 @@ function SynthUi(synth) {
 		});
 	};
 
-	this.setPresetOptions = () => {
+	this.setPresetOptions = (value) => {
+		const presetValue = value ?? this.controls.presetSelect.value;
 		const names = SaveManager.getSynthPresetNames();
 		const options = names.map((n) => {
 			const option = document.createElement('option');
-			option.value = n;
-			option.innerHTML = n;
+			option.value = `${n}`;
+			option.innerHTML = `${n}`;
 			return option;
 		});
-		this.controls.presetSelect.replaceChildren(options);
+
+		const resetOption = document.createElement('option');
+		resetOption.value = 'reset';
+		resetOption.innerHTML = 'Reset';
+		this.controls.presetSelect.replaceChildren(resetOption, ...options);
+		this.controls.presetSelect.value = presetValue;
 	};
 
 	this.init = () => {
