@@ -350,10 +350,51 @@ function SynthUi(synth) {
 	this.synth = synth;
 	this.container = document.querySelector('.oscillators-container');
 	this.template = document.querySelector('#oscillator-template');
+	this.controls = {
+		copy: document.querySelector('#synth-copy-btn'),
+		paste: document.querySelector('#synth-paste-btn'),
+		save: document.querySelector('#synth-save-btn'),
+		presetSelect: document.querySelector('#synth-preset-select'),
+	};
+	this.oscillators;
 
-	this.oscillators = this.synth.oscillators.map((osc, i) => {
-		return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
-	});
+	this.controls.copy.onclick = () => {
+		saveSynthToClipboard(this.synth.save());
+	};
+
+	this.controls.paste.onclick = () => {
+		this.synth.load(getSynthFromClipboard());
+		this.container.replaceChildren();
+		this.init();
+	};
+	
+	this.controls.save.onclick = () => {
+		const input = document.createElement('input');
+		input.classList.add('name-editor', 'text-input');
+		input.onblur = () => input.remove();
+		input.onkeydown = (e) => {
+			e.stopPropagation();
+			if (e.code === 'Escape') input.blur();
+			if (e.code !== 'Enter' || !input.value) return;
+			SaveManager.saveSynthPreset(this.synth.save(), input.value);
+			this.setPresetOptions(input.value);
+			input.blur()
+		};
+		this.controls.save.appendChild(input);
+		input.focus();
+	};
+
+	this.controls.presetSelect.onchange = () => {
+		const value = this.controls.presetSelect.value;
+		if (value === 'reset') {
+			this.synth.applyPreset(null);
+		} else {
+			const preset = SaveManager.loadSynthPreset(value);
+			this.synth.load(preset);
+		}
+		this.container.replaceChildren();
+		this.init();
+	};
 
 	this.addOsc = () => {
 		const len = this.synth.addOsc();
@@ -379,5 +420,30 @@ function SynthUi(synth) {
 			o.updateModulateOptions([ none, ...options ]);
 		});
 	};
-	this.updateModulateOptions();
+
+	this.setPresetOptions = (value) => {
+		const presetValue = value ?? this.controls.presetSelect.value;
+		const names = SaveManager.getSynthPresetNames();
+		const options = names.map((n) => {
+			const option = document.createElement('option');
+			option.value = `${n}`;
+			option.innerHTML = `${n}`;
+			return option;
+		});
+
+		const resetOption = document.createElement('option');
+		resetOption.value = 'reset';
+		resetOption.innerHTML = 'Reset';
+		this.controls.presetSelect.replaceChildren(resetOption, ...options);
+		this.controls.presetSelect.value = presetValue;
+	};
+
+	this.init = () => {
+		this.oscillators = this.synth.oscillators.map((osc, i) => {
+			return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
+		});
+		this.updateModulateOptions();
+		this.setPresetOptions();
+	};
+	this.init();
 }

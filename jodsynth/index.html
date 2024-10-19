@@ -12,8 +12,10 @@
 		<link rel="stylesheet" href="stylesheets/jodroll.css" />
 		<link rel="icon"  type="image/png" href="../images/favicon.png">
 		<script src="../scripts/vector.js"></script>
+		<script src="scripts/save-manager.js"></script>
 		<script src="scripts/functions.js"></script>
 		<script src="scripts/templates.js"></script>
+		<script src="scripts/vfx.js"></script>
 		<script src="custom-elements/jod-numb.element.js"></script>
 		<script src="scripts/synth.js"></script>
 		<script src="scripts/synth-ui.js"></script>
@@ -45,12 +47,14 @@
 						<option value="3">Template: Doku Dish</option>
 						<option value="4">Template: Jurobit</option>
 						<option value="5">Template: Salmon</option>
+						<option value="6">Template: Par</option>
 					</select>
 				</div>
 				<div>
 					<label for="bpmUi">BPM</label>
 					<input class="detune" id="bpmUi" type="number">
 				</div>
+				<button id="toggleLoopingBtn">Loop</button>
 				<div>
 					<div onclick="toggleHelp()" class="circle clickable help-icon end">?</div>
 					<div id="help-box" class="help-box invisible">
@@ -87,6 +91,12 @@
 							Copy / paste selected notes with Ctrl + C / Ctrl + V
 						</p>
 						<p>
+							Shift + click to place a loop start point.<br>
+							Shift + right-click to place a loop end point<br>
+							Toggle looping with Ctrl + L, or by clicking the loop-button.<br>
+							When looping is enabled, the song will play only between the loop points.
+						</p>
+						<p>
 							The save system is currently a bit experimental and unconventional.<br>
 							Clicking "Save" stores the current tracks and synths locally on your device under the name specified in the text input.<br>
 							This will also copy the saved data to the clipboard so you can paste it into a text file.<br>
@@ -105,7 +115,11 @@
 			<div class="joddaw-body">
 				<div class="side-panel">
 					<div class="track-container"></div>
-					<button class="add-track-btn" id="addTrackBtn">+ Add track</button>
+					<button class="wide" id="addTrackBtn">+ Add track</button>
+					<div class="checkbox-container">
+						<label for="animationsCheckbox">Animations</label>
+						<input type="checkbox" id="animationsCheckbox" checked="true" />
+					</div>
 				</div>
 
 				<div class="main-panel">
@@ -125,6 +139,17 @@
 							</select>
 							<button id="addFxBtn">+ Add effect</button>
 						</div>
+						<div class="synth-toolbar">
+							<button id="synth-copy-btn">Copy synth</button>
+							<button id="synth-paste-btn">Paste</button>
+							<button id="synth-save-btn">Save as...</button>
+							<div class="select-box">
+								<label for="synth-preset-select">Preset</label>
+								<select id="synth-preset-select">
+									<option value="reset">Reset</option>
+								</select>
+							</div>
+						</div>
 						<div class="oscillators-container"></div>
 						<div class="button-container">
 							<button id="addOscBtn">+ Add oscillator</button>
@@ -133,6 +158,7 @@
 				</div>
 			</div>
 		</div>
+		<div class="jod-overlay invisible" id="jodOverlay"></div>
 		<script src="scripts/main.js" defer></script>
 	</body>
 </html>

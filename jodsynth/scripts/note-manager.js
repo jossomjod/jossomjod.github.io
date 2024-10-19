@@ -68,11 +68,21 @@ function NoteManager(ac, output) {
 	this.activeOscillators = [];
 	this.tracks = [];
 	this.selectedTrack = 0;
+	this.selectedTrackId = 1;
 	this.soloTrack = false;
+
+	this.loop = {
+		start: 0,
+		end: 4,
+		active: false,
+	};
 	this.loopEnd = 4;
-	this.isLooping = true;
+
 	this.intervalId = 0;
 	this.latestNoteStartTime = 0;
+
+	this.trackIdCounter = 0;
+	this.onNoteScheduled = (currentTrackIndex, startsIn, duration, isTrackActive) => null; // set in UI
 
 	this.addNote = (startTime, tone, duration) => {
 		const synth = this.getSelectedTrack().synth.oscillators[0];
@@ -82,25 +92,12 @@ function NoteManager(ac, output) {
 		return newNote;
 	};
 
-	/** @deprecated */
-	this.play = (startTime = 0) => {
-		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTime, this.bpm);
-		this.isPlaying = true;
-		this.getSelectedTrack().notes.forEach((n) => {
-			const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
-			if (startTime < 0) return;
-			const duration = beatsToSeconds(n.duration, this.bpm);
-			const freq = toneToFreq(n.tone);
-			this.activeOscillators.push(this.getSelectedTrack().synth.schedulePlayback({ startTime, duration, freq }));
-		});
-	};
 
-	/** @deprecated */
-	this.stop = () => {
-		this.isPlaying = false;
-		this.activeOscillators.forEach((osc) => this.getSelectedTrack().synth.stop(osc));
-		this.activeOscillators = [];
-	};
+	this.toggleLooping = (active = !this.loop.active) => this.loop.active = active;
+	this.setLoopStart = (beats) => this.loop.start = beats;
+	this.setLoopEnd = (beats) => this.loop.end = beats;
+	this.getStartTime = () => this.loop.active ? this.loop.start : 0;
+	this.setEndTime = (beats) => this.loopEnd = beats;
 
 
 	this.playTrack = (track, startTimeSec) => {
@@ -119,7 +116,7 @@ function NoteManager(ac, output) {
 		oscs.forEach((osc) => track.synth.stop(osc));
 	};
 
-	this.playAll = (startTimeBeats = 0) => {
+	this.playAll = (startTimeBeats = this.getStartTime()) => {
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
 		this.isPlaying = true;
 		this.activeOscillators = this.tracks.filter((t) => !t.muted).map((t) => {
@@ -138,32 +135,49 @@ function NoteManager(ac, output) {
 		return notes.filter((n) => n.startTime > this.latestNoteStartTime && n.startTime < start + end);
 	};
 
-	this.playbackLoop = (startTimeBeats = 0) => { // FIXME: bpm change bug
+	this.playbackLoop = (startTimeBeats = this.getStartTime()) => { // FIXME: bpm change bug
 		const lookaheadBeats = 0.1
 		const intervalMs = 20;
+		const intervalBeats = secondsToBeats(0.001 * intervalMs, this.bpm);
+
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
 		this.latestNoteStartTime = -1;
+		
 		if (this.isPlaying) return;
 		this.isPlaying = true;
 
 		clearInterval(this.intervalId);
 		this.intervalId = setInterval(() => {
+			const loopEnd = this.loop.active ? this.loop.end : this.loopEnd;
+			const currentBeats = secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
+			const beatsPastEnd = intervalBeats + currentBeats - loopEnd;
+
 			let latestTime = this.latestNoteStartTime;
 
-			this.tracks.forEach((t) => {
+			this.tracks.forEach((t, i) => {
 				if (t.muted) return;
-				const notes = this.getNotesToPlay(t.notes, secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm), lookaheadBeats);
+				const notes = this.getNotesToPlay(t.notes, currentBeats, lookaheadBeats);
 				
 				notes.forEach((n) => {
 					latestTime = Math.max(n.startTime, latestTime);
 					const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
 					if (startTime < 0) return;
-					const duration = beatsToSeconds(n.duration, this.bpm);
+					const durationBeats = Math.min(loopEnd - n.startTime, n.duration);
+					if (durationBeats <= 0) return;
+					const duration = beatsToSeconds(durationBeats, this.bpm);
 					const freq = toneToFreq(n.tone);
 					t.synth.schedulePlayback({ startTime, duration, freq });
+					
+					const delay = (startTime - ac.currentTime) * 1000;
+					this.onNoteScheduled(i, delay, duration * 1000, this.selectedTrack === i);
 				});
 			});
 			this.latestNoteStartTime = latestTime;
+
+			if (this.isPlaying && beatsPastEnd > 0) {
+				this.playbackStartTime = ac.currentTime - beatsToSeconds(this.getStartTime(), this.bpm);
+				this.latestNoteStartTime = -1;
+			}
 		}, intervalMs);
 	}
 
@@ -186,20 +200,55 @@ function NoteManager(ac, output) {
 
 	this.createTrack = () => {
 		const index = this.tracks.length + 1;
-		const track = { notes: [], name: 'Track ' + index, active: true, muted: false, gain: 1 };
+		const track = { notes: [], name: 'Track ' + index, active: true, muted: false, gain: 1, id: ++this.trackIdCounter };
 		track.fx = new FxManager(ac, output);
 		track.synth = new Synth(ac, track.fx.input);
 		this.tracks.push(track);
 		return track;
 	};
 
+	this.deleteTrack = (track) => {
+		if (!track) throw 'Can\'t delete track because it doesn\'t exist';
+		if (this.tracks.length === 1) throw 'You really should not remove the only remaining track';
+
+		const index = this.tracks.findIndex((t) => t.id === track.id);
+		let selectedIdx = this.tracks.findIndex((t) => t.id === this.selectedTrackId);
+		
+		this.tracks.splice(index, 1);
+		if (index <= selectedIdx) selectedIdx = Math.max(0, selectedIdx - 1);
+		this.selectTrackByIndex(selectedIdx);
+		return this.tracks[selectedIdx];
+	};
+
 	this.selectTrack = (track) => {
-		this.tracks[this.selectedTrack].active = false;
-		track.active = true;
-		this.selectedTrack = this.tracks.indexOf(track);
+		this.selectedTrack = Math.max(0, this.tracks.indexOf(track));
+		this.selectedTrackId = track.id;
+		this.tracks.forEach((t, i) => t.active = i === this.selectedTrack);
+	};
+
+	this.selectTrackByIndex = (index) => {
+		if (index < 0) index = 0;
+		this.tracks.forEach((t, i) => t.active = i === index);
+		this.selectedTrack = index;
+		this.selectedTrackId = this.tracks[index].id;
+	};
+
+	this.selectTrackById = (id) => {
+		if (!id) throw 'missing id wtf';
+		this.tracks.forEach((t) => t.active = t.id === id);
+		this.selectedTrackId = id;
+	};
+
+	this.getTrackById = (id) => {
+		return this.tracks.find((t) => t.id === id);
+	};
+
+	this.getTrackIndex = (id) => {
+		return this.tracks.findIndex((t) => t.id === id);
 	};
 
 	this.getSelectedTrack = () => {
+		if (!this.tracks[this.selectedTrack]) this.selectedTrack = 0;
 		return this.tracks[this.selectedTrack];
 	};
 
@@ -220,6 +269,8 @@ function NoteManager(ac, output) {
 	};
 
 	this.loadTracks = (tracks) => {
+		this.trackIdCounter = 0;
+
 		if (!tracks?.length) {
 			this.tracks = [];
 			this.createTrack();
@@ -227,11 +278,16 @@ function NoteManager(ac, output) {
 			return;
 		}
 		this.tracks = tracks.map((t, i) => {
-			if (t.active) this.selectedTrack = i;
+			if (t.active) {
+				this.selectedTrack = i;
+				this.selectedTrackId = t.id;
+			}
 
 			const track = t;
 			track.fx = new FxManager(ac, output, t.fx, t.gain);
 			track.synth = new Synth(ac, track.fx.input, t.synth);
+			if (track.id > this.trackIdCounter) this.trackIdCounter = track.id;
+			else if (!track.id) track.id = ++this.trackIdCounter;
 			return track;
 		});
 	};
