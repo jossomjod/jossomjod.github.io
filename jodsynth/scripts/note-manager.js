@@ -63,6 +63,10 @@ function envelopeToAutomationNodes(envelope, duration) { // TODO
  */
 function NoteManager(ac, output) {
 	this.bpm = 140;
+	this.lookaheadBeats = 0.09
+	this.intervalMs = 18;
+	this.intervalBeats = secondsToBeats(0.001 * this.intervalMs, this.bpm);
+
 	this.isPlaying = false;
 	this.playbackStartTime = 0;
 	this.activeOscillators = [];
@@ -131,17 +135,43 @@ function NoteManager(ac, output) {
 		});
 	};
 
-	this.getNotesToPlay = (notes, start, end) => {
-		return notes.filter((n) => n.startTime > this.latestNoteStartTime && n.startTime < start + end);
+	// For use in the playback loop
+	this.scheduleTrackNotesPlayback = (track, trackIndex, currentBeats, loopEnd, beatsPastEnd, latestTime) => {
+		const ns = track.notes;
+		const startBeats = this.getStartTime();
+		const pastEnd = beatsPastEnd > 0;
+
+		let boie = -0.00001;
+
+		for (let i = 0; i < ns.length; i++) {
+			const n = ns[i];
+
+			if (pastEnd && n.startTime < this.latestNoteStartTime) {
+				if (!(n.startTime > boie && n.startTime < startBeats + beatsPastEnd)) continue;
+				boie = Math.max(n.startTime, boie);
+			} else {
+				if (!(n.startTime > this.latestNoteStartTime && n.startTime < currentBeats + this.lookaheadBeats)) continue;
+			}
+
+			latestTime = Math.max(n.startTime, latestTime);
+			const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
+			if (startTime < 0) continue;
+			const durationBeats = Math.min(loopEnd - n.startTime, n.duration);
+			if (durationBeats <= 0.00001) continue;
+			const duration = beatsToSeconds(durationBeats, this.bpm);
+			const freq = toneToFreq(n.tone);
+			track.synth.schedulePlayback({ startTime, duration, freq });
+			
+			const delay = (startTime - ac.currentTime) * 1000;
+			this.onNoteScheduled(trackIndex, delay, duration * 1000, track.active);
+		}
+		return pastEnd ? boie : latestTime;
 	};
 
-	this.playbackLoop = (startTimeBeats = this.getStartTime()) => { // FIXME: bpm change bug
-		const lookaheadBeats = 0.1
-		const intervalMs = 20;
-		const intervalBeats = secondsToBeats(0.001 * intervalMs, this.bpm);
-
+	this.playbackLoop = (startTimeBeats = this.getStartTime()) => {
+		this.intervalBeats = secondsToBeats(0.001 * this.intervalMs, this.bpm);
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
-		this.latestNoteStartTime = -1;
+		this.latestNoteStartTime = -0.00001;
 		
 		if (this.isPlaying) return;
 		this.isPlaying = true;
@@ -150,35 +180,21 @@ function NoteManager(ac, output) {
 		this.intervalId = setInterval(() => {
 			const loopEnd = this.loop.active ? this.loop.end : this.loopEnd;
 			const currentBeats = secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
-			const beatsPastEnd = intervalBeats + currentBeats - loopEnd;
+			const beatsPastEnd = this.intervalBeats + currentBeats - loopEnd;
 
 			let latestTime = this.latestNoteStartTime;
 
 			this.tracks.forEach((t, i) => {
 				if (t.muted) return;
-				const notes = this.getNotesToPlay(t.notes, currentBeats, lookaheadBeats);
-				
-				notes.forEach((n) => {
-					latestTime = Math.max(n.startTime, latestTime);
-					const startTime = this.playbackStartTime + beatsToSeconds(n.startTime, this.bpm);
-					if (startTime < 0) return;
-					const durationBeats = Math.min(loopEnd - n.startTime, n.duration);
-					if (durationBeats <= 0) return;
-					const duration = beatsToSeconds(durationBeats, this.bpm);
-					const freq = toneToFreq(n.tone);
-					t.synth.schedulePlayback({ startTime, duration, freq });
-					
-					const delay = (startTime - ac.currentTime) * 1000;
-					this.onNoteScheduled(i, delay, duration * 1000, this.selectedTrack === i);
-				});
+				latestTime = this.scheduleTrackNotesPlayback(t, i, currentBeats, loopEnd, beatsPastEnd, latestTime);
 			});
 			this.latestNoteStartTime = latestTime;
 
-			if (this.isPlaying && beatsPastEnd > 0) {
-				this.playbackStartTime = ac.currentTime - beatsToSeconds(this.getStartTime(), this.bpm);
-				this.latestNoteStartTime = -1;
+			if (this.isPlaying && beatsPastEnd >= 0) {
+				this.playbackStartTime = ac.currentTime - beatsToSeconds(this.getStartTime() + beatsPastEnd, this.bpm);
+				this.latestNoteStartTime = -0.00001;
 			}
-		}, intervalMs);
+		}, this.intervalMs);
 	}
 
 	this.stopPlaybackLoop = () => {
@@ -195,7 +211,13 @@ function NoteManager(ac, output) {
 	};
 
 	this.setBpm = (bpm) => {
+		const prev = this.bpm;
 		this.bpm = bpm;
+		this.intervalBeats = secondsToBeats(0.001 * this.intervalMs, this.bpm);
+		if (!this.isPlaying) return;
+
+		const currentBeats = secondsToBeats(ac.currentTime - this.playbackStartTime, prev);
+		this.playbackStartTime = ac.currentTime - beatsToSeconds(currentBeats, this.bpm);
 	};
 
 	this.createTrack = () => {
@@ -264,6 +286,7 @@ function NoteManager(ac, output) {
 	};
 
 	this.load = (data) => {
+		this.toggleLooping(false);
 		this.bpm = data.bpm ?? 140;
 		this.loadTracks(data.tracks);
 	};

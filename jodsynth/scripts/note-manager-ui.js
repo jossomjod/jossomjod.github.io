@@ -685,6 +685,7 @@ function NoteManagerUI(noteManager) {
 		this.bpmUi.value = noteManager.bpm;
 		this.render();
 		this.renderTracks();
+		this.toggleLoopingBtn.classList.toggle('active', noteManager.loop.active);
 	};
 
 	this.renderTracks = (tracks = noteManager.tracks) => {
