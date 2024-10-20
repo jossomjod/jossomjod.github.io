@@ -14,6 +14,7 @@ const EModes = {
 const jodColors = {
 	background: '#000000',
 	caret: '#c7bc8f',
+	cursorLine: '#9ca5ff66',
 	gridReference: '#579cef',
 	gridLine: '#a7cab322',
 	gridOctave: '#97a6ca44',
@@ -186,6 +187,8 @@ function NoteManagerUI(noteManager) {
 	this.isSelectingAllTracks = false;
 	this.areaSelectAABB = { ax: 0, ay: 0, bx: 0, by: 0 };
 
+	this.isCursorInside = false;
+	this.showCursorLine = true;
 	this.cursorX = 0;
 	this.cursorTime = 0;
 	this.endTime = this.beatsPerBar;
@@ -285,17 +288,22 @@ function NoteManagerUI(noteManager) {
 	this.onMouseUpOrEnter = (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+
+		let rendered = false;
+		this.isCursorInside = true;
 		
 		if (~e.buttons & this.primaryAction) {
 			if (this.isSelectingArea) {
 				this.isSelectingArea = false;
 				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.render();
+				this.rendered = true;
 			}
 			else if (this.isSelectingAllTracks) {
 				this.isSelectingAllTracks = false;
 				this.selectedNotes = this.getAllNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.render();
+				this.rendered = true;
 			}
 			else if (this.timeLine.isSelecting) {
 				const allTracks = this.timeLine.isSelecting > 1;
@@ -307,22 +315,29 @@ function NoteManagerUI(noteManager) {
 				const func = allTracks ? this.getAllNotesInAABB : this.getNotesInAABB;
 				this.selectedNotes = func(ax, -9999, bx, 9999);
 				this.render();
+				this.rendered = true;
 			}
 			else if (this.clickedNote) {
 				this.newNoteDuration = this.clickedNote.duration;
 				this.updateEndTime();
 				this.render();
+				this.rendered = true;
 			}
 
 			this.previewNote(false);
 			this.clickedNote = null;
 			this.isResizing = false;
 			this.timeLineClicked = false;
+			if (!rendered && this.showCursorLine) this.render();
 		}
 	};
 
 	this.trackerContainer.addEventListener('mouseup', this.onMouseUpOrEnter);
 	this.trackerContainer.addEventListener('mouseenter', this.onMouseUpOrEnter);
+	this.trackerContainer.addEventListener('mouseleave', () => {
+		this.isCursorInside = false;
+		if (this.showCursorLine) this.render();
+	});
 
 	this.trackerContainer.oncontextmenu = (e) => e.preventDefault();
 
@@ -332,10 +347,12 @@ function NoteManagerUI(noteManager) {
 		const rect = this.canvas.getBoundingClientRect();
 		let realX = e.x - rect.left;
 		let realY = this.height - (e.y - rect.top);
+		let rendered = false;
 		this.cursorX = realX;
 		this.cursorTime = this.xToTime(this.cursorX);
 
-		const timeLineClicked = +this.timeLine.isPointInside(realX, e.y - rect.top) * this.timeLineAction;
+		const timeLineHovered = this.timeLine.isPointInside(realX, e.y - rect.top);
+		const timeLineClicked = +timeLineHovered * this.timeLineAction;
 		const scrollHack = +e.altKey * this.scrollAction; // alternative to middle mouse button
 		const fakeButtons = e.buttons | scrollHack | timeLineClicked;
 
@@ -356,6 +373,7 @@ function NoteManagerUI(noteManager) {
 					this.areaSelectAABB.bx = realX;
 					this.areaSelectAABB.by = realY;
 					this.render();
+					rendered = true;
 					break;
 				}
 
@@ -379,6 +397,7 @@ function NoteManagerUI(noteManager) {
 				this.scrollX += e.movementX;
 				this.scrollY -= e.movementY;
 				this.render();
+				rendered = true;
 				break;
 			case this.timeLineAction | this.primaryAction:
 				if (this.clickedNote) break;
@@ -389,6 +408,11 @@ function NoteManagerUI(noteManager) {
 				else this.scrollToAbsolute(realX);
 				break;
 		}
+
+		const prevIsCursorInside = this.isCursorInside;
+		this.isCursorInside = !timeLineHovered;
+		if (!rendered && e.movementX && this.showCursorLine && this.isCursorInside) this.render();
+		else if (timeLineHovered && prevIsCursorInside) this.render()
 	});
 
 
@@ -912,6 +936,7 @@ function NoteManagerUI(noteManager) {
 		if (this.isSelectingArea || this.isSelectingAllTracks) this.drawAABB(this.areaSelectAABB);
 		this.drawLoopLines();
 		this.drawTimeLine();
+		if (this.showCursorLine && this.isCursorInside) this.drawCursorLine();
 	};
 
 	this.drawTimeLine = () => {
@@ -1010,6 +1035,15 @@ function NoteManagerUI(noteManager) {
 		ctx.lineTo(start, this.height - this.timeLine.rect.h);
 		ctx.moveTo(end, 0);
 		ctx.lineTo(end, this.height - this.timeLine.rect.h);
+		ctx.stroke();
+	};
+
+	this.drawCursorLine = (ctx = this.ctx) => {
+		const x = this.snapX ? this.snapToGridX(this.cursorX) : this.cursorX;
+		ctx.beginPath();
+		ctx.strokeStyle = jodColors.cursorLine;
+		ctx.moveTo(x, 0);
+		ctx.lineTo(x, this.height - this.timeLine.rect.h);
 		ctx.stroke();
 	};
 
