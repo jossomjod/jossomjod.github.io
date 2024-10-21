@@ -297,13 +297,13 @@ function NoteManagerUI(noteManager) {
 				this.isSelectingArea = false;
 				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.render();
-				this.rendered = true;
+				rendered = true;
 			}
 			else if (this.isSelectingAllTracks) {
 				this.isSelectingAllTracks = false;
 				this.selectedNotes = this.getAllNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.render();
-				this.rendered = true;
+				rendered = true;
 			}
 			else if (this.timeLine.isSelecting) {
 				const allTracks = this.timeLine.isSelecting > 1;
@@ -315,13 +315,13 @@ function NoteManagerUI(noteManager) {
 				const func = allTracks ? this.getAllNotesInAABB : this.getNotesInAABB;
 				this.selectedNotes = func(ax, -9999, bx, 9999);
 				this.render();
-				this.rendered = true;
+				rendered = true;
 			}
 			else if (this.clickedNote) {
 				this.newNoteDuration = this.clickedNote.duration;
 				this.updateEndTime();
 				this.render();
-				this.rendered = true;
+				rendered = true;
 			}
 
 			this.previewNote(false);
