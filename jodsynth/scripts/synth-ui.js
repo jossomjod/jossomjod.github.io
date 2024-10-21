@@ -336,7 +336,7 @@ function OscillatorUi(oscillator, container, name) {
 			this.oscGainControl.max = 1.0;
 			this.oscGainControl.speed = 1.0;
 		} else {
-			this.oscGainControl.max = 1000000.0;
+			this.oscGainControl.max = 100000000.0;
 			this.oscGainControl.speed = 100.0;
 		}
 	};
