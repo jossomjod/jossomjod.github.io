@@ -83,16 +83,17 @@ class JodNumbElement extends HTMLElement {
 					this.offsetX = e.clientX;
 					this.offsetY = e.clientY;
 					this.lastValue = this.#value;
-					this.dragging = e.buttons;
+					this.dragging = 1;
 					break;
 				case 4:
-					this.setValue(0.0);
+					this.setValue(this._min ?? 0);
 					break;
 			}
 		});
 
 		document.addEventListener('mouseup', (e) => {
-			this.dragging = e.buttons;
+			if (e.buttons) return;
+			this.dragging = 0;
 			this.dragObject = null;
 		});
 
