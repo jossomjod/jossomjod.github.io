@@ -223,6 +223,76 @@ function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 
 }
 
 
+class CompressorEffect {
+	ac;
+	fxType = 'compressor';
+	params;
+	input
+	compressor
+	destination;
+
+	/**
+	 * @param {AudioContext} ac 
+	 */
+	constructor(
+		ac, params = {
+			bypass: false,
+			threshold: -24,  // -100-0 dB
+			knee: 30,        // 0-40 dB
+			ratio: 12,       // 1-20 dB
+			attack: 0.003,   // 0-1 s
+			release: 0.25 ,  // 0-1 s
+		}
+	) {
+		this.ac = ac;
+		this.params = params;
+		this.input = new GainNode(ac, { gain: 1 });
+		this.compressor = new DynamicsCompressorNode(ac, params);
+	}
+
+	connect(destination) {
+		this.destination = destination;
+
+		if (this.params.bypass) {
+			this.input.connect(destination);
+			return destination;
+		}
+		this.input
+			.connect(this.compressor)
+			.connect(destination);
+		return destination;
+	}
+
+	disconnect() {
+		this.input.disconnect();
+		this.compressor.disconnect();
+	}
+
+	refreshConnection() {
+		this.disconnect();
+		this.connect(this.destination);
+	}
+
+	setParam = (param, value) => {
+		if (param === 'bypass') {
+			this.params.bypass = value;
+			this.refreshConnection();
+			return;
+		}
+		this.params[param] = value;
+		this.compressor[param].setValueAtTime(value, ac.currentTime);
+	}
+
+	save() {
+		return { params: this.params, fxType: this.fxType };
+	}
+	load(params){
+		this.params = params;
+		Object.entries(this.params).forEach(([key, value]) => this.compressor[key].setValueAtTime?.(value, this.ac.currentTime));
+		this.compressor.type = params.type;
+	}
+}
+
 
 function effectFromType(ac, type, params) {
 	switch (type) {
@@ -230,6 +300,8 @@ function effectFromType(ac, type, params) {
 			return new FilterEffect(ac, params);
 		case 'reverb':
 			return new ReverbEffect(ac, params);
+		case 'compressor':
+			return new CompressorEffect(ac, params);
 		default:
 			throw `No effect exists with type ${type}`;
 	}

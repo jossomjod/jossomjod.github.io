@@ -18,6 +18,7 @@ function createParamControl(param, setParam) {
 	const input = document.createElement('input');
 	const label = document.createElement('label');
 
+	container.classList.add('fx-param');
 	container.appendChild(input);
 	container.appendChild(label);
 
@@ -44,6 +45,7 @@ function createParamJodnumb(param, setParam) {
 	const input = document.createElement('jod-numb');
 	const label = document.createElement('label');
 
+	container.classList.add('fx-param');
 	container.appendChild(input);
 	container.appendChild(label);
 
@@ -68,6 +70,7 @@ function createParamSelect(param) {
 	const select = document.createElement('select');
 	const label = document.createElement('label');
 
+	container.classList.add('fx-param');
 	container.appendChild(select);
 	container.appendChild(label);
 
@@ -96,6 +99,7 @@ function createParamCheckbox(param, setParam) {
 	const input = document.createElement('input');
 	const label = document.createElement('label');
 
+	container.classList.add('fx-param');
 	container.appendChild(input);
 	container.appendChild(label);
 
@@ -169,23 +173,43 @@ function createFilterFxUi(fx, parent, rmCallback, titleText) {
 	return fxUi;
 }
 
+function createCompressorFxUi(fx, parent, rmCallback, titleText) {
+	const fxUi = new FxUi(fx.params, parent, rmCallback, titleText);
+	const controls = [
+		createParamJodnumb({ label: 'Threshold', param: 'threshold', value: fx.params.threshold, min: -100, max: 0, step: 0.1 }, fx.setParam),
+		createParamJodnumb({ label: 'Ratio', param: 'ratio', value: fx.params.ratio, min: 1, max: 20, step: 0.1 }, fx.setParam),
+		createParamJodnumb({ label: 'Attack', param: 'attack', value: fx.params.attack, min: 0, max: 1, step: 0.001 }, fx.setParam),
+		createParamJodnumb({ label: 'Release', param: 'release', value: fx.params.release, min: 0, max: 1, step: 0.001 }, fx.setParam),
+		createParamJodnumb({ label: 'Knee', param: 'knee', value: fx.params.knee, min: 0, max: 40, step: 0.1 }, fx.setParam),
+		createParamCheckbox({ label: 'Bypass', param: 'bypass', value: fx.params.bypass }, fx.setParam),
+	];
+	fxUi.setControls(controls);
+	return fxUi;
+}
+
 function createFxUi(fx, parent, rmCallback) {
 	switch (fx.fxType) {
 		case 'filter':
 			return createFilterFxUi(fx, parent, rmCallback, 'Filter');
 		case 'reverb':
 			return createReverbFxUi(fx, parent, rmCallback, 'Reverb');
+		case 'compressor':
+			return createCompressorFxUi(fx, parent, rmCallback, 'Compressor');
 		default:
 			throw 'Unknown effect type';
 	}
 }
 
-const fxTypes = ['filter', 'reverb'];
+const fxTypes = ['filter', 'reverb', 'compressor'];
 
 function FxManagerUi(fxManager) {
 	this.container = document.querySelector('.fx-container');
 	this.fxManager;
 	this.fxUis;
+
+	this.container.addEventListener('dragend', (e) => {
+		console.log('DROPPED', e);
+	});
 
 	this.addFx = (type) => {
 		if (!fxTypes.includes(type)) return;

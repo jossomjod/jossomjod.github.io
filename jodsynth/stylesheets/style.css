@@ -56,6 +56,14 @@
 	background-color: #010a1d;
 }
 
+.fx-param {
+	display: grid;
+	grid-template-columns: 113px 1fr;
+	gap: 5px;
+	align-items: center;
+	margin: 5px 0;
+}
+
 .synth-toolbar {
 	gap: 5px;
 }
