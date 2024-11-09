@@ -215,6 +215,40 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return osc;
 	}
 
+	this.schedulePlaybackWithAutomation = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
+		const freq = this.isLFO ? this.fixedFreq : frequency;
+		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
+		osc.setPeriodicWave(this.customeWave);
+
+		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+		const endTime = startTime + duration;
+
+		gainNode.gain.value = gain;
+		osc.connect(panner).connect(gainNode);
+		osc.start(startTime);
+
+		
+		gainNode.gain.setValueAtTime(0, startTime);
+
+		automation.gain.forEach((g) => {
+			const time = beatsToSeconds(g.time, bpm);
+			if (time <= duration) gainNode.gain.linearRampToValueAtTime(g.value * gain, time + startTime);
+		});
+		gainNode.gain.linearRampToValueAtTime(0, endTime);
+
+		automation.pitch.forEach((p) => {
+			osc.detune.linearRampToValueAtTime(this.detune + p.value * 100, beatsToSeconds(p.time, bpm) + startTime);
+		});
+
+		automation.pan?.forEach((p) => {
+			panner.pan.linearRampToValueAtTime(p.value, beatsToSeconds(p.time, bpm) + startTime);
+		});
+
+		osc.stop(endTime);
+
+		return osc;
+	}
+
 	this.createEnvelopeFromObject = (obj) => {
 		if (!obj) return undefined;
 		return new ArrayEnvelope(ac, Object.values(obj.points), obj.multiplier);
@@ -235,21 +269,18 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 
 const oscarGainPoints = [
 	{ value: 1.0, time: 0.001 },
-	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.8 },
 	{ value: 0.0, time: 0.81 },
 ];
 
 const osmanGainPoints = [
 	{ value: 1.0, time: 0.0 },
-	{ value: 1.0, time: 0.3 },
 	{ value: 1.0, time: 0.9 },
 	{ value: 0.0, time: 0.91 },
 ];
 
 const pitchPoints = [
 	{ value: 0.0, time: 0.0 },
-	{ value: 0.0, time: 0.3 },
 	{ value: 0.0, time: 0.5 },
 ];
 
@@ -312,11 +343,13 @@ function Synth(ac, output, fromObject) {
 		});
 	};
 
-	this.schedulePlayback = ({ startTime, duration, freq }) => {
-		const oscs = this.oscillators.map((osc) => {
+	this.schedulePlayback = ({ startTime, duration, freq, automations, bpm }) => {
+		const oscs = this.oscillators.map((osc, i) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
+			const oscillator = automations?.[i]
+				? osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automations[i], bpm)
+				: osc.schedulePlayback(freq, gain, pan, startTime, duration);
 			return { gain, oscillator };
 		});
 

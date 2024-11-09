@@ -245,8 +245,7 @@ document.body.onkeydown = (e) => {
 	e.preventDefault();
 	switch (e.which) {
 		case 9: // tab
-			noteManagerUi.automationMode = !noteManagerUi.automationMode;
-			noteManagerUi.render();
+			noteManagerUi.toggleMode();
 			break;
 		case 32: // space
 			noteManagerUi.togglePlayback({ fromCursor: e.ctrlKey || e.shiftKey });
@@ -306,6 +305,36 @@ document.body.onkeydown = (e) => {
 		case 'Backquote':
 			noteManagerUi.toggleVisible();
 			break;
+		case 'KeyQ':
+			if (noteManagerUi.mode) noteManagerUi.toggleMode(EModes.pitchAutomation);
+			break;
+		case 'KeyW':
+			if (noteManagerUi.mode) noteManagerUi.toggleMode(EModes.automation);
+			break;
+		case 'KeyA':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(noteManagerUi.selectedOsc - 1);
+			break;
+		case 'KeyD':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(noteManagerUi.selectedOsc + 1);
+			break;
+		case 'Digit1':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(0);
+			break;
+		case 'Digit2':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(1);
+			break;
+		case 'Digit3':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(2);
+			break;
+		case 'Digit4':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(3);
+			break;
+		case 'Digit5':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(4);
+			break;
+		case 'Digit6':
+			if (noteManagerUi.mode) noteManagerUi.selectOsc(5);
+			break;
 	}
 	toggleKeys(e, true);
 };
@@ -339,6 +368,7 @@ function toggleKeys(e, bool) {
 	}
 	if (e.ctrlKey) return;
 	//if (e.code === 'BracketRight') return; // Chrome really hates this key on Nordic keyboard layouts :(
+	if (noteManagerUi.mode) return;
 
 	const key = keyboardKeys[e.code];
 	if (key && key.down !== bool) {

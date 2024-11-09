@@ -44,6 +44,7 @@ note manager TODOs:
 - automation
   - per note
 	  - should initially be based on the synth envelopes
+		- we will very often want the same pitch automation applied to all oscillators
 	- per track
 	  - it should be possible to choose a default value to use when playing on the keyboard
 		- when moving a note, the preview sound should go through the effect with the value at the note start time
