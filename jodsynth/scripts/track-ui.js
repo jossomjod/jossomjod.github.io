@@ -70,11 +70,15 @@ function createTrackNameEditor(labelElement, track, trackHandler) {
 
 function createTrackEntryUi(track, trackHandler) {
 	const div = document.createElement('div');
+	const btnContainer = document.createElement('div');
 	const label = document.createElement('span');
 	const gain = document.createElement('jod-numb');
 	const muteBtn = document.createElement('button');
+	const soloBtn = document.createElement('button');
+	const automationBtn = document.createElement('button');
 	const nameEditor = createTrackNameEditor(label, track, trackHandler);
-	div.append(nameEditor, label, gain, muteBtn);
+	btnContainer.append(soloBtn, muteBtn, automationBtn);
+	div.append(nameEditor, label, gain, btnContainer);
 
 	div.shaker = new Shaker(div, 400, 10);
 	
@@ -105,14 +109,36 @@ function createTrackEntryUi(track, trackHandler) {
 		muteBtn.classList.toggle('muted', track.muted); // unmute when changing gain
 	});
 
+	btnContainer.className = 'track-btn-container';
+
+	soloBtn.innerHTML = 'S';
+	soloBtn.className = 'clickable sandwich-btn';
+	soloBtn.classList.toggle('enabled', !!track.solo);
+	soloBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		trackHandler.toggleSoloTrack(track);
+		soloBtn.classList.toggle('enabled', !!track.solo);
+	});
+
 	muteBtn.innerHTML = 'M';
-	muteBtn.className = 'clickable circle small btn';
+	muteBtn.className = 'clickable sandwich-btn';
 	muteBtn.classList.toggle('muted', track.muted);
 	muteBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
 		e.preventDefault();
 		trackHandler.toggleMuteTrack(track);
 		muteBtn.classList.toggle('muted', track.muted);
+	});
+
+	automationBtn.innerHTML = 'A';
+	automationBtn.className = 'clickable sandwich-btn';
+	automationBtn.classList.toggle('enabled', !track.disableNoteAutomation);
+	automationBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		trackHandler.toggleDisableNoteAutomationForTrack(track);
+		automationBtn.classList.toggle('enabled', !track.disableNoteAutomation);
 	});
 	return div;
 }

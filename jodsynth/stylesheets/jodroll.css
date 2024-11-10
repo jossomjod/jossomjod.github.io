@@ -65,6 +65,10 @@
 	width: 60px;
 	font-size: smaller;
 }
+.track-btn-container {
+	display: flex;
+	flex-direction: column;
+}
 
 .jodroll-canvas {
   width: 100%;
@@ -79,10 +83,29 @@
 	margin: 10px;
 }
 
+.sandwich-btn {
+	width: 20px;
+	height: 16px;
+	border-radius: 2px;
+	border: 1px solid #0066ff;
+	font-size: 0.7rem;
+	padding: 0;
+}
+
 .muted {
 	background-color: #fd3132;
 }
 
 .muted:hover {
 	background-color: #ff5656;
+}
+
+.enabled {
+	background-color: #79ffd7;
+	color: #111;
+}
+
+.enabled:hover {
+	background-color: #b1d6ff;
+	color: #123;
 }

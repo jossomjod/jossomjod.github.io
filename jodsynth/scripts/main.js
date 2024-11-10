@@ -311,6 +311,9 @@ document.body.onkeydown = (e) => {
 		case 'KeyW':
 			if (noteManagerUi.mode) noteManagerUi.toggleMode(EModes.automation);
 			break;
+		case 'KeyE':
+			if (noteManagerUi.mode) noteManagerUi.toggleMode(EModes.panAutomation);
+			break;
 		case 'KeyA':
 			if (noteManagerUi.mode) noteManagerUi.selectOsc(noteManagerUi.selectedOsc - 1);
 			break;

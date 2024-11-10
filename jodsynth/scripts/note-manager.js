@@ -149,6 +149,10 @@ function NoteManager(ac, output) {
 	this.getStartTime = () => this.loop.active ? this.loop.start : 0;
 	this.setEndTime = (beats) => this.loopEnd = beats;
 
+	this.toggleSolo = (track) => {
+		track.solo = !track.solo;
+		this.soloTrack = this.tracks.some((t) => t.solo);
+	};
 
 	this.playTrack = (track, startTimeSec) => {
 		const oscs = [];
@@ -191,6 +195,7 @@ function NoteManager(ac, output) {
 
 		for (let i = 0; i < ns.length; i++) {
 			const n = ns[i];
+			const automations = !track.disableNoteAutomation ? n.automations : null;
 
 			if (pastEnd && n.startTime < this.latestNoteStartTime) {
 				if (!(n.startTime > boie && n.startTime < startBeats + beatsPastEnd)) continue;
@@ -206,7 +211,7 @@ function NoteManager(ac, output) {
 			if (durationBeats <= 0.00001) continue;
 			const duration = beatsToSeconds(durationBeats, this.bpm);
 			const freq = toneToFreq(n.tone);
-			track.synth.schedulePlayback({ startTime, duration, freq, automations: n.automations, bpm: this.bpm });
+			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm });
 			
 			const delay = (startTime - ac.currentTime) * 1000;
 			this.onNoteScheduled(trackIndex, delay, duration * 1000, track.active);
@@ -231,7 +236,7 @@ function NoteManager(ac, output) {
 			let latestTime = this.latestNoteStartTime;
 
 			this.tracks.forEach((t, i) => {
-				if (t.muted) return;
+				if (t.muted || (this.soloTrack && !t.solo)) return;
 				latestTime = this.scheduleTrackNotesPlayback(t, i, currentBeats, loopEnd, beatsPastEnd, latestTime);
 			});
 			this.latestNoteStartTime = latestTime;
@@ -268,7 +273,16 @@ function NoteManager(ac, output) {
 
 	this.createTrack = () => {
 		const index = this.tracks.length + 1;
-		const track = { notes: [], name: 'Track ' + index, active: true, muted: false, gain: 1, id: ++this.trackIdCounter };
+		const track = {
+			notes: [],
+			name: 'Track ' + index,
+			active: true,
+			muted: false,
+			solo: false,
+			gain: 1,
+			id: ++this.trackIdCounter,
+			disableNoteAutomation: false,
+		};
 		track.fx = new FxManager(ac, output);
 		track.synth = new Synth(ac, track.fx.input);
 		this.tracks.push(track);
@@ -363,6 +377,7 @@ function NoteManager(ac, output) {
 			else if (!track.id) track.id = ++this.trackIdCounter;
 			return track;
 		});
+		this.soloTrack = this.tracks.some((t) => t.solo);
 	};
 }
 
