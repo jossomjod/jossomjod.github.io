@@ -630,7 +630,7 @@ function NoteManagerUI(noteManager) {
 		const time = this.xToTime(x);
 		return noteManager.getSelectedTrack().notes.find((n) => {
 			const t = n.startTime - timePadding;
-			const d = t + this.getTrueNoteDuration(n) + timePadding;
+			const d = t + n.duration + timePadding;
 			const ny = this.toneToY(n.tone);
 			const nr = this.automationBoxHeight * 0.5 + padding;
 			return time > t && time < d && Math.abs(ny - y) <= nr;
@@ -686,7 +686,7 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.getNotesAtTime = (time, track = noteManager.getSelectedTrack()) => {
-		return track.notes.filter((n) => n.startTime <= time && n.startTime + this.getTrueNoteDuration(n) >= time);
+		return track.notes.filter((n) => n.startTime <= time && n.startTime + n.duration >= time);
 	};
 
 	this.getAutomationArray = (note, prop = this.automationProperty, osc = this.selectedOsc) => {
@@ -826,10 +826,6 @@ function NoteManagerUI(noteManager) {
 		this.selectedNotes = track.notes;
 		this.render();
 	};
-
-	this.getTrueNoteDuration = (note, oscIdx = this.selectedOsc) => {
-		return note.automations?.[oscIdx]?.gain.at(-1)?.time ?? note.duration;
-	}
 
 	this.addNote = (x, y) => {
 		const time = this.xToTime(x);
@@ -1248,7 +1244,7 @@ function NoteManagerUI(noteManager) {
 
 		notes.forEach((n) => {
 			const startX = this.timeToX(n.startTime);
-			const endX = this.timeToX(n.startTime + this.getTrueNoteDuration(n));
+			const endX = this.timeToX(n.startTime + n.duration);
 			if (endX < 0.0) return;
 			if (startX > this.width) return;
 
