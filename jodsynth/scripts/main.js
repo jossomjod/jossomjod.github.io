@@ -80,19 +80,6 @@ animationsCheckbox.onchange = () => jodConfiguration.animations = this.animation
 
 
 
-// OVERLAY
-
-var jodOverlay = document.querySelector('#jodOverlay');
-
-function openOverlay(onClose = () => null) {
-	jodOverlay.classList.toggle('invisible', false);
-	
-}
-
-
-
-
-
 
 
 
@@ -198,15 +185,24 @@ function loadAll(name) {
 
 
 
-// MISC UI STUFF ig ------------------------------------------------------
+// OVERLAY / DIALOGS ------------------------------------------------------
 
 
+var jodOverlay = document.querySelector('#jodOverlay');
 var helpBox = document.querySelector('#help-box');
-function toggleHelp() {
-	helpBox.classList.toggle('invisible');
+
+function toggleOverlay(clickable = true) {
+	return jodOverlay.classList.toggle('unclickable', clickable);
 }
 
+function toggleHelp(open = true) {
+	if (!helpBox.classList.toggle('invisible', !open)) toggleOverlay(false)
+}
 
+jodOverlay.onclick = () => {
+	jodOverlay.classList.toggle('unclickable', true);
+	toggleHelp(false);
+};
 
 
 

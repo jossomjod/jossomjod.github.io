@@ -1,6 +1,5 @@
 .jodroll-container {
   display: flex;
-  background-color: blueviolet;
 }
 
 .track-container, .side-panel {
@@ -36,7 +35,6 @@
   max-height: 700px;
   min-height: 700px;
   flex-grow: 1;
-  background-color: palevioletred;
 }
 
 .context-menu {
@@ -65,7 +63,16 @@
 	width: 60px;
 	font-size: smaller;
 }
-.track-btn-container {
+.track-gain-and-btn-row {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.track-btn-row {
+	display: flex;
+	gap: 2px;
+}
+.track-btn-column {
 	display: flex;
 	flex-direction: column;
 }

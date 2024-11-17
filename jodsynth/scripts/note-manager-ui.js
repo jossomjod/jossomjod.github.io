@@ -49,6 +49,7 @@ const jodColors = {
 
 
 class TimelineUI {
+	noteManager;
 	rect;
 	color = '#0a0c1f';
 	backgroundColor = '#020305';
@@ -58,8 +59,9 @@ class TimelineUI {
 	selectionColor = '#31426f53';
 
 	/** @param {Rect} rect  */
-	constructor(rect) {
+	constructor(rect, noteManager) {
 		this.rect = rect;
+		this.noteManager = noteManager;
 	}
 
 	isPointInside(_x, y) { // currently the x pos and width always matches the canvas
@@ -96,6 +98,8 @@ class TimelineUI {
 		
 		const caretX = w * (caretTime / endTime);
 		tracks.forEach((t) => {
+			const shouldAnimate = isPlaying && jodConfiguration.animations && !t.muted && (!this.noteManager.soloTrack || t.solo);
+
 			t.notes.forEach((n) => {
 				const nx = w * n.startTime / endTime;
 				const ny = y + (h - n.tone);
@@ -106,7 +110,7 @@ class TimelineUI {
 				
 				const time = (caretX - nx) / nw;
 				const dur = 1.5;
-				if (isPlaying && jodConfiguration.animations && !t.muted && time >= 0 && time <= dur) {
+				if (shouldAnimate && time >= 0 && time <= dur) {
 					const invert = dur - time;
 					const ease = invert * invert;
 					const thicc = 0.5 + 1.5 * ease;
@@ -165,6 +169,10 @@ function NoteManagerUI(noteManager) {
 	this.bpmUi.onchange = () => noteManager.setBpm(this.bpmUi.value);
 	this.canvas = this.jodroll.querySelector('#jodroll-main-canvas');
 	this.ctx = this.canvas.getContext('2d');
+
+	this.overlay = document.querySelector('#jodOverlay');
+	this.screenFlasher = new CssFlasher(this.overlay, 350, 0.4);
+	this.screenShaker = new CssShaker(document.body, 500, 8);
 	
 	this.toggleLoopingBtn = document.querySelector('#toggleLoopingBtn');
 	this.toggleLoopingBtn.classList.toggle('active', noteManager.loop.active);
@@ -224,7 +232,7 @@ function NoteManagerUI(noteManager) {
 	this.caretPos = 0; // used ONLY for animating notes during playback
 	this.caretTime = 0; // used ONLY for animating timeline notes during playback
 
-	this.timeLine = new TimelineUI({ x: 0, y: this.height - 100, w: this.width, h: 100 });
+	this.timeLine = new TimelineUI({ x: 0, y: this.height - 100, w: this.width, h: 100 }, noteManager);
 	this.timeLineClicked = false;
 
 
@@ -271,6 +279,11 @@ function NoteManagerUI(noteManager) {
 		}
 
 		// AUTOMATION
+		/**
+		 * TODO:
+		 * if note clicked: select note and display automation ONLY for selected
+		 * elif selectedNotes.length: set node clicked or add node (clamp to automation box)
+		 */
 		if (!this.timeLineClicked && this.mode >= EModes.automation) {
 			switch (e.buttons) {
 				case this.primaryAction:
@@ -1120,7 +1133,7 @@ function NoteManagerUI(noteManager) {
 	};
 
 
-	this.drawNote = (note, color = jodColors.note, resizeColor = jodColors.resizeHandle, muted = false) => {
+	this.drawNote = (note, color = jodColors.note, resizeColor = jodColors.resizeHandle, shouldAnimate = false) => {
 		const x = this.timeToX(note.startTime);
 		const y = this.toneToY(note.tone);
 		const w = note.duration * this.pxPerBeat;
@@ -1129,7 +1142,7 @@ function NoteManagerUI(noteManager) {
 
 		const time = (this.caretPos - x) / w;
 		const dur = 2.5;
-		if (this.isPlaying() && jodConfiguration.animations && !muted && time >= 0 && time <= dur) {
+		if (shouldAnimate && time >= 0 && time <= dur) {
 			const invert = dur - time;
 			const ease = invert * invert;
 			const thicc = 2 * ease;
@@ -1247,7 +1260,8 @@ function NoteManagerUI(noteManager) {
 		this.ctx.lineWidth = 1;
 	};
 
-	this.drawNotes = ({ notes, active, muted }) => {
+	this.drawNotes = ({ notes, active, muted, solo }) => {
+		const shouldAnimate = this.isPlaying() && jodConfiguration.animations && !muted && (!noteManager.soloTrack || solo);
 		let color = jodColors.note;
 		let resizeColor = jodColors.resizeHandle;
 		let selectedColor = jodColors.selectedNote;
@@ -1266,8 +1280,8 @@ function NoteManagerUI(noteManager) {
 
 			switch (this.mode) {
 				case EModes.pitchAutomation:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, muted);
-					else this.drawNote(n, color, resizeColor, muted);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, shouldAnimate);
+					else this.drawNote(n, color, resizeColor, shouldAnimate);
 					if (!active) this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					else this.drawPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
@@ -1278,8 +1292,8 @@ function NoteManagerUI(noteManager) {
 					this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty], true);
 					break;
 				default:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, muted);
-					else this.drawNote(n, color, resizeColor, muted);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, shouldAnimate);
+					else this.drawNote(n, color, resizeColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 			}
@@ -1301,7 +1315,11 @@ function NoteManagerUI(noteManager) {
 		this.ctx.fillRect(aabb.ax, y, w, h);
 	};
 
-	this.render = () => {
+
+
+	this.renderFnBusy = false;
+
+	this.renderFn = () => {
 		this.drawClear();
 		this.drawGrid();
 		this.drawAllTracks();
@@ -1309,7 +1327,16 @@ function NoteManagerUI(noteManager) {
 		this.drawLoopLines();
 		this.drawTimeLine();
 		if (this.showCursorLine && this.isCursorInside) this.drawCursorLine();
+		this.renderFnBusy = false;
 	};
+
+	this.render = () => {
+		if (this.isPlaying() || this.renderFnBusy) return;
+		this.renderFnBusy = true;
+		requestAnimationFrame(this.renderFn);
+	};
+
+
 
 	this.drawTimeLine = () => {
 		this.timeLine.draw(this.ctx, this.scrollX, this.pxPerBeat, this.endTime, noteManager.tracks, this.isPlaying(), this.caretTime);
@@ -1429,7 +1456,7 @@ function NoteManagerUI(noteManager) {
 		this.caretTime = time;
 		
 		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.2;
-		this.render();
+		this.renderFn();
 		this.drawCaret(caretPos);
 		this.timeLine.drawCaret(this.ctx, time / this.endTime);
 
@@ -1452,12 +1479,12 @@ function NoteManagerUI(noteManager) {
 		}
 	};
 
-	this.onNoteScheduled = (trackIndex, startsIn, duration, isTrackActive) => {
+	this.onNoteScheduled = (trackIndex, startsIn, duration, track) => {
 		if (!jodConfiguration.animations) return;
 		const element = this.getTrackElement(trackIndex);
-		const strength = 8;
-		playTrackAnimation(element, startsIn, duration, isTrackActive);
-		element.shaker?.shake(duration, strength);
+		playTrackAnimation(element, startsIn, duration, track.active);
+		if (track.screenFlash) this.screenFlasher.start();
+		if (track.screenShake) this.screenShaker.start();
 	};
 
 	this.visible = true;

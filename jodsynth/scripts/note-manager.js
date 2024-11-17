@@ -119,7 +119,7 @@ function NoteManager(ac, output) {
 	this.latestNoteStartTime = 0;
 
 	this.trackIdCounter = 0;
-	this.onNoteScheduled = (currentTrackIndex, startsIn, duration, isTrackActive) => null; // set in UI
+	this.onNoteScheduled = (currentTrackIndex, startsIn, duration, track) => null; // set in UI
 
 	this.addNote = (startTime, tone, duration) => {
 		const synth = this.getSelectedTrack().synth;
@@ -214,7 +214,7 @@ function NoteManager(ac, output) {
 			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm });
 			
 			const delay = (startTime - ac.currentTime) * 1000;
-			this.onNoteScheduled(trackIndex, delay, duration * 1000, track.active);
+			this.onNoteScheduled(trackIndex, delay, duration * 1000, track);
 		}
 		return pastEnd ? boie : latestTime;
 	};

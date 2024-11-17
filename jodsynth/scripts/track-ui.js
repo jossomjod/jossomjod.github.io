@@ -70,17 +70,22 @@ function createTrackNameEditor(labelElement, track, trackHandler) {
 
 function createTrackEntryUi(track, trackHandler) {
 	const div = document.createElement('div');
-	const btnContainer = document.createElement('div');
+	const gainAndBtnRowContainer = document.createElement('div');
+	const btnRow = document.createElement('div');
+	const btnColumn = document.createElement('div');
 	const label = document.createElement('span');
 	const gain = document.createElement('jod-numb');
+	const screenShakeBtn = document.createElement('button');
+	const screenFlashBtn = document.createElement('button');
 	const muteBtn = document.createElement('button');
 	const soloBtn = document.createElement('button');
 	const automationBtn = document.createElement('button');
 	const nameEditor = createTrackNameEditor(label, track, trackHandler);
-	btnContainer.append(soloBtn, muteBtn, automationBtn);
-	div.append(nameEditor, label, gain, btnContainer);
-
-	div.shaker = new Shaker(div, 400, 10);
+	
+	btnRow.append(screenShakeBtn, screenFlashBtn);
+	gainAndBtnRowContainer.append(gain, btnRow);
+	btnColumn.append(soloBtn, muteBtn, automationBtn);
+	div.append(nameEditor, label, gainAndBtnRowContainer, btnColumn);
 	
 	div.id = 'track-entry-' + track.id;
 	div.classList.add('jodroll-track');
@@ -94,11 +99,16 @@ function createTrackEntryUi(track, trackHandler) {
 	div.addEventListener('contextmenu', (e) => {
 		e.stopPropagation();
 		e.preventDefault();
-		openContextMenu(div, [{ name: 'Delete', callback: () => trackHandler.deleteTrack(track) }]);
+		openContextMenu(div, [
+			{ name: 'Delete', callback: () => trackHandler.deleteTrack(track) },
+		]);
 	});
 	
 	label.classList.add('track-label');
 	label.innerHTML = track.name;
+
+	gainAndBtnRowContainer.className = 'track-gain-and-btn-row';
+	btnRow.className = 'track-btn-row'
 
 	gain.setAttribute('min', 0);
 	gain.setAttribute('max', 1);
@@ -109,7 +119,28 @@ function createTrackEntryUi(track, trackHandler) {
 		muteBtn.classList.toggle('muted', track.muted); // unmute when changing gain
 	});
 
-	btnContainer.className = 'track-btn-container';
+	screenShakeBtn.innerHTML = 'SH';
+	screenShakeBtn.className = 'clickable sandwich-btn';
+	screenShakeBtn.classList.toggle('enabled', !!track.screenShake);
+	screenShakeBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		track.screenShake = !track.screenShake;
+		screenShakeBtn.classList.toggle('enabled', !!track.screenShake);
+		if (track.screenShake) trackHandler.screenShaker.start();
+	});
+	screenFlashBtn.innerHTML = 'FL';
+	screenFlashBtn.className = 'clickable sandwich-btn';
+	screenFlashBtn.classList.toggle('enabled', !!track.screenFlash);
+	screenFlashBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		track.screenFlash = !track.screenFlash;
+		screenFlashBtn.classList.toggle('enabled', !!track.screenFlash);
+		if (track.screenFlash) trackHandler.screenFlasher.start();
+	});
+
+	btnColumn.className = 'track-btn-column';
 
 	soloBtn.innerHTML = 'S';
 	soloBtn.className = 'clickable sandwich-btn';
