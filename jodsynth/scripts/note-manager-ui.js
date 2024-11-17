@@ -21,12 +21,12 @@ const AutomationProperties = [
 
 const jodColors = {
 	background: '#000000',
-	caret: '#c7bc8f',
+	caret: '#e7fc8f68',
 	cursorLine: '#9ca5ff66',
 	gridReference: '#579cef',
 	gridLine: '#a7cab322',
-	gridOctave: '#97a6ca44',
-	gridBar: '#97a6ca44',
+	gridOctave: '#97a6ca64',
+	gridBar: '#97a6ca64',
 	gridBeat: '#a3adba2c',
 	selectArea: '#88ccff66',
 	selectedNote: '#9259f2',
@@ -42,7 +42,7 @@ const jodColors = {
 	automationNode: '#eca592',
 	automationLine: '#3a8afc77',
 	fadedAutomationNode: '#eca59244',
-	fadedAutomationLine: '#3a8afc33',
+	fadedAutomationLine: '#ffff7044',
 	releaseBox: '#283e6299',
 	loopLine: '#58c34ab2',
 };
@@ -50,8 +50,8 @@ const jodColors = {
 
 class TimelineUI {
 	rect;
-	color = '#212436';
-	backgroundColor = '#111111';
+	color = '#0a0c1f';
+	backgroundColor = '#020305';
 
 	selectionRange = { start: 0, end: 0 };
 	isSelecting = 0; // 1: ctrl, 2: ctrl + shift
@@ -83,24 +83,38 @@ class TimelineUI {
 	}
 
 	/** @param {CanvasRenderingContext2D} ctx  */
-	draw(ctx, scrollX, pxPerBeat, endTime, tracks) {
+	draw(ctx, scrollX, pxPerBeat, endTime, tracks, isPlaying, caretTime) {
 		const { x, y, w, h } = this.rect;
 		ctx.fillStyle = this.backgroundColor;
 		ctx.fillRect(x, y, w, h);
 
 		const left = (-scrollX / (endTime * pxPerBeat)) * w;
 		const width = w * w / (pxPerBeat * endTime);
-
+		
 		ctx.fillStyle = this.color;
 		ctx.fillRect(left, y, width, h);
+		
+		const caretX = w * (caretTime / endTime);
+		tracks.forEach((t) => {
+			t.notes.forEach((n) => {
+				const nx = w * n.startTime / endTime;
+				const ny = y + (h - n.tone);
+				const nw = w * n.duration / endTime;
 
-		tracks.forEach((t) => t.notes.forEach((n) => {
-			const nx = w * n.startTime / endTime;
-			const ny = y + (h - n.tone);
-			const nw = w * n.duration / endTime;
-			ctx.fillStyle = jodColors.note;
-			ctx.fillRect(nx, ny, nw, 1);
-		}));
+				ctx.fillStyle = t.active ? jodColors.note : jodColors.fadedNote;
+				ctx.fillRect(nx, ny, nw, 1);
+				
+				const time = (caretX - nx) / nw;
+				const dur = 1.5;
+				if (isPlaying && jodConfiguration.animations && !t.muted && time >= 0 && time <= dur) {
+					const invert = dur - time;
+					const ease = invert * invert;
+					const thicc = 0.5 + 1.5 * ease;
+					ctx.fillStyle = `rgb(200, 230, 255, ${ease})`;
+					ctx.fillRect(nx, ny - thicc, nw, thicc * 2);
+				}
+			})
+		});
 
 		if (this.isSelecting) this.drawSelectionBox(ctx);
 	}
@@ -179,7 +193,7 @@ function NoteManagerUI(noteManager) {
 	this.beatsPerBar = 4; // the top number in the time signature
 	this.beatDivisor = 4; // the bottom number in the time signature
 	this.gridSizeTime = 0.25; // 4 vertical lines per beat   TODO
-	this.gridSizeX = this.pxPerBeat;
+	this.gridSizeX = this.pxPerBeat * 0.25;
 	this.offsetY = this.pxPerTone / 2;
 	this.snapX = true;
 	this.snapY = true;
@@ -207,7 +221,8 @@ function NoteManagerUI(noteManager) {
 	this.cursorTime = 0;
 	this.endTime = this.beatsPerBar;
 
-	this.caretPos = -9999; // used ONLY for animating notes during playback. Must be reset to -9999 when not playing
+	this.caretPos = 0; // used ONLY for animating notes during playback
+	this.caretTime = 0; // used ONLY for animating timeline notes during playback
 
 	this.timeLine = new TimelineUI({ x: 0, y: this.height - 100, w: this.width, h: 100 });
 	this.timeLineClicked = false;
@@ -542,9 +557,10 @@ function NoteManagerUI(noteManager) {
 		e.stopPropagation();
 		const cursorTime = this.xToTime(this.cursorX);
 		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
-		this.gridSizeX = this.pxPerBeat;
+		//this.gridSizeX = this.pxPerBeat;
 		this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
 		this.render();
+		//console.log('zoom:', this.gridSizeX, this.gridSizeTime, this.width / this.pxPerBeat);
 	});
 	
 	this.trackerContainer.appendChild(this.jodroll);
@@ -1296,7 +1312,7 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawTimeLine = () => {
-		this.timeLine.draw(this.ctx, this.scrollX, this.pxPerBeat, this.endTime, noteManager.tracks);
+		this.timeLine.draw(this.ctx, this.scrollX, this.pxPerBeat, this.endTime, noteManager.tracks, this.isPlaying(), this.caretTime);
 		if (!noteManager.loop.active) return;
 		const start = noteManager.loop.start / this.endTime;
 		const end = noteManager.loop.end / this.endTime;
@@ -1305,10 +1321,12 @@ function NoteManagerUI(noteManager) {
 
 	this.drawGrid = (ctx = this.ctx) => {
 		//const pxPerBeat = Math.max(8, Math.min(600, this.pxPerBeat));
+		//const visibleBeats = this.width / this.pxPerBeat;
+		//const colsPerBeat = this.pxPerBeat / this.gridSizeX;
 		const visColsMult = 1 << Math.floor(this.pxPerBeat / 50);
-		const gridX = this.pxPerBeat / visColsMult;// Math.max(8, Math.min(100, this.pxPerBeat / visColsMult));
+		const gridX = /* this.gridSizeX;// */this.pxPerBeat / visColsMult;// Math.max(8, Math.min(100, this.pxPerBeat / visColsMult));
 		const visibleRows = this.height / this.pxPerTone;
-		const visibleCols = this.width / gridX;
+		const visibleCols = /* visibleBeats * colsPerBeat;// */this.width / gridX;
 		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone);
 		const offsetCols = Math.floor(-this.scrollX / gridX);
 		
@@ -1408,6 +1426,7 @@ function NoteManagerUI(noteManager) {
 		const time = noteManager.getCurrentTime();
 		const caretPos = this.timeToX(time);
 		this.caretPos = caretPos;
+		this.caretTime = time;
 		
 		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.2;
 		this.render();
@@ -1417,7 +1436,6 @@ function NoteManagerUI(noteManager) {
 		if (noteManager.isPlaying) {
 			requestAnimationFrame(this.playbackAnimationFrame);
 		} else {
-			this.caretPos = -9999;
 			this.render();
 		}
 	};
