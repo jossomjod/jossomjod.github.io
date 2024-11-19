@@ -69,6 +69,6 @@ class CssFlasher extends CssAnimator {
 
 	reset() {
 		super.reset();
-		this.element.style.opacity = 0;
+		this.element.style.removeProperty('opacity');
 	}
 }

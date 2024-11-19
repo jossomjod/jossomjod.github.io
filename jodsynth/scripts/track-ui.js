@@ -1,9 +1,9 @@
 const playTrackAnimationFrames = [
-	{ backgroundColor: '#bbbbbb', scale: '1.1' },
+	{ backgroundColor: '#bbbbbb', scale: '1.02' },
 	{ backgroundColor: '#376cf3', scale: '1' },
 ];
 const playSelectedTrackAnimationFrames = [
-	{ backgroundColor: '#ffffff', scale: '1.2' },
+	{ backgroundColor: '#ffffff', scale: '1.05' },
 	{ backgroundColor: '#77b5ff', scale: '1' },
 ];
 
@@ -77,12 +77,13 @@ function createTrackEntryUi(track, trackHandler) {
 	const gain = document.createElement('jod-numb');
 	const screenShakeBtn = document.createElement('button');
 	const screenFlashBtn = document.createElement('button');
+	const monoPitchBtn = document.createElement('button');
 	const muteBtn = document.createElement('button');
 	const soloBtn = document.createElement('button');
 	const automationBtn = document.createElement('button');
 	const nameEditor = createTrackNameEditor(label, track, trackHandler);
 	
-	btnRow.append(screenShakeBtn, screenFlashBtn);
+	btnRow.append(screenShakeBtn, screenFlashBtn, monoPitchBtn);
 	gainAndBtnRowContainer.append(gain, btnRow);
 	btnColumn.append(soloBtn, muteBtn, automationBtn);
 	div.append(nameEditor, label, gainAndBtnRowContainer, btnColumn);
@@ -138,6 +139,15 @@ function createTrackEntryUi(track, trackHandler) {
 		track.screenFlash = !track.screenFlash;
 		screenFlashBtn.classList.toggle('enabled', !!track.screenFlash);
 		if (track.screenFlash) trackHandler.screenFlasher.start();
+	});
+	monoPitchBtn.innerHTML = 'MP';
+	monoPitchBtn.className = 'clickable sandwich-btn';
+	monoPitchBtn.classList.toggle('enabled', !!track.monoPitch);
+	monoPitchBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		track.monoPitch = !track.monoPitch;
+		monoPitchBtn.classList.toggle('enabled', !!track.monoPitch);
 	});
 
 	btnColumn.className = 'track-btn-column';

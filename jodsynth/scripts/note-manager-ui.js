@@ -171,7 +171,7 @@ function NoteManagerUI(noteManager) {
 	this.ctx = this.canvas.getContext('2d');
 
 	this.overlay = document.querySelector('#jodOverlay');
-	this.screenFlasher = new CssFlasher(this.overlay, 350, 0.4);
+	this.screenFlasher = new CssFlasher(this.overlay, 650, 0.7);
 	this.screenShaker = new CssShaker(document.body, 500, 8);
 	
 	this.toggleLoopingBtn = document.querySelector('#toggleLoopingBtn');
@@ -405,7 +405,6 @@ function NoteManagerUI(noteManager) {
 		e.preventDefault();
 		e.stopPropagation();
 
-		let rendered = false;
 		this.isCursorInside = true;
 		
 		if (~e.buttons & this.primaryAction) {
@@ -413,13 +412,11 @@ function NoteManagerUI(noteManager) {
 				this.isSelectingArea = false;
 				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.render();
-				rendered = true;
 			}
 			else if (this.isSelectingAllTracks) {
 				this.isSelectingAllTracks = false;
 				this.selectedNotes = this.getAllNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.render();
-				rendered = true;
 			}
 			else if (this.timeLine.isSelecting) {
 				const allTracks = this.timeLine.isSelecting > 1;
@@ -431,14 +428,12 @@ function NoteManagerUI(noteManager) {
 				const func = allTracks ? this.getAllNotesInAABB : this.getNotesInAABB;
 				this.selectedNotes = func(ax, -9999, bx, 9999);
 				this.render();
-				rendered = true;
 			}
 			else if (this.clickedNote) {
 				this.newNoteDuration = this.clickedNote.duration;
 				if (this.isResizing) this.finalizeResizing();
 				this.updateEndTime();
 				this.render();
-				rendered = true;
 			}
 
 			this.previewNote(false);
@@ -446,7 +441,7 @@ function NoteManagerUI(noteManager) {
 			this.clickedNode = null;
 			this.isResizing = false;
 			this.timeLineClicked = false;
-			if (!rendered && this.showCursorLine) this.render();
+			if (this.showCursorLine) this.render();
 		}
 	};
 
@@ -466,7 +461,6 @@ function NoteManagerUI(noteManager) {
 		const unFlippedY = e.y - rect.top;
 		let realX = e.x - rect.left;
 		let realY = this.height - unFlippedY;
-		let rendered = false;
 		this.cursorX = realX;
 		this.cursorTime = this.xToTime(this.cursorX);
 
@@ -496,7 +490,6 @@ function NoteManagerUI(noteManager) {
 					this.movePitchAutomationNodeBy(this.clickedNode, dTime, dValue);
 					this.getCurrentAutomationArray(this.clickedNote).sort((a, b) => a.time - b.time);
 					this.render();
-					rendered = true;
 					this.previewNoteId.forEach((pn) => pn.oscillator.frequency.value = toneToFreq(this.clickedNote.tone + this.clickedNode.value));
 					break;
 				}
@@ -510,18 +503,16 @@ function NoteManagerUI(noteManager) {
 					this.moveAutomationNodeBy(this.clickedNode, dTime, dValue);
 					this.updateNoteAndAutomation(this.clickedNote, this.getCurrentAutomationArray(this.clickedNote));
 					this.render();
-					rendered = true;
 					break;
 				}
 
-				if (this.snapX) realX = this.snapToGridX(realX);
-				if (this.snapY) realY = this.snapToGridY(realY);
+				if (this.snapX && !e.ctrlKey && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
+				if (this.snapY && !e.shiftKey && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
 
 				if (this.isSelectingArea || this.isSelectingAllTracks) {
 					this.areaSelectAABB.bx = realX;
 					this.areaSelectAABB.by = realY;
 					this.render();
-					rendered = true;
 					break;
 				}
 
@@ -546,7 +537,6 @@ function NoteManagerUI(noteManager) {
 				this.scrollX += e.movementX;
 				this.scrollY -= e.movementY;
 				this.render();
-				rendered = true;
 				break;
 			case this.timeLineAction | this.primaryAction:
 				if (this.clickedNote) break;
@@ -560,7 +550,7 @@ function NoteManagerUI(noteManager) {
 
 		const prevIsCursorInside = this.isCursorInside;
 		this.isCursorInside = !timeLineHovered;
-		if (!rendered && e.movementX && this.showCursorLine && this.isCursorInside) this.render();
+		if (e.movementX && this.showCursorLine && this.isCursorInside) this.render();
 		else if (timeLineHovered && prevIsCursorInside) this.render()
 	});
 

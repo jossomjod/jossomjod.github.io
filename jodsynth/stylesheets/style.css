@@ -17,9 +17,16 @@ body {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background-color: #ffffff;
+	background-color: #afcfff;
 	z-index: 99;
 	opacity: 0;
+	pointer-events: none;
+}
+
+.jod-overlay.overlay-visible {
+	pointer-events: all;
+	background-color: #5c9dff;
+	opacity: 0.3;
 }
 
 .save-form {
@@ -142,16 +149,21 @@ body {
 	overflow-y: auto;
 	background-color: #04152e;
 	color: #cfeaff;
-	line-height: 1.4em;
+	line-height: 1.6em;
 	z-index: 999;
+}
+
+.help-box .key {
+	padding: 2px 5px;
+	background-color: #00278f;
+	color: #dfdfdf;
+	border-radius: 5px;
+	border: 1px solid #dfdfdf;
+	font-size: 0.75rem;
 }
 
 .clickable {
 	background-color: #1c38b4;
-}
-
-.unclickable {
-	pointer-events: none;
 }
 
 .circle {

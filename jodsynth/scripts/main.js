@@ -191,16 +191,16 @@ function loadAll(name) {
 var jodOverlay = document.querySelector('#jodOverlay');
 var helpBox = document.querySelector('#help-box');
 
-function toggleOverlay(clickable = true) {
-	return jodOverlay.classList.toggle('unclickable', clickable);
+function toggleOverlay(visible = false) {
+	return jodOverlay.classList.toggle('overlay-visible', visible);
 }
 
 function toggleHelp(open = true) {
-	if (!helpBox.classList.toggle('invisible', !open)) toggleOverlay(false)
+	if (!helpBox.classList.toggle('invisible', !open)) toggleOverlay(true)
 }
 
 jodOverlay.onclick = () => {
-	jodOverlay.classList.toggle('unclickable', true);
+	toggleOverlay(false);
 	toggleHelp(false);
 };
 

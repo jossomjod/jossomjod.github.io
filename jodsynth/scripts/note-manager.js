@@ -211,7 +211,7 @@ function NoteManager(ac, output) {
 			if (durationBeats <= 0.00001) continue;
 			const duration = beatsToSeconds(durationBeats, this.bpm);
 			const freq = toneToFreq(n.tone);
-			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm });
+			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
 			
 			const delay = (startTime - ac.currentTime) * 1000;
 			this.onNoteScheduled(trackIndex, delay, duration * 1000, track);
@@ -279,6 +279,7 @@ function NoteManager(ac, output) {
 			active: true,
 			muted: false,
 			solo: false,
+			monoPitch: false,
 			gain: 1,
 			id: ++this.trackIdCounter,
 			disableNoteAutomation: false,

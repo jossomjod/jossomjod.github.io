@@ -343,13 +343,16 @@ function Synth(ac, output, fromObject) {
 		});
 	};
 
-	this.schedulePlayback = ({ startTime, duration, freq, automations, bpm }) => {
+	this.schedulePlayback = ({ startTime, duration, freq, automations, bpm, monoPitch }) => {
 		const oscs = this.oscillators.map((osc, i) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const oscillator = automations?.[i]
-				? osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automations[i], bpm)
-				: osc.schedulePlayback(freq, gain, pan, startTime, duration);
+			const automation = automations?.[i];
+			let oscillator;
+			if (automation) {
+				if (monoPitch) automation.pitch = automations[0].pitch;
+				oscillator = osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automation, bpm);
+			} else oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
 			return { gain, oscillator };
 		});
 
