@@ -14,3 +14,20 @@ function beatsToSeconds(beats, bpm) {
 function secondsToBeats(sec, bpm) {
 	return bpm * sec / 60;
 }
+
+
+
+function lerp(a, b, t) {
+	return a * t + b * (1 - t);
+}
+
+
+
+function makeSerializable(obj) {
+	return Object.entries(obj)
+		.filter(([,v]) => typeof v !== 'function')
+		.reduce((prev, [key, value]) => {
+			prev[key] = (!!value && typeof value === 'object') ? makeSerializable(value) : value;
+			return prev;
+		}, {});
+}
