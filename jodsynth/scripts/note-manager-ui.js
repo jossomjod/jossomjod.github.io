@@ -158,6 +158,31 @@ class TimelineUI {
 	}
 }
 
+class EditingModeUI {
+	currentOscInfo = document.querySelector('#jodrollCurrentOscInfo');
+	btnNormalMode = document.querySelector('#jodrollBtnNormalMode');
+	btnPitchMode = document.querySelector('#jodrollBtnPitchAutomationMode');
+	btnGainMode = document.querySelector('#jodrollBtnGainAutomationMode');
+	btnPanMode = document.querySelector('#jodrollBtnPanAutomationMode');
+	buttonsss = [this.btnNormalMode, this.btnPitchMode, this.btnGainMode, this.btnPanMode];
+
+	callback;
+
+	constructor(mode = 0, modeChangeCallback = (_mode) => null) {
+		this.modeChange(mode);
+		this.callback = modeChangeCallback;
+		this.buttonsss.forEach((b, i) => b.addEventListener('click', () => this.callback(i)));
+	}
+
+	modeChange(mode = 0) {
+		this.buttonsss.forEach((b, i) => b.classList.toggle('enabled', mode === i));
+	}
+
+	oscChange(osc = 0) {
+		this.currentOscInfo.innerHTML = `Osc: ${osc + 1}`;
+	}
+}
+
 
 function NoteManagerUI(noteManager) {
 	this.trackerContainer = document.querySelector('.tracker-container');
@@ -178,8 +203,11 @@ function NoteManagerUI(noteManager) {
 	this.toggleLoopingBtn.classList.toggle('active', noteManager.loop.active);
 	this.toggleLoopingBtn.onclick = () => this.toggleLooping();
 
-	this.timeDisplay = document.querySelector('#jodrollPlaybackTime');
-
+	this.timeDisplayContainer = document.querySelector('.jodroll-playback-time');
+	this.timeDisplayContainer.onclick = () => this.displaySeconds = !this.displaySeconds;
+	this.timeDisplay = document.querySelector('#jodrollPlaybackTimeBeats');
+	this.timeDecimalsDisplay = document.querySelector('#jodrollPlaybackTimeDecimals');
+	this.editingModeUi = new EditingModeUI(EModes.notes, (mode = 0) => this.toggleMode(mode));
 	this.currentSynthUi;
 	this.currentFxUi;
 
@@ -230,6 +258,7 @@ function NoteManagerUI(noteManager) {
 	this.cursorX = 0;
 	this.cursorTime = 0;
 	this.endTime = this.beatsPerBar;
+	this.displaySeconds = false;
 
 	this.caretPos = 0; // used ONLY for animating notes during playback
 	this.caretTime = 0; // used ONLY for animating timeline notes during playback
@@ -1073,6 +1102,7 @@ function NoteManagerUI(noteManager) {
 		else this.previewNote(false);
 		this.mode = mode ?? +!this.mode;
 		this.automationProperty = AutomationProperties[this.mode];
+		this.editingModeUi.modeChange(this.mode);
 		this.render();
 	};
 
@@ -1082,6 +1112,7 @@ function NoteManagerUI(noteManager) {
 		oscIdx = Math.max(0, Math.min(oscIdx, oscCount));
 		if (!oscArr[oscIdx]) return;
 		this.selectedOsc = oscIdx;
+		this.editingModeUi.oscChange(oscIdx);
 		this.render();
 	};
 
@@ -1187,8 +1218,7 @@ function NoteManagerUI(noteManager) {
 	this.setSynthUi = (track) => {
 		if (this.currentSynthUi) {
 			const container = document.querySelector('.oscillators-container');
-			while (container.firstChild) container.removeChild(container.firstChild);
-			delete this.currentSynthUi;
+			container.replaceChildren();
 		}
 		this.currentSynthUi = new SynthUi(track.synth);
 
@@ -1534,10 +1564,12 @@ function NoteManagerUI(noteManager) {
 		ctx.stroke();
 	};
 
-	this.formatPlaybackTimeString = (time) => {
+	this.setTimeDisplay = (time) => {
+		if (this.displaySeconds) time = beatsToSeconds(time, noteManager.bpm);
 		const beats = Math.floor(time);
 		const decimals = (time - beats) * 100;
-		return beats.toString().padStart(2, '0') + `:${decimals}`.slice(0, 3);
+		this.timeDisplay.innerHTML = beats.toString().padStart(2, '0');
+		this.timeDecimalsDisplay.innerHTML = decimals.toString().slice(0, 2).replace('.', '').padStart(2, '0');
 	};
 
 	this.playbackAnimationFrame = () => {
@@ -1552,10 +1584,10 @@ function NoteManagerUI(noteManager) {
 		this.timeLine.drawCaret(this.ctx, time / this.endTime);
 
 		if (noteManager.isPlaying) {
-			this.timeDisplay.innerHTML = this.formatPlaybackTimeString(time);
+			this.setTimeDisplay(time);
 			requestAnimationFrame(this.playbackAnimationFrame);
 		} else {
-			this.timeDisplay.innerHTML = '00:00';
+			this.setTimeDisplay(0);
 			this.render();
 		}
 	};

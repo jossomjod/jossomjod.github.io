@@ -37,6 +37,49 @@
   flex-grow: 1;
 }
 
+.jodroll-transport {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+}
+
+.jodroll-transport-center {
+	display: flex;
+	flex-direction: column;
+	min-width: 130px;
+	padding: 5px;
+	align-items: center;
+	justify-self: center;
+}
+
+.jodroll-transport-left {
+	display: flex;
+	height: 3em;
+	align-items: center;
+}
+
+.jodroll-transport-right {
+	display: flex;
+	justify-self: right;
+}
+
+.jodroll-playback-time {
+	padding: 1px;
+	font-weight: 600;
+	text-shadow: 0 0 3px #acf;
+}
+.jodroll-playback-time span {
+	display: inline-block;
+	width: 1em;
+	text-align: center;
+	cursor: pointer;
+}
+.jodroll-playback-time #jodrollPlaybackTimeBeats {
+	width: unset;
+}
+#jodrollBtnPlay {
+	width: 5em;
+}
+
 .context-menu {
 	position: absolute;
 	display: flex;

@@ -73,15 +73,24 @@
 				<div class="main-panel">
 					<div class="tracker-container"></div>
 					<div class="jodroll-transport">
-						<div class="jodroll-toggles">
+						<div class="jodroll-transport-left">
+							<button id="jodrollBtnNormalMode">Note editing</button>
+							<button id="jodrollBtnPitchAutomationMode">Pitch</button>
+							<button id="jodrollBtnGainAutomationMode">Gain</button>
+							<button id="jodrollBtnPanAutomationMode">Pan</button>
+							<div id="jodrollCurrentOscInfo">Osc: 1</div>
+						</div>
+						<div class="jodroll-transport-center">
+							<button id="jodrollBtnPlay">|></button>
+							<div class="jodroll-playback-time">
+								<span id="jodrollPlaybackTimeBeats">00</span><span>:</span><span id="jodrollPlaybackTimeDecimals">00</span>
+							</div>
+						</div>
+						<!-- <div class="jodroll-transport-right">
 							<button id="jodrollBtnLoop">Loop</button>
 							<button id="jodrollBtnSnapH">SnapH</button>
 							<button id="jodrollBtnSnapV">SnapV</button>
-						</div>
-						<div class="jodroll-transport-buttons">
-							<button id="jodrollBtnPlay">|></button>
-							<div class="jodroll-playback-time" id="jodrollPlaybackTime">00:00</div>
-						</div>
+						</div> -->
 					</div>
 					<div class="synth-body">
 						<div class="global-fx-container">
