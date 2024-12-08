@@ -6,7 +6,6 @@ TODO:
 	- maybe drag the left side for BIG changes, right side for small, middle for medium?
 	- right/left/middle click and drag?
 	- modifier keys?
-- LOW FUCKING PASS OILY JOSH
 - and we gotta hmmmm make AM multiplicative duh
 - moving an envelope node horizontally should also move all nodes after it
 
@@ -17,6 +16,8 @@ note manager TODOs:
   - per note
 	  - should initially be based on the synth envelopes
 		- we will very often want the same pitch automation applied to all oscillators
+		- copying selected notes should instead copy automation
+		- pasting should paste automation into selected note
 	- per track
 	  - it should be possible to choose a default value to use when playing on the keyboard
 		- when moving a note, the preview sound should go through the effect with the value at the note start time
