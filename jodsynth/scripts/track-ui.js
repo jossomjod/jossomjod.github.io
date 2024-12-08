@@ -67,6 +67,20 @@ function createTrackNameEditor(labelElement, track, trackHandler) {
 	return input;
 }
 
+function createTrackToggleButton({ track, property, label, onclick, inverse, cssClass }) {
+	const btn = document.createElement('button');
+	btn.innerHTML = label;
+	btn.className = 'clickable sandwich-btn';
+	btn.classList.toggle(cssClass ?? 'enabled', !!track[property] === !inverse);
+	btn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		onclick();
+		btn.classList.toggle(cssClass ?? 'enabled', !!track[property] === !inverse);
+	});
+	return btn;
+}
+
 
 function createTrackEntryUi(track, trackHandler) {
 	const div = document.createElement('div');
@@ -75,13 +89,22 @@ function createTrackEntryUi(track, trackHandler) {
 	const btnColumn = document.createElement('div');
 	const label = document.createElement('span');
 	const gain = document.createElement('jod-numb');
-	const screenShakeBtn = document.createElement('button');
-	const screenFlashBtn = document.createElement('button');
-	const monoPitchBtn = document.createElement('button');
-	const muteBtn = document.createElement('button');
-	const soloBtn = document.createElement('button');
-	const automationBtn = document.createElement('button');
 	const nameEditor = createTrackNameEditor(label, track, trackHandler);
+
+	const screenShakeBtn = createTrackToggleButton({ track, property: 'screenShake', label: 'SH', onclick: () => {
+		track.screenShake = !track.screenShake;
+		if (track.screenShake) trackHandler.screenShaker.start();
+	}});
+	const screenFlashBtn = createTrackToggleButton({ track, property: 'screenFlash', label: 'SF', onclick: () => {
+		track.screenFlash = !track.screenFlash;
+		if (track.screenFlash) trackHandler.screenFlasher.start();
+	}});
+	const monoPitchBtn = createTrackToggleButton({ track, property: 'monoPitch', label: 'MP', onclick: () => (track.monoPitch = !track.monoPitch)});
+	const muteBtn = createTrackToggleButton({ track, property: 'muted', cssClass: 'muted', label: 'M', onclick: () => trackHandler.toggleMuteTrack(track)});
+	const soloBtn = createTrackToggleButton({ track, property: 'solo', label: 'S', onclick: () => trackHandler.toggleSoloTrack(track)});
+	const automationBtn = createTrackToggleButton({ track, property: 'disableNoteAutomation', inverse: true, label: 'A', onclick: () => {
+		trackHandler.toggleDisableNoteAutomationForTrack(track);
+	}});
 	
 	btnRow.append(screenShakeBtn, screenFlashBtn, monoPitchBtn);
 	gainAndBtnRowContainer.append(gain, btnRow);
@@ -120,66 +143,6 @@ function createTrackEntryUi(track, trackHandler) {
 		muteBtn.classList.toggle('muted', track.muted); // unmute when changing gain
 	});
 
-	screenShakeBtn.innerHTML = 'SH';
-	screenShakeBtn.className = 'clickable sandwich-btn';
-	screenShakeBtn.classList.toggle('enabled', !!track.screenShake);
-	screenShakeBtn.addEventListener('click', (e) => {
-		e.stopPropagation();
-		e.preventDefault();
-		track.screenShake = !track.screenShake;
-		screenShakeBtn.classList.toggle('enabled', !!track.screenShake);
-		if (track.screenShake) trackHandler.screenShaker.start();
-	});
-	screenFlashBtn.innerHTML = 'FL';
-	screenFlashBtn.className = 'clickable sandwich-btn';
-	screenFlashBtn.classList.toggle('enabled', !!track.screenFlash);
-	screenFlashBtn.addEventListener('click', (e) => {
-		e.stopPropagation();
-		e.preventDefault();
-		track.screenFlash = !track.screenFlash;
-		screenFlashBtn.classList.toggle('enabled', !!track.screenFlash);
-		if (track.screenFlash) trackHandler.screenFlasher.start();
-	});
-	monoPitchBtn.innerHTML = 'MP';
-	monoPitchBtn.className = 'clickable sandwich-btn';
-	monoPitchBtn.classList.toggle('enabled', !!track.monoPitch);
-	monoPitchBtn.addEventListener('click', (e) => {
-		e.stopPropagation();
-		e.preventDefault();
-		track.monoPitch = !track.monoPitch;
-		monoPitchBtn.classList.toggle('enabled', !!track.monoPitch);
-	});
-
 	btnColumn.className = 'track-btn-column';
-
-	soloBtn.innerHTML = 'S';
-	soloBtn.className = 'clickable sandwich-btn';
-	soloBtn.classList.toggle('enabled', !!track.solo);
-	soloBtn.addEventListener('click', (e) => {
-		e.stopPropagation();
-		e.preventDefault();
-		trackHandler.toggleSoloTrack(track);
-		soloBtn.classList.toggle('enabled', !!track.solo);
-	});
-
-	muteBtn.innerHTML = 'M';
-	muteBtn.className = 'clickable sandwich-btn';
-	muteBtn.classList.toggle('muted', track.muted);
-	muteBtn.addEventListener('click', (e) => {
-		e.stopPropagation();
-		e.preventDefault();
-		trackHandler.toggleMuteTrack(track);
-		muteBtn.classList.toggle('muted', track.muted);
-	});
-
-	automationBtn.innerHTML = 'A';
-	automationBtn.className = 'clickable sandwich-btn';
-	automationBtn.classList.toggle('enabled', !track.disableNoteAutomation);
-	automationBtn.addEventListener('click', (e) => {
-		e.stopPropagation();
-		e.preventDefault();
-		trackHandler.toggleDisableNoteAutomationForTrack(track);
-		automationBtn.classList.toggle('enabled', !track.disableNoteAutomation);
-	});
 	return div;
 }

@@ -21,18 +21,6 @@ function getSynthFromClipboard() {
 	return JSON.parse(clipboard.synth ?? '{}');
 }
 
-var jodConfiguration = {
-	animations: true,
-};
-
-var keys = {
-	left: false,
-	up: false,
-	right: false,
-	down: false,
-	ctrl: false
-};
-
 var lowerKeys = [
 	'IntlBackslash', 'KeyZ', 'KeyS', 'KeyX', 'KeyD', 'KeyC', 'KeyV', 'KeyG', 'KeyB', 'KeyH', 'KeyN', 'KeyJ',
 	'KeyM', 'Comma', 'KeyL', 'Period', 'Semicolon', 'Slash', 'ShiftRight', 'Backslash',
@@ -57,6 +45,25 @@ generateKeyDict();
 
 
 
+
+// CONFIGURATION
+
+var jodConfiguration = SaveManager.loadConfiguration() ?? {
+	animations: true,
+	autoSave: true,
+};
+
+const animationsCheckbox = document.querySelector('#animationsCheckbox');
+animationsCheckbox.checked = !!jodConfiguration.animations;
+animationsCheckbox.onchange = () => {
+	jodConfiguration.animations = animationsCheckbox.checked;
+	SaveManager.saveConfiguration(jodConfiguration);
+};
+
+
+
+
+
 // MASTER Gain
 
 const masterGain = ac.createGain();
@@ -68,17 +75,6 @@ masterGainUI.value = masterGain.gain.value;
 masterGainUI.addEventListener('input', () => {
 	masterGain.gain.value = masterGainUI.value;
 });
-
-
-
-// CONFIGURATION
-
-
-const animationsCheckbox = document.querySelector('#animationsCheckbox');
-animationsCheckbox.onchange = () => jodConfiguration.animations = this.animationsCheckbox.checked;
-
-
-
 
 
 
@@ -103,6 +99,9 @@ const fxAddSelect = document.querySelector('#fxAddSelect');
 const addFxBtn = document.querySelector('#addFxBtn');
 addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
+
+const playBtn = document.querySelector('#jodrollBtnPlay');
+playBtn.onclick = () => noteManagerUi.togglePlayback();
 
 
 // SAVE / LOAD ---------------------------------
@@ -165,7 +164,7 @@ function saveAll(name) {
 	if (!saveName) return;
 
 	const data = noteManager.save();
-	if (saveName.length < 100) SaveManager.saveAll(data, saveName);
+	if (saveName.length < 250) SaveManager.saveAll(data, saveName);
 	else saveNameInput.value = '';
 
 	generateSaveSelectOptions();
@@ -187,22 +186,43 @@ function loadAll(name) {
 
 // OVERLAY / DIALOGS ------------------------------------------------------
 
-
+var jodOverlayOpen = false;
+var jodOverlayContainer = document.querySelector('.jod-overlay-container');
+var jodOverlayContent = document.querySelector('.jod-overlay-content');
 var jodOverlay = document.querySelector('#jodOverlay');
-var helpBox = document.querySelector('#help-box');
+jodOverlay.onmousewheel = (e) => { e.stopPropagation(); e.preventDefault(); };
+
+const helpIcon = document.querySelector('.help-icon');
+const helpPanelTemplate = document.querySelector('#helpPanel');
+const helpPanel = helpPanelTemplate.content.cloneNode(true);
+const helpBox = helpPanel.querySelector('.help-box');
 
 function toggleOverlay(visible = false) {
 	return jodOverlay.classList.toggle('overlay-visible', visible);
 }
 
-function toggleHelp(open = true) {
-	if (!helpBox.classList.toggle('invisible', !open)) toggleOverlay(true)
+function toggleHelp() {
+	openPopup(helpBox, { right: 5 + '%', top: 5 + '%' });
 }
 
 jodOverlay.onclick = () => {
-	toggleOverlay(false);
-	toggleHelp(false);
+	closePopup();
 };
+
+/**
+ * @param {HTMLElement} element 
+ */
+function openPopup(element, style = { left: 0, top: 0 }) {
+	jodOverlayContent.replaceChildren(element);
+	Object.assign(element.style, style);
+	toggleOverlay(true);
+}
+
+function closePopup() {
+	jodOverlayContent.replaceChildren();
+	toggleOverlay(false);
+	jodOverlayOpen = false;
+}
 
 
 
@@ -222,7 +242,7 @@ topBar.onkeydown = (e) => {
 		case 32: // space
 			e.preventDefault();
 			document.activeElement.blur();
-			noteManagerUi.togglePlayback({ fromCursor: keys.ctrl });
+			noteManagerUi.togglePlayback({ fromCursor: e.ctrlKey || e.shiftKey });
 	}
 };
 topBar.onkeyup = (e) => {
@@ -231,6 +251,22 @@ topBar.onkeyup = (e) => {
 
 saveNameInput.onkeydown = (e) => {
 	e.stopPropagation();
+};
+/* 
+window.onload = () => {
+	const autoSave = SaveManager.loadAutoSave();
+	if (!autoSave) return;
+	noteManager.load(autoSave);
+	noteManagerUi.renderAll();
+}; */
+
+window.onbeforeunload = (e) => {
+	if (SaveManager.hasUnsavedChanges) {
+		e.preventDefault();
+		e.returnValue = false;
+		return 'unsaved changes are unsaved, oh no, how terrible';
+	}
+	//SaveManager.autoSave(noteManager.save());
 };
 
 
@@ -345,26 +381,7 @@ document.body.onkeyup = (e) => {
 };
 
 function toggleKeys(e, bool) {
-	switch (e.which) {
-		case 37:
-			keys.left = bool;
-			break;
-		case 38:
-			keys.up = bool;
-			break;
-		case 39:
-			keys.right = bool;
-			break;
-		case 40:
-			keys.down = bool;
-			break;
-		case 17:
-			keys.ctrl = bool;
-			break;
-		default:
-			//console.log('Key event - physical:', e.code, 'which:', e.which);
-			break;
-	}
+	//console.log('Key event - physical:', e.code, 'which:', e.which);
 	if (e.ctrlKey) return;
 	//if (e.code === 'BracketRight') return; // Chrome really hates this key on Nordic keyboard layouts :(
 	if (noteManagerUi.mode) return;

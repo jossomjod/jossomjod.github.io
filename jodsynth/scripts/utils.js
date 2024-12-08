@@ -16,11 +16,9 @@ function secondsToBeats(sec, bpm) {
 }
 
 
-
-function lerp(a, b, t) {
+function lerp(b, a, t) {
 	return a * t + b * (1 - t);
 }
-
 
 
 function makeSerializable(obj) {

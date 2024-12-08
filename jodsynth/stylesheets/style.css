@@ -9,6 +9,18 @@ body {
 	height: 100%;
 }
 
+.jod-overlay-container {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 99;
+	pointer-events: none;
+}
+
 .jod-overlay {
 	position: fixed;
 	width: 100%;
@@ -18,7 +30,6 @@ body {
 	right: 0;
 	bottom: 0;
 	background-color: #afcfff;
-	z-index: 99;
 	opacity: 0;
 	pointer-events: none;
 }
@@ -140,9 +151,8 @@ body {
 
 .help-box {
 	position: absolute;
-	margin-left: -20vw;
-	width: 40vw;
-	max-height: 80vh;
+	width: 50vw;
+	max-height: 85vh;
 	padding: 20px;
 	border-radius: 10px;
 	box-shadow: 1px 1px 12px 2px #000;
@@ -151,6 +161,7 @@ body {
 	color: #cfeaff;
 	line-height: 1.6em;
 	z-index: 999;
+	pointer-events: all;
 }
 
 .help-box .key {

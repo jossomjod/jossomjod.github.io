@@ -122,7 +122,7 @@ function FxUi(params, parent, rmCallback, titleText) {
 	this.title = document.createElement('h4');
 	this.title.innerText = titleText ?? 'Unnamed effect';
 	this.rmBtn = document.createElement('button');
-	this.rmBtn.innerText = 'DELET';
+	this.rmBtn.innerText = 'Remove';
 	this.container.appendChild(this.title);
 	this.container.appendChild(this.dragHandle);
 	this.container.appendChild(this.ctrlBox);
