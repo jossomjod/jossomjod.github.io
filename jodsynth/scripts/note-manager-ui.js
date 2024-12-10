@@ -600,7 +600,11 @@ function NoteManagerUI(noteManager) {
 		const prevIsCursorInside = this.isCursorInside;
 		this.isCursorInside = !timeLineHovered;
 		if (e.movementX && this.showCursorLine && this.isCursorInside) this.render();
-		else if (timeLineHovered && prevIsCursorInside) this.render()
+		else if (timeLineHovered && prevIsCursorInside) this.render();
+
+		// TODO: better snap handling
+		if (this.snapX && !e.ctrlKey) realX = this.snapToGridX(realX);
+		if (!this.isPlaying()) this.setTimeDisplay(this.xToTime(realX));
 	});
 
 
@@ -1570,6 +1574,9 @@ function NoteManagerUI(noteManager) {
 		const decimals = (time - beats) * 100;
 		this.timeDisplay.innerHTML = beats.toString().padStart(2, '0');
 		this.timeDecimalsDisplay.innerHTML = decimals.toString().slice(0, 2).replace('.', '').padStart(2, '0');
+		if (!jodConfiguration.animations) return;
+		const invTime = 1 - decimals * 0.01;
+		this.timeDisplay.style.scale = 1 + invTime * invTime * 0.3;
 	};
 
 	this.playbackAnimationFrame = () => {
@@ -1588,6 +1595,7 @@ function NoteManagerUI(noteManager) {
 			requestAnimationFrame(this.playbackAnimationFrame);
 		} else {
 			this.setTimeDisplay(0);
+			this.timeDisplay.style.removeProperty('scale');
 			this.render();
 		}
 	};
