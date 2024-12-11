@@ -36,8 +36,8 @@ body {
 
 .jod-overlay.overlay-visible {
 	pointer-events: all;
-	background-color: #5c9dff;
-	opacity: 0.3;
+	background-color: #00183d;
+	opacity: 0.5;
 }
 
 .save-form {
@@ -173,8 +173,25 @@ body {
 	font-size: 0.75rem;
 }
 
+.help-box-section {
+	margin-bottom: 3em;
+}
+
+.help-box .sandwich-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--color-button);
+	color: var(--color-contrast);
+}
+
+.help-box .sandwich-btn.enabled {
+	background-color: var(--color-enabled);
+	color: var(--color-enabled-contrast);
+}
+
 .clickable {
-	background-color: #1c38b4;
+	background-color: var(--color-button);
 }
 
 .circle {
@@ -210,5 +227,6 @@ body {
 }
 
 button.active {
-	background-color: #58c34a;
+	background-color: var(--color-active);
+	color: var(--color-active-contrast);
 }

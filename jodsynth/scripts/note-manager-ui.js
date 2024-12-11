@@ -175,7 +175,7 @@ class EditingModeUI {
 	}
 
 	modeChange(mode = 0) {
-		this.buttonsss.forEach((b, i) => b.classList.toggle('enabled', mode === i));
+		this.buttonsss.forEach((b, i) => b.classList.toggle('active', mode === i));
 	}
 
 	oscChange(osc = 0) {
@@ -1576,7 +1576,7 @@ function NoteManagerUI(noteManager) {
 		this.timeDecimalsDisplay.innerHTML = decimals.toString().slice(0, 2).replace('.', '').padStart(2, '0');
 		if (!jodConfiguration.animations) return;
 		const invTime = 1 - decimals * 0.01;
-		this.timeDisplay.style.scale = 1 + invTime * invTime * 0.3;
+		this.timeDisplay.style.scale = 1 + invTime * invTime * 0.2;
 	};
 
 	this.playbackAnimationFrame = () => {

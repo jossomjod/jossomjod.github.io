@@ -7,6 +7,7 @@
 		<meta name="author" content="jossomjod">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+		<link rel="stylesheet" href="../stylesheets/custom-properties.css" />
 		<link rel="stylesheet" href="../stylesheets/global_style.css" />
 		<link rel="stylesheet" href="stylesheets/style.css" />
 		<link rel="stylesheet" href="stylesheets/jodroll.css" />
@@ -236,54 +237,80 @@
 
 <template id="helpPanel">
 	<div id="help-box" class="help-box">
-		<h1>How to use</h1>
-		<p>
-			You can play notes by pressing keys on the keyboard.<br>
-			Z, X, C, V, etc are like the white keys on a piano.<br>
-			S, D, G, H, J, etc are like the black keys.<br>
-			Q, W, E, etc are an octave up from there.<br>
-			You'll figure out the rest, I'm sure.
-		</p>
-		<p>
-			<span class="key">Page Up</span> / <span class="key">Page Down</span> changes the base octave.<br>
-			<span class="key">Home</span> / <span class="key">End</span> adjusts the note offset<br>
-		</p>
-		<p>
-			Click the "Tracker" button to open/close the tracker.<br>
-			Place notes by clicking in the grid. Resize notes with the handle on the right.<br>
-			Remove notes by right-clicking on them.<br>
-			Hold down the middle mouse button (the mouse wheel) and move the mouse to pan. Scroll to zoom.<br>
-			If you don't have a middle mouse button, or if it just doesn't work, you can use <span class="key">Alt</span> instead.<br>
-			<br>
-			Each track has its own synth and notes.<br>
-			You can add new tracks and switch between them from the panel on the left.
-		</p>
-		<p>
-			Use <span class="key">F3</span> and <span class="key">F4</span> to toggle snapping to the grid horizontally or vertically.<br>
-			<span class="key">Space</span> to toggle playback, <span class="key">Ctrl</span> + <span class="key">Space</span> to play from the cursor. Right-click the overview in the bottom to play from there.<br><br>
-			<span class="key">Ctrl</span> + click and drag to select every note in an area in the current track.<br>
-			<span class="key">Ctrl</span> + <span class="key">Shift</span> + click and drag to select every note in an area in every track.<br>
-			Area select also works in the overview.<br>
-			<span class="key">Ctrl</span> + <span class="key">A</span> to select all notes in the current track.<br>
-			<span class="key">Ctrl</span> + <span class="key">Shift</span> + <span class="key">A</span> to select all notes in all tracks.<br>
-			Press <span class="key">Delete</span> to delete all selected notes.<br>
-			Copy / paste selected notes with <span class="key">Ctrl</span> + <span class="key">C</span> / <span class="key">Ctrl</span> + <span class="key">V</span>
-		</p>
-		<p>
-			<span class="key">Shift</span> + click to place a loop start point.<br>
-			<span class="key">Shift</span> + right-click to place a loop end point<br>
-			Toggle looping with <span class="key">Ctrl</span> + <span class="key">L</span>, or by clicking the loop-button.<br>
-			When looping is enabled, the song will play only between the loop points.
-		</p>
-		<p>
-			The save system is currently a bit experimental and unconventional.<br>
-			Clicking "Save" stores the current tracks and synths locally on your device under the name specified in the text input.<br>
-			This will also copy the saved data to the clipboard so you can paste it into a text file.<br>
-			To load the saved data, type in the name you saved it under and click "Load", or just select it from the project list.<br>
-			Alternatively, you can paste the saved data directly into the save name field and click "Load".<br>
-			You can also quick-save / quick-load with <span class="key">F8</span> / <span class="key">F9</span> or <span class="key">Ctrl</span> + <span class="key">S</span> / <span class="key">Ctrl</span> + <span class="key">Z</span><br>
-			Quick-saving overwrites the previous quick-save, and is not a reliable means of long-term storage.
-		</p>
+		<h1>JODDAW user guide</h1>
+		<h2 onclick="toggleHelpSection('#helpBoxSection1')">Playing music with the keyboard</h2>
+		<div class="help-box-section" id="helpBoxSection1">
+			<p>
+				You can play notes by pressing keys on the keyboard.<br>
+				Z, X, C, V, etc are like the white keys on a piano.<br>
+				S, D, G, H, J, etc are like the black keys.<br>
+				Q, W, E, etc are an octave up from there.<br>
+				You'll figure out the rest, I'm sure.
+			</p>
+			<p>
+				<span class="key">Page Up</span> / <span class="key">Page Down</span> changes the base octave.<br>
+				<span class="key">Home</span> / <span class="key">End</span> adjusts the note offset<br>
+			</p>
+		</div>
+		<h2 onclick="toggleHelpSection('#helpBoxSection2')">Tracker / Piano-roll</h2>
+		<div class="help-box-section" id="helpBoxSection2">
+			<p>
+				Click the "Tracker" button to open/close the tracker.<br>
+				Place notes by clicking in the grid. Resize notes with the handle on the right.<br>
+				Remove notes by right-clicking on them.<br>
+				Hold down the middle mouse button (the mouse wheel) and move the mouse to pan. Scroll to zoom.<br>
+				If you don't have a middle mouse button, or if it just doesn't work, you can use <span class="key">Alt</span> instead.<br>
+				<br>
+				Each track has its own synth and notes.<br>
+				You can add new tracks and switch between them from the panel on the left.
+			</p>
+			<p>
+				Use <span class="key">F3</span> and <span class="key">F4</span> to toggle snapping to the grid horizontally or vertically.<br>
+				<span class="key">Space</span> to toggle playback, <span class="key">Ctrl</span> + <span class="key">Space</span> to play from the cursor. Right-click the overview in the bottom to play from there.<br><br>
+				<span class="key">Ctrl</span> + click and drag to select every note in an area in the current track.<br>
+				<span class="key">Ctrl</span> + <span class="key">Shift</span> + click and drag to select every note in an area in every track.<br>
+				Area select also works in the overview.<br>
+				<span class="key">Ctrl</span> + <span class="key">A</span> to select all notes in the current track.<br>
+				<span class="key">Ctrl</span> + <span class="key">Shift</span> + <span class="key">A</span> to select all notes in all tracks.<br>
+				Press <span class="key">Delete</span> to delete all selected notes.<br>
+				Copy / paste selected notes with <span class="key">Ctrl</span> + <span class="key">C</span> / <span class="key">Ctrl</span> + <span class="key">V</span>
+			</p>
+			<p>
+				<span class="key">Shift</span> + click to place a loop start point.<br>
+				<span class="key">Shift</span> + right-click to place a loop end point<br>
+				Toggle looping with <span class="key">Ctrl</span> + <span class="key">L</span>, or by clicking the loop-button.<br>
+				When looping is enabled, the song will play only between the loop points.
+			</p>
+		</div>
+		<h2 onclick="toggleHelpSection('#helpBoxSection3')">Automation</h2>
+		<div class="help-box-section" id="helpBoxSection3">
+			<h3>Per-note automation</h3>
+			<p>
+				You can automate the pitch, gain, and pan of individual oscillators on individual notes.
+				For this to have any effect, the automation toggle (<span class="sandwich-btn enabled">A</span>) on the track must be enabled.
+				Automation overrides the envelopes on the synth.
+				If Mono-Pitch (<span class="sandwich-btn enabled">MP</span>) is enabled, the same pitch automation will apply to all oscillators.
+			</p>
+			<p>
+				Use the buttons just below the piano-roll to switch between editing notes and automation.
+				Alternatively, use <span class="key">Tab</span> to toggle automation mode.
+				While in automation mode, use <span class="key">Q</span>, <span class="key">W</span>, and <span class="key">E</span>
+				to switch between editing pitch, gain, and pan automation, respectively. Use <span class="key">A</span> and <span class="key">D</span>
+				to cycle through the oscillators.
+			</p>
+		</div>
+		<h2 onclick="toggleHelpSection('#helpBoxSection4')">Saving / Loading</h2>
+		<div class="help-box-section" id="helpBoxSection4">
+			<p>
+				The save system is currently a bit experimental and unconventional.<br>
+				Clicking "Save" stores the current tracks and synths locally on your device under the name specified in the text input.<br>
+				This will also copy the saved data to the clipboard so you can paste it into a text file.<br>
+				To load the saved data, type in the name you saved it under and click "Load", or just select it from the project list.<br>
+				Alternatively, you can paste the saved data directly into the save name field and click "Load".<br>
+				You can also quick-save / quick-load with <span class="key">F8</span> / <span class="key">F9</span> or <span class="key">Ctrl</span> + <span class="key">S</span> / <span class="key">Ctrl</span> + <span class="key">Z</span><br>
+				Quick-saving overwrites the previous quick-save, and is not a reliable means of long-term storage.
+			</p>
+		</div>
 		<p>
 			You may experience performance issues in Firefox.<br>
 			Chrome and Edge should work fine.

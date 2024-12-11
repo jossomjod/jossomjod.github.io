@@ -190,7 +190,6 @@ var jodOverlayOpen = false;
 var jodOverlayContainer = document.querySelector('.jod-overlay-container');
 var jodOverlayContent = document.querySelector('.jod-overlay-content');
 var jodOverlay = document.querySelector('#jodOverlay');
-jodOverlay.onmousewheel = (e) => { e.stopPropagation(); e.preventDefault(); };
 
 const helpIcon = document.querySelector('.help-icon');
 const helpPanelTemplate = document.querySelector('#helpPanel');
@@ -203,6 +202,10 @@ function toggleOverlay(visible = false) {
 
 function toggleHelp() {
 	openPopup(helpBox, { right: 5 + '%', top: 5 + '%' });
+}
+
+function toggleHelpSection(id) {
+	document.querySelector(id).classList.toggle('invisible');
 }
 
 jodOverlay.onclick = () => {

@@ -1,0 +1,11 @@
+:root {
+	--color-bg-0: #010110;
+	--color-panel: #04152e;
+	--color-button: #1c38b4;
+	--color-button-hover: #464984;
+	--color-active: #77b5ff;
+	--color-active-contrast: #000000;
+	--color-contrast: #ffffff;
+	--color-enabled: #79ffd7;
+	--color-enabled-contrast: #111;
+}

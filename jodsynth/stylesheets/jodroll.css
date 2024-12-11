@@ -25,7 +25,8 @@
 	background-color: #4785ff;
 }
 .jodroll-track.active {
-	background-color: #77b5ff;
+	background-color: var(--color-active);
+	color: var(--color-active-contrast);
 	text-shadow: 1px 1px #01040f;
 	box-shadow: 0 0 7px 1px #fff;
 }
@@ -151,8 +152,8 @@
 }
 
 .enabled {
-	background-color: #79ffd7;
-	color: #111;
+	background-color: var(--color-enabled);
+	color: var(--color-enabled-contrast);
 }
 
 .enabled:hover {
