@@ -93,11 +93,11 @@ function createTrackEntryUi(track, trackHandler) {
 
 	const screenShakeBtn = createTrackToggleButton({ track, property: 'screenShake', label: 'SH', onclick: () => {
 		track.screenShake = !track.screenShake;
-		if (track.screenShake) trackHandler.screenShaker.start();
+		if (track.screenShake && jodConfiguration.animations) trackHandler.screenShaker.start();
 	}});
 	const screenFlashBtn = createTrackToggleButton({ track, property: 'screenFlash', label: 'SF', onclick: () => {
 		track.screenFlash = !track.screenFlash;
-		if (track.screenFlash) trackHandler.screenFlasher.start();
+		if (track.screenFlash && jodConfiguration.animations) trackHandler.screenFlasher.start();
 	}});
 	const monoPitchBtn = createTrackToggleButton({ track, property: 'monoPitch', label: 'MP', onclick: () => (track.monoPitch = !track.monoPitch)});
 	const muteBtn = createTrackToggleButton({ track, property: 'muted', cssClass: 'muted', label: 'M', onclick: () => trackHandler.toggleMuteTrack(track)});

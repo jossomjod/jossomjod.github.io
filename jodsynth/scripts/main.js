@@ -50,7 +50,7 @@ generateKeyDict();
 
 var jodConfiguration = SaveManager.loadConfiguration() ?? {
 	animations: true,
-	autoSave: true,
+	autoSave: false,
 };
 
 const animationsCheckbox = document.querySelector('#animationsCheckbox');
@@ -205,7 +205,12 @@ function toggleHelp() {
 }
 
 function toggleHelpSection(id) {
-	document.querySelector(id).classList.toggle('invisible');
+	const section = document.querySelector(id);
+	const header = section.previousElementSibling;
+	const height = section.firstElementChild.clientHeight;
+	const expanded = section.classList.toggle('expanded');
+	section.style = expanded ? `height: calc(3em + ${height}px)` : '';
+	header.classList.toggle('expanded');
 }
 
 jodOverlay.onclick = () => {

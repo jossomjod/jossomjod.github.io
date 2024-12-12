@@ -29,15 +29,15 @@ body {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background-color: #afcfff;
+	background-color: #ffffff;
 	opacity: 0;
 	pointer-events: none;
 }
 
 .jod-overlay.overlay-visible {
 	pointer-events: all;
-	background-color: #00183d;
-	opacity: 0.5;
+	background-color: #0a000a;
+	opacity: 0.8;
 }
 
 .save-form {
@@ -173,10 +173,6 @@ body {
 	font-size: 0.75rem;
 }
 
-.help-box-section {
-	margin-bottom: 3em;
-}
-
 .help-box .sandwich-btn {
 	display: inline-flex;
 	align-items: center;
@@ -188,6 +184,43 @@ body {
 .help-box .sandwich-btn.enabled {
 	background-color: var(--color-enabled);
 	color: var(--color-enabled-contrast);
+}
+
+.help-box .help-header {
+	cursor: pointer;
+}
+
+.help-box .help-header::before {
+	content: '';
+	display: inline-block;
+	width: 20px;
+	height: 10px;
+	margin-right: 20px;
+	background-color: var(--color-button);
+	transition: all 80ms ease-in-out;
+}
+
+.help-box .help-header.expanded::before {
+	content: '';
+	height: 20px;
+	background-color: var(--color-active);
+}
+
+.help-box .help-header:hover::before {
+	content: '';
+	display: inline-block;
+	height: 15px;
+}
+
+.help-box-section {
+	overflow: hidden;
+	height: 0;
+	margin-left: 40px;
+	transition: height 80ms ease-in-out;
+}
+.help-box-section.expanded {
+	height: auto;
+	margin-bottom: 3em;
 }
 
 .clickable {
@@ -209,7 +242,7 @@ body {
 .drag-handle {
 	width: 20px;
 	height: 20px;
-	background-color: #1c38b4;
+	background-color: var(--color-button);
 }
 
 .detune {
