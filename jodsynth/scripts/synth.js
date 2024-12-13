@@ -413,7 +413,10 @@ function Synth(ac, output, fromObject) {
 			const automation = automations?.[i];
 			let oscillator;
 			if (automation) {
-				if (monoPitch) automation.pitch = automations[0].pitch;
+				if (monoPitch) {
+					automation.pitch = automations[0].pitch;
+					if (osc.mod === null) automation.gain = automations[0].gain;
+				}
 				oscillator = osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automation, bpm);
 			} else oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
 			return { gain, oscillator };
