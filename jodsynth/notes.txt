@@ -1,13 +1,3 @@
-
-TODO: tooltip for envelope   DONE
-TODO: ui improvements     THIS WILL ALWAYS BE A TODO LMAO
-TODO: moving an envelope node horizontally should also move all nodes after it
-TODO: actually do the todos
-
-
-
-
-
 TODO:
 - modulate/carry input    DONE
 - pitch automation        DONE
@@ -16,27 +6,8 @@ TODO:
 	- maybe drag the left side for BIG changes, right side for small, middle for medium?
 	- right/left/middle click and drag?
 	- modifier keys?
-- LOW FUCKING PASS OILY JOSH
 - and we gotta hmmmm make AM multiplicative duh
-
-
-WE NEED SMALLER VALUES
-Tiny changes make a big difference with FM synthesis.
-DONE
-
-
-and also
-hmmmmm
-i forgor
-
-ok, yeah
-we need to give better feedback on what the custom number input is doing
-and also fix it so it works better
-yep
-
-In FL studio you modify the clicked digit when you click and drag.
-Just check the x coordinate onclick and do some math to account for font size maybe?
-mono-space
+- moving an envelope node horizontally should also move all nodes after it
 
 
 
@@ -44,11 +15,20 @@ note manager TODOs:
 - automation
   - per note
 	  - should initially be based on the synth envelopes
+		- we will very often want the same pitch automation applied to all oscillators
+		- copying selected notes should instead copy automation
+		- pasting should paste automation into selected note
 	- per track
 	  - it should be possible to choose a default value to use when playing on the keyboard
 		- when moving a note, the preview sound should go through the effect with the value at the note start time
 	- global
 	  - bpm, master gain
+- global fx
+  - compressor
+- note/synth fx with envelope and automation
+  - filter
+- sidechain fx
+  - trigger fx gain envelope on note start
 
 
 ====== BUGS ======
@@ -62,10 +42,6 @@ note manager TODOs:
 	- FIXED by workaround
 
 - Chrome refuses to emit a keyup event every other time you press the ¨^~ key (Physical: "RightBracket")
-
-- some synth parameter inputs show incorrect values when loading a save or switching tracks   FIXED
-
-- playback of long notes sounds wrong      FIXED
 
 - grid renders bar and octave lines wrong when panned to negative coords (positive scroll values)
 

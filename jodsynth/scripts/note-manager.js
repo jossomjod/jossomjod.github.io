@@ -1,36 +1,19 @@
 
-function freqToTone(freq) {
-	return 12 * Math.log2(freq / 440) + 49;
-}
-
-function toneToFreq(tone) {
-	return 440 * Math.pow(2, (tone - 49) / 12);
-}
-
-function beatsToSeconds(beats, bpm) {
-	return 60 * beats / bpm;
-}
-
-function secondsToBeats(sec, bpm) {
-	return bpm * sec / 60;
-}
-
 function AutomationNode(time = 0, value = 0) {
 	this.time = time;
 	this.value = value;
 }
 
-function Note(tone, start, dur, gain, gainNodes, pitchNodes, automation) {
+function Note(tone, start, dur, gain, automations) {
 	this.startTime = start || 0.0;
 	this.duration = dur || 1.0;
 	this.tone = tone || 24;
 	this.gain = gain || 1.0;
-	this.gainNodes = gainNodes || []; // AutomationNode[]
-	this.pitchNodes = pitchNodes || []; // AutomationNode[]
-	this.automation = automation || {
-		gain: gainNodes || [], // AutomationNode[]
-		pitch: pitchNodes || [], // AutomationNode[]
-	};
+	this.automations = automations || [{
+		gain: [], // AutomationNode[]
+		pitch: [], // AutomationNode[]
+		pan: [], // AutomationNode[]
+	}];
 }
 
 
@@ -53,8 +36,57 @@ function playNote (note, oscArr, ac, output, currentTime, bpm) {
 	oscArr.push(osc);
 }
 
-function envelopeToAutomationNodes(envelope, duration) { // TODO
-	const {points, multiplier} = envelope;
+function envelopeToAutomation(env, bpm, duration, valueMultiplier = 1) {
+	const arr = env.points.map((p) => {
+		const t = secondsToBeats(p.time, bpm);
+		const time = Math.max(0, Math.min(duration, t));
+		const value = p.value * valueMultiplier;
+		return { time, value };
+	});
+	return arr;
+	if (!arr.length) return arr;
+	if (arr.length < 2) return arr; // TODO: handle better
+	
+	const penult = arr.at(-2);
+	const release = arr.at(-1).time - penult.time;
+
+	if (penult.time < duration) {
+		const last = arr.pop();
+		//last.time = duration + release;
+		arr.push(new AutomationNode(duration, penult.value), last);
+	} else {
+		const idx = arr.findLastIndex((a) => a.time < duration);
+		if (idx === -1) {
+			// lerp from 0 to 1st value, stopping at duration
+			// add release
+			const ddt = duration / arr[0].time;
+			const val = lerp(0, arr[0].value, ddt);
+			arr[0].value = val;
+			arr[0].time = duration;
+		} else {
+			// lerp from arr[idx] to arr[idx+1], stopping at duration
+			// add release
+			const next = arr[idx + 1];
+			const tDiff = next.time - arr[idx].time;
+			const dDiff = duration - arr[idx].time;
+			const ddt = dDiff / tDiff;
+			const val = lerp(arr[idx].value, next.value, ddt);
+			next.value = val;
+			next.time = duration;
+		}
+	}
+	arr.at(-1).time = duration;// + release;
+
+	return arr;
+}
+
+function getAutomationFromSynth(synth, bpm, duration) {
+	return synth.oscillators.map((o) => {
+		const gain = envelopeToAutomation(o.gainEnvelope, bpm, duration);
+		const pitch = envelopeToAutomation(o.pitchEnvelope, bpm, duration, 12);
+		const pan = [];
+		return { gain, pitch, pan };
+	});
 }
 
 /**
@@ -62,6 +94,7 @@ function envelopeToAutomationNodes(envelope, duration) { // TODO
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
+	this.version = 0;
 	this.bpm = 140;
 	this.lookaheadBeats = 0.09
 	this.intervalMs = 18;
@@ -86,14 +119,27 @@ function NoteManager(ac, output) {
 	this.latestNoteStartTime = 0;
 
 	this.trackIdCounter = 0;
-	this.onNoteScheduled = (currentTrackIndex, startsIn, duration, isTrackActive) => null; // set in UI
+	this.onNoteScheduled = (currentTrackIndex, startsIn, duration, track) => null; // set in UI
 
 	this.addNote = (startTime, tone, duration) => {
-		const synth = this.getSelectedTrack().synth.oscillators[0];
+		const synth = this.getSelectedTrack().synth;
 		if (startTime < 0) startTime = 0;
-		const newNote = new Note(tone, startTime, duration, 1, synth.gainEnvelope.points.slice(), synth.pitchEnvelope.points.slice());
+		const newNote = new Note(tone, startTime, duration, 1, getAutomationFromSynth(synth, this.bpm, duration));
 		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
+	};
+
+	this.addAutomationNode = (nodeArray, node = { time: 0, value: 0 }) => {
+		nodeArray.push(node);
+	};
+
+	this.deleteAutomationNode = (nodeArray, node) => {
+		const idx = nodeArray.indexOf(node);
+		nodeArray.splice(idx, 1);
+	};
+
+	this.resetNoteAutomation = (note, synth = this.getSelectedTrack().synth) => {
+		note.automations = getAutomationFromSynth(synth, this.bpm, note.duration);
 	};
 
 
@@ -103,6 +149,10 @@ function NoteManager(ac, output) {
 	this.getStartTime = () => this.loop.active ? this.loop.start : 0;
 	this.setEndTime = (beats) => this.loopEnd = beats;
 
+	this.toggleSolo = (track) => {
+		track.solo = !track.solo;
+		this.soloTrack = this.tracks.some((t) => t.solo);
+	};
 
 	this.playTrack = (track, startTimeSec) => {
 		const oscs = [];
@@ -145,6 +195,7 @@ function NoteManager(ac, output) {
 
 		for (let i = 0; i < ns.length; i++) {
 			const n = ns[i];
+			const automations = !track.disableNoteAutomation ? n.automations : null;
 
 			if (pastEnd && n.startTime < this.latestNoteStartTime) {
 				if (!(n.startTime > boie && n.startTime < startBeats + beatsPastEnd)) continue;
@@ -160,10 +211,10 @@ function NoteManager(ac, output) {
 			if (durationBeats <= 0.00001) continue;
 			const duration = beatsToSeconds(durationBeats, this.bpm);
 			const freq = toneToFreq(n.tone);
-			track.synth.schedulePlayback({ startTime, duration, freq });
+			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
 			
 			const delay = (startTime - ac.currentTime) * 1000;
-			this.onNoteScheduled(trackIndex, delay, duration * 1000, track.active);
+			this.onNoteScheduled(trackIndex, delay, duration * 1000, track);
 		}
 		return pastEnd ? boie : latestTime;
 	};
@@ -185,7 +236,7 @@ function NoteManager(ac, output) {
 			let latestTime = this.latestNoteStartTime;
 
 			this.tracks.forEach((t, i) => {
-				if (t.muted) return;
+				if (t.muted || (this.soloTrack && !t.solo)) return;
 				latestTime = this.scheduleTrackNotesPlayback(t, i, currentBeats, loopEnd, beatsPastEnd, latestTime);
 			});
 			this.latestNoteStartTime = latestTime;
@@ -222,7 +273,17 @@ function NoteManager(ac, output) {
 
 	this.createTrack = () => {
 		const index = this.tracks.length + 1;
-		const track = { notes: [], name: 'Track ' + index, active: true, muted: false, gain: 1, id: ++this.trackIdCounter };
+		const track = {
+			notes: [],
+			name: 'Track ' + index,
+			active: true,
+			muted: false,
+			solo: false,
+			monoPitch: false,
+			gain: 1,
+			id: ++this.trackIdCounter,
+			disableNoteAutomation: false,
+		};
 		track.fx = new FxManager(ac, output);
 		track.synth = new Synth(ac, track.fx.input);
 		this.tracks.push(track);
@@ -280,6 +341,7 @@ function NoteManager(ac, output) {
 
 	this.save = () => {
 		return {
+			version: this.version,
 			bpm: this.bpm,
 			tracks: this.getStringableTracks(),
 		};
@@ -287,6 +349,9 @@ function NoteManager(ac, output) {
 
 	this.load = (data) => {
 		this.toggleLooping(false);
+		if (data.version !== this.version) {
+			console.warn('Version mismatch');
+		}
 		this.bpm = data.bpm ?? 140;
 		this.loadTracks(data.tracks);
 	};
@@ -313,6 +378,7 @@ function NoteManager(ac, output) {
 			else if (!track.id) track.id = ++this.trackIdCounter;
 			return track;
 		});
+		this.soloTrack = this.tracks.some((t) => t.solo);
 	};
 }
 

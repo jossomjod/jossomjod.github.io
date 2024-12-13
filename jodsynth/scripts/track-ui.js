@@ -1,9 +1,9 @@
 const playTrackAnimationFrames = [
-	{ backgroundColor: '#bbbbbb', scale: '1.1' },
+	{ backgroundColor: '#bbbbbb', scale: '1.02' },
 	{ backgroundColor: '#376cf3', scale: '1' },
 ];
 const playSelectedTrackAnimationFrames = [
-	{ backgroundColor: '#ffffff', scale: '1.2' },
+	{ backgroundColor: '#ffffff', scale: '1.05' },
 	{ backgroundColor: '#77b5ff', scale: '1' },
 ];
 
@@ -67,16 +67,49 @@ function createTrackNameEditor(labelElement, track, trackHandler) {
 	return input;
 }
 
+function createTrackToggleButton({ track, property, label, onclick, inverse, cssClass }) {
+	const btn = document.createElement('button');
+	btn.innerHTML = label;
+	btn.className = 'clickable sandwich-btn';
+	btn.classList.toggle(cssClass ?? 'enabled', !!track[property] === !inverse);
+	btn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		e.preventDefault();
+		onclick();
+		btn.classList.toggle(cssClass ?? 'enabled', !!track[property] === !inverse);
+	});
+	return btn;
+}
+
 
 function createTrackEntryUi(track, trackHandler) {
 	const div = document.createElement('div');
+	const gainAndBtnRowContainer = document.createElement('div');
+	const btnRow = document.createElement('div');
+	const btnColumn = document.createElement('div');
 	const label = document.createElement('span');
 	const gain = document.createElement('jod-numb');
-	const muteBtn = document.createElement('button');
 	const nameEditor = createTrackNameEditor(label, track, trackHandler);
-	div.append(nameEditor, label, gain, muteBtn);
 
-	div.shaker = new Shaker(div, 400, 10);
+	const screenShakeBtn = createTrackToggleButton({ track, property: 'screenShake', label: 'SH', onclick: () => {
+		track.screenShake = !track.screenShake;
+		if (track.screenShake && jodConfiguration.animations) trackHandler.screenShaker.start();
+	}});
+	const screenFlashBtn = createTrackToggleButton({ track, property: 'screenFlash', label: 'SF', onclick: () => {
+		track.screenFlash = !track.screenFlash;
+		if (track.screenFlash && jodConfiguration.animations) trackHandler.screenFlasher.start();
+	}});
+	const monoPitchBtn = createTrackToggleButton({ track, property: 'monoPitch', label: 'MP', onclick: () => (track.monoPitch = !track.monoPitch)});
+	const muteBtn = createTrackToggleButton({ track, property: 'muted', cssClass: 'muted', label: 'M', onclick: () => trackHandler.toggleMuteTrack(track)});
+	const soloBtn = createTrackToggleButton({ track, property: 'solo', label: 'S', onclick: () => trackHandler.toggleSoloTrack(track)});
+	const automationBtn = createTrackToggleButton({ track, property: 'disableNoteAutomation', inverse: true, label: 'A', onclick: () => {
+		trackHandler.toggleDisableNoteAutomationForTrack(track);
+	}});
+	
+	btnRow.append(screenShakeBtn, screenFlashBtn, monoPitchBtn);
+	gainAndBtnRowContainer.append(gain, btnRow);
+	btnColumn.append(soloBtn, muteBtn, automationBtn);
+	div.append(nameEditor, label, gainAndBtnRowContainer, btnColumn);
 	
 	div.id = 'track-entry-' + track.id;
 	div.classList.add('jodroll-track');
@@ -90,11 +123,16 @@ function createTrackEntryUi(track, trackHandler) {
 	div.addEventListener('contextmenu', (e) => {
 		e.stopPropagation();
 		e.preventDefault();
-		openContextMenu(div, [{ name: 'Delete', callback: () => trackHandler.deleteTrack(track) }]);
+		openContextMenu(div, [
+			{ name: 'Delete', callback: () => trackHandler.deleteTrack(track) },
+		]);
 	});
 	
 	label.classList.add('track-label');
 	label.innerHTML = track.name;
+
+	gainAndBtnRowContainer.className = 'track-gain-and-btn-row';
+	btnRow.className = 'track-btn-row'
 
 	gain.setAttribute('min', 0);
 	gain.setAttribute('max', 1);
@@ -105,14 +143,6 @@ function createTrackEntryUi(track, trackHandler) {
 		muteBtn.classList.toggle('muted', track.muted); // unmute when changing gain
 	});
 
-	muteBtn.innerHTML = 'M';
-	muteBtn.className = 'clickable circle small btn';
-	muteBtn.classList.toggle('muted', track.muted);
-	muteBtn.addEventListener('click', (e) => {
-		e.stopPropagation();
-		e.preventDefault();
-		trackHandler.toggleMuteTrack(track);
-		muteBtn.classList.toggle('muted', track.muted);
-	});
+	btnColumn.className = 'track-btn-column';
 	return div;
 }

@@ -16,7 +16,7 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		w: this.container.clientWidth,
 		h: this.container.clientHeight,
 	};
-	this.maxTime = 4.0;
+	this.maxTime = 2.0;
 	this.radius = 8.0;
 
 	this.canvas.width = this.rect.w;
@@ -313,8 +313,9 @@ function OscillatorUi(oscillator, container, name) {
 
 	// PAN
 	this.oscPanUI = this.oscUi.querySelector('#oscPan');
-	this.oscPanUI.value = '' + this.oscillator.pan;
-	this.oscPanUI.addEventListener('input', () => {
+	this.oscPanUI.value = this.oscillator.pan;
+	this.oscPanUI.setAttribute('value', this.oscillator.pan + '');
+	this.oscPanUI.addEventListener('changed', () => {
 		this.oscillator.pan = +this.oscPanUI.value;
 	});
 

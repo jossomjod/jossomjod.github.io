@@ -1,6 +1,5 @@
 .jodroll-container {
   display: flex;
-  background-color: blueviolet;
 }
 
 .track-container, .side-panel {
@@ -26,7 +25,8 @@
 	background-color: #4785ff;
 }
 .jodroll-track.active {
-	background-color: #77b5ff;
+	background-color: var(--color-active);
+	color: var(--color-active-contrast);
 	text-shadow: 1px 1px #01040f;
 	box-shadow: 0 0 7px 1px #fff;
 }
@@ -36,7 +36,49 @@
   max-height: 700px;
   min-height: 700px;
   flex-grow: 1;
-  background-color: palevioletred;
+}
+
+.jodroll-transport {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+}
+
+.jodroll-transport-center {
+	display: flex;
+	flex-direction: column;
+	min-width: 130px;
+	padding: 5px;
+	align-items: center;
+	justify-self: center;
+}
+
+.jodroll-transport-left {
+	display: flex;
+	height: 3em;
+	align-items: center;
+}
+
+.jodroll-transport-right {
+	display: flex;
+	justify-self: right;
+}
+
+.jodroll-playback-time {
+	padding: 1px;
+	font-weight: 600;
+	text-shadow: 0 0 3px #acf;
+}
+.jodroll-playback-time span {
+	display: inline-block;
+	width: 1em;
+	text-align: center;
+	cursor: pointer;
+}
+.jodroll-playback-time #jodrollPlaybackTimeBeats {
+	width: unset;
+}
+#jodrollBtnPlay {
+	width: 5em;
 }
 
 .context-menu {
@@ -65,6 +107,19 @@
 	width: 60px;
 	font-size: smaller;
 }
+.track-gain-and-btn-row {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.track-btn-row {
+	display: flex;
+	gap: 2px;
+}
+.track-btn-column {
+	display: flex;
+	flex-direction: column;
+}
 
 .jodroll-canvas {
   width: 100%;
@@ -79,10 +134,29 @@
 	margin: 10px;
 }
 
+.sandwich-btn {
+	width: 20px;
+	height: 16px;
+	border-radius: 2px;
+	border: 1px solid #0066ff;
+	font-size: 0.7rem;
+	padding: 0;
+}
+
 .muted {
 	background-color: #fd3132;
 }
 
 .muted:hover {
 	background-color: #ff5656;
+}
+
+.enabled {
+	background-color: var(--color-enabled);
+	color: var(--color-enabled-contrast);
+}
+
+.enabled:hover {
+	background-color: #b1d6ff;
+	color: #123;
 }
