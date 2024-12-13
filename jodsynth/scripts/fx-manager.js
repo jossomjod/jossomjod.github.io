@@ -25,51 +25,12 @@ function createNoiseBuffer(ac, time) {
 	return buford;
 }
 
-// COPYPASTA
-function setupReverb() {
-	this.effect = this.context.createConvolver();
-
-	this.reverbTime = reverbTime;
-
-	this.attack = 0;
-	this.decay = 0.0;
-	this.release = reverbTime/3;
-
-	this.preDelay = this.context.createDelay(reverbTime);
-	this.preDelay.delayTime.setValueAtTime(preDelay,    this.context.currentTime);
-	this.multitap = [];
-	for(let i = 2; i > 0; i--) {
-		this.multitap.push(this.context.createDelay(reverbTime));
-	}
-	this.multitap.map((t,i)=>{
-		if(this.multitap[i+1]) {
-			t.connect(this.multitap[i+1])
-		}
-		t.delayTime.setValueAtTime(0.001+(i*(preDelay/2)), this.context.currentTime);
-	})
-
-	this.multitapGain = this.context.createGain();
-	this.multitap[this.multitap.length-1].connect(this.multitapGain);
-	this.multitapGain.gain.value = 0.2;
-
-	this.multitapGain.connect(this.output);
-	this.wet = this.context.createGain();
-
-	this.input.connect(this.wet);
-	this.wet.connect(this.preDelay);
-	this.wet.connect(this.multitap[0]);
-	this.preDelay.connect(this.effect);
-	this.effect.connect(this.output);
-
-	this.renderTail();
-}
-
 
 
 /**
  * @param {AudioContext} ac 
  */
-function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.22, wet: 0.5, dry: 0.5 }) {
+function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.01, wet: 0.5, dry: 0.5 }) {
 	this.fxType = 'reverb';
 	this.params = params;
 	this.reverb = ac.createConvolver();
