@@ -263,3 +263,44 @@ button.active {
 	background-color: var(--color-active);
 	color: var(--color-active-contrast);
 }
+
+.epilepsy-warning {
+	display: inline-block;
+	padding: 6.9px;
+	font-weight: 666;
+	animation: epilepsy 420ms ease-in-out 0s infinite;
+}
+
+@media (prefers-reduced-motion) {
+	.epilepsy-warning {
+		animation: unset;
+	}
+}
+
+
+@keyframes epilepsy {
+	from {
+		translate: 0 0;
+		color: #fff;
+	}
+	20% {
+		translate: -0.1em -0.2em;
+		color: #f11;
+	}
+	40% {
+		translate: 0.2em -0.02em;
+		color: #ff1;
+	}
+	60% {
+		translate: -0.2em -0.02em;
+		color: #1ff;
+	}
+	80% {
+		translate: 0.1em -0.2em;
+		color: #11f;
+	}
+	to {
+		translate: 0 0;
+		color: #fff;
+	}
+}
