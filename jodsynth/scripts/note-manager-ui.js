@@ -613,6 +613,7 @@ function NoteManagerUI(noteManager) {
 		e.stopPropagation();
 		const cursorTime = this.xToTime(this.cursorX);
 		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
+		this.pxPerBeat = Math.max(3, Math.min(600, this.pxPerBeat));
 		//this.gridSizeX = this.pxPerBeat;
 		this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
 		this.render();
