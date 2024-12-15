@@ -86,9 +86,7 @@ noteManagerGain.gain.value = 1.0;
 noteManagerGain.connect(masterGain);
 
 var noteManager = new NoteManager(ac, noteManagerGain);
-
 var noteManagerUi = new NoteManagerUI(noteManager);
-
 noteManagerUi.renderAll();
 
 
@@ -98,10 +96,6 @@ addOscBtn.onclick = () => noteManagerUi.addOsc();
 const fxAddSelect = document.querySelector('#fxAddSelect');
 const addFxBtn = document.querySelector('#addFxBtn');
 addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
-
-
-const playBtn = document.querySelector('#jodrollBtnPlay');
-playBtn.onclick = () => noteManagerUi.togglePlayback();
 
 
 // SAVE / LOAD ---------------------------------

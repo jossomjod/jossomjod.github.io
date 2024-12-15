@@ -61,6 +61,8 @@
 .jodroll-transport-right {
 	display: flex;
 	justify-self: right;
+	height: 3em;
+	align-items: center;
 }
 
 .jodroll-playback-time {
@@ -78,7 +80,16 @@
 	width: unset;
 }
 #jodrollBtnPlay {
-	width: 5em;
+	font-size: x-large;
+	padding: 0;
+	width: 3em;
+	height: 1.7em;
+}
+#jodrollBtnPlay::after {
+	content: '►';
+}
+#jodrollBtnPlay.active::after {
+	content: '■';
 }
 
 .context-menu {

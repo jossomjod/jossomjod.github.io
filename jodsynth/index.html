@@ -55,7 +55,6 @@
 					<label for="bpmUi">BPM</label>
 					<input class="detune" id="bpmUi" type="number">
 				</div>
-				<button id="toggleLoopingBtn">Loop</button>
 				<div>
 					<div onclick="toggleHelp()" class="circle clickable help-icon end">?</div>
 				</div>
@@ -82,16 +81,17 @@
 							<div id="jodrollCurrentOscInfo">Osc: 1</div>
 						</div>
 						<div class="jodroll-transport-center">
-							<button id="jodrollBtnPlay">|></button>
+							<button id="jodrollBtnPlay"></button>
 							<div class="jodroll-playback-time">
 								<span id="jodrollPlaybackTimeBeats">00</span><span>:</span><span id="jodrollPlaybackTimeDecimals">00</span>
 							</div>
 						</div>
-						<!-- <div class="jodroll-transport-right">
+						<div class="jodroll-transport-right">
 							<button id="jodrollBtnLoop">Loop</button>
-							<button id="jodrollBtnSnapH">SnapH</button>
-							<button id="jodrollBtnSnapV">SnapV</button>
-						</div> -->
+							<button id="jodrollBtnAutoScroll">Auto-scroll</button>
+							<!-- <button id="jodrollBtnSnapH">SnapH</button>
+							<button id="jodrollBtnSnapV">SnapV</button> -->
+						</div>
 					</div>
 					<div class="synth-body">
 						<div class="global-fx-container">

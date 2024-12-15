@@ -158,6 +158,25 @@ class TimelineUI {
 	}
 }
 
+class ToggleButton {
+	element;
+	active = false;
+
+	constructor(element, toggleFn, initialActive) {
+		this.element = element;
+		this.toggle(!!initialActive);
+		this.element.onclick = () => {
+			this.toggle();
+			toggleFn();
+		};
+	}
+
+	toggle(force) {
+		this.active = this.element.classList.toggle('active', force);
+		return this.active;
+	}
+}
+
 class EditingModeUI {
 	currentOscInfo = document.querySelector('#jodrollCurrentOscInfo');
 	btnNormalMode = document.querySelector('#jodrollBtnNormalMode');
@@ -198,10 +217,13 @@ function NoteManagerUI(noteManager) {
 	this.overlay = document.querySelector('#jodOverlay');
 	this.screenFlasher = new CssFlasher(this.overlay, 650, 0.7);
 	this.screenShaker = new CssShaker(document.querySelector('.main-content'), 500, 8);
-	
-	this.toggleLoopingBtn = document.querySelector('#toggleLoopingBtn');
-	this.toggleLoopingBtn.classList.toggle('active', noteManager.loop.active);
-	this.toggleLoopingBtn.onclick = () => this.toggleLooping();
+
+	this.playBtn = new ToggleButton(document.querySelector('#jodrollBtnPlay'), () => this.togglePlayback());
+	this.toggleLoopingBtn = new ToggleButton(document.querySelector('#jodrollBtnLoop'), () => this.toggleLooping(), noteManager.loop.active);
+	this.toggleAutoScrollBtn = new ToggleButton(
+		document.querySelector('#jodrollBtnAutoScroll'),
+		() => this.autoScrollOnPlayback = !this.autoScrollOnPlayback
+	);
 
 	this.timeDisplayContainer = document.querySelector('.jodroll-playback-time');
 	this.timeDisplayContainer.onclick = () => this.displaySeconds = !this.displaySeconds;
@@ -1123,7 +1145,7 @@ function NoteManagerUI(noteManager) {
 
 	this.toggleLooping = () => {
 		noteManager.toggleLooping();
-		this.toggleLoopingBtn.classList.toggle('active', noteManager.loop.active);
+		this.toggleLoopingBtn.toggle(noteManager.loop.active);
 		this.render();
 	};
 
@@ -1147,7 +1169,7 @@ function NoteManagerUI(noteManager) {
 		this.bpmUi.value = noteManager.bpm;
 		this.render();
 		this.renderTracks();
-		this.toggleLoopingBtn.classList.toggle('active', noteManager.loop.active);
+		this.toggleLoopingBtn.toggle(noteManager.loop.active);
 	};
 
 	this.renderTracks = (tracks = noteManager.tracks) => {
@@ -1611,6 +1633,7 @@ function NoteManagerUI(noteManager) {
 			else noteManager.playbackLoop();
 			this.playbackAnimationFrame();
 		}
+		this.playBtn.toggle(this.isPlaying());
 	};
 
 	this.onNoteScheduled = (trackIndex, startsIn, duration, track) => {
