@@ -1621,7 +1621,7 @@ function NoteManagerUI(noteManager) {
 		if (track.screenShake) this.screenShaker.start();
 	};
 
-	this.visible = true;
+	this.visible = false;
 	this.toggleVisible = (visible = !this.visible) => {
 		this.visible = visible;
 		this.trackerContainer.setAttribute('style', `width: ${this.width}px`);
