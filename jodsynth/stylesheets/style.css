@@ -151,7 +151,8 @@ body {
 
 .help-box {
 	position: absolute;
-	width: 50vw;
+	left: calc(50vw - 300px);
+	width: 600px;
 	max-height: 85vh;
 	padding: 20px;
 	border-radius: 10px;
