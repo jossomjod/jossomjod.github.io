@@ -1,5 +1,63 @@
 
 
+class BaseEffect { // TODO
+	ac;
+	fxType = 'base';
+	params;
+	input;
+	effectNode;
+	destination;
+
+	/**
+	 * @param {AudioContext} ac 
+	 */
+	constructor(ac, params) {
+		this.ac = ac;
+		this.params = params;
+		this.input = new GainNode(ac, { gain: 1 });
+	}
+
+	connect(destination) {
+		this.destination = destination;
+
+		if (this.params.bypass) {
+			this.input.connect(destination);
+			return destination;
+		}
+		this.input
+			.connect(this.effectNode)
+			.connect(destination);
+		return destination;
+	}
+
+	disconnect() {
+		this.input.disconnect();
+		this.effectNode.disconnect();
+	}
+
+	refreshConnection() {
+		this.disconnect();
+		this.connect(this.destination);
+	}
+
+	setParam = (param, value) => {
+		if (param === 'bypass') {
+			this.params.bypass = value;
+			this.refreshConnection();
+			return;
+		}
+		this.params[param] = value;
+		this.effectNode[param].setValueAtTime(value, ac.currentTime);
+	};
+
+	save() {
+		return { params: this.params, fxType: this.fxType };
+	}
+	load(params){
+		this.params = params;
+		this.effectNode.type = params.type;
+	}
+}
 
 
 function ReverbManager2(ac, input, output, reverb) {
@@ -136,6 +194,7 @@ function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 
 	this.input = new GainNode(ac, { gain: 1 });
 	this.filter = new BiquadFilterNode(ac, params);
 	this.destination;
+	this.automation = {};
 
 	this.connect = (destination) => {
 		this.destination = destination;
@@ -175,7 +234,7 @@ function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 
 		this.filter.type = type;
 	};
 
-	this.save = () => ({ params: this.params, fxType: this.fxType });
+	this.save = () => ({ params: this.params, fxType: this.fxType, automation: this.automation });
 	this.load = (_params) => {
 		this.params = _params;
 		Object.entries(this.params).forEach(([key, value]) => this.filter[key].setValueAtTime?.(value, ac.currentTime));
@@ -242,7 +301,7 @@ class CompressorEffect {
 		}
 		this.params[param] = value;
 		this.compressor[param].setValueAtTime(value, ac.currentTime);
-	}
+	};
 
 	save() {
 		return { params: this.params, fxType: this.fxType };
@@ -304,7 +363,11 @@ function FxManager(ac, output, fromArray, gain = 1) {
 	this.save = () => this.fxChain.map((fx) => fx.save());
 
 	this.load = (arr) => {
-		this.fxChain = arr.map(({fxType, params}) => effectFromType(ac, fxType, params));
+		this.fxChain = arr.map(({fxType, params, automation}) => {
+			const fx = effectFromType(ac, fxType, params);
+			fx.automation = automation ?? {};
+			return fx;
+		});
 		if (this.output) this.connect(this.output);
 	};
 

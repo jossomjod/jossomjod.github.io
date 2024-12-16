@@ -1252,8 +1252,7 @@ function NoteManagerUI(noteManager) {
 
 		if (this.currentFxUi) {
 			const container = document.querySelector('.fx-container');
-			while (container.firstChild) container.removeChild(container.firstChild);
-			delete this.currentFxUi;
+			container.replaceChildren();
 		}
 		this.currentFxUi = new FxManagerUi(track.fx);
 	};

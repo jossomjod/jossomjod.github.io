@@ -222,10 +222,7 @@ function FxManagerUi(fxManager) {
 
 	this.rmCallback = (index) => {
 		this.fxManager.removeFx(index);
-
-		while (this.container.firstChild) {
-			this.container.removeChild(this.container.firstChild);
-		}
+		this.container.replaceChildren();
 		this.setFxManager(this.fxManager);
 	};
 
