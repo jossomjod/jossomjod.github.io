@@ -48,10 +48,20 @@ generateKeyDict();
 
 // CONFIGURATION
 
-var jodConfiguration = SaveManager.loadConfiguration() ?? {
+const defaultConfig = {
 	animations: true,
 	autoSave: false,
+	autoScroll: true,
 };
+
+function loadConfig() {
+	const config = defaultConfig;
+	const loaded = SaveManager.loadConfiguration();
+	if (loaded) Object.assign(config, loaded);
+	return config;
+}
+
+var jodConfiguration = loadConfig();
 
 const animationsCheckbox = document.querySelector('#animationsCheckbox');
 animationsCheckbox.checked = !!jodConfiguration.animations;
