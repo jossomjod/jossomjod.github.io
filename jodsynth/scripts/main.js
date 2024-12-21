@@ -349,6 +349,18 @@ document.body.onkeydown = (e) => {
 		case 'Backquote':
 			noteManagerUi.toggleVisible();
 			break;
+		case 'ArrowUp':
+			octave++;
+			break;
+		case 'ArrowDown':
+			octave--;
+			break;
+		case 'ArrowLeft':
+			noteOffset--;
+			break;
+		case 'ArrowRight':
+			noteOffset++;
+			break;
 		case 'KeyQ':
 			if (noteManagerUi.mode) noteManagerUi.toggleMode(EModes.pitchAutomation);
 			break;
