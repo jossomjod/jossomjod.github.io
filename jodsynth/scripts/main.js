@@ -48,10 +48,20 @@ generateKeyDict();
 
 // CONFIGURATION
 
-var jodConfiguration = SaveManager.loadConfiguration() ?? {
+const defaultConfig = {
 	animations: true,
 	autoSave: false,
+	autoScroll: true,
 };
+
+function loadConfig() {
+	const config = defaultConfig;
+	const loaded = SaveManager.loadConfiguration();
+	if (loaded) Object.assign(config, loaded);
+	return config;
+}
+
+var jodConfiguration = loadConfig();
 
 const animationsCheckbox = document.querySelector('#animationsCheckbox');
 animationsCheckbox.checked = !!jodConfiguration.animations;
@@ -338,6 +348,18 @@ document.body.onkeydown = (e) => {
 	switch (e.code) {
 		case 'Backquote':
 			noteManagerUi.toggleVisible();
+			break;
+		case 'ArrowUp':
+			octave++;
+			break;
+		case 'ArrowDown':
+			octave--;
+			break;
+		case 'ArrowLeft':
+			noteOffset--;
+			break;
+		case 'ArrowRight':
+			noteOffset++;
 			break;
 		case 'KeyQ':
 			if (noteManagerUi.mode) noteManagerUi.toggleMode(EModes.pitchAutomation);

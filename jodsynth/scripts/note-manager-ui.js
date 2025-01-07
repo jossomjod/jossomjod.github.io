@@ -222,7 +222,8 @@ function NoteManagerUI(noteManager) {
 	this.toggleLoopingBtn = new ToggleButton(document.querySelector('#jodrollBtnLoop'), () => this.toggleLooping(), noteManager.loop.active);
 	this.toggleAutoScrollBtn = new ToggleButton(
 		document.querySelector('#jodrollBtnAutoScroll'),
-		() => this.autoScrollOnPlayback = !this.autoScrollOnPlayback
+		() => this.autoScrollOnPlayback = !this.autoScrollOnPlayback,
+		jodConfiguration.autoScroll,
 	);
 
 	this.timeDisplayContainer = document.querySelector('.jodroll-playback-time');
@@ -243,7 +244,7 @@ function NoteManagerUI(noteManager) {
 	this.noteHeight = this.pxPerTone;
 	this.newNoteDuration = 1;
 	this.isPlaying = () => noteManager.isPlaying;
-	this.autoScrollOnPlayback = false;
+	this.autoScrollOnPlayback = jodConfiguration.autoScroll;
 
 	this.primaryAction = 1;
 	this.secondaryAction = 2;
