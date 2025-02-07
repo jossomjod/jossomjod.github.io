@@ -185,6 +185,14 @@ function loadAll(name) {
 	}
 }
 
+async function loadFromClipboard() {
+	const data = await SaveManager.loadFromClipboard();
+	if (data) {
+		noteManager.load(data);
+		noteManagerUi.renderAll();
+	}
+}
+
 
 
 

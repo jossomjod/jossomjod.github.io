@@ -100,6 +100,14 @@ class SaveManager {
 		return this.parseTrackData(dataString);
 	}
 	
+	static async loadFromClipboard() {
+		console.log('Loading from clipboard');
+		this.hasUnsavedChanges = false;
+		return navigator.clipboard.readText().then((data) => {
+			return this.parseTrackData(data);
+		});
+	}
+	
 	
 	static saveSynthPreset(data, name) {
 		const saveName = this.synthPresetPrefix + name;
