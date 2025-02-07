@@ -241,14 +241,14 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 
 		return osc;
 	}
-
+	
 	this.schedulePlaybackWithAutomation = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
 		const freq = this.isLFO ? this.fixedFreq : frequency;
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customeWave);
 
 		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
-		const endTime = startTime + duration;
+		let endTime = startTime + duration;
 
 		gainNode.gain.value = gain;
 		osc.connect(panner).connect(gainNode);
@@ -257,14 +257,23 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		
 		gainNode.gain.setValueAtTime(0, startTime);
 
-		automation.gain.forEach((g) => {
-			const time = beatsToSeconds(g.time, bpm);
-			if (time <= duration) gainNode.gain.linearRampToValueAtTime(g.value * gain, time + startTime);
-		});
+		if (automation.gain.length) {
+			automation.gain.forEach((g) => {
+				const time = beatsToSeconds(g.time, bpm);
+				if (time <= duration) gainNode.gain.linearRampToValueAtTime(g.value * gain, time + startTime);
+			});
+		} else {
+			this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration);
+			endTime += this.gainEnvelope.getRelease();
+		}
 
-		automation.pitch.forEach((p) => {
-			osc.detune.linearRampToValueAtTime(this.detune + p.value * 100, beatsToSeconds(p.time, bpm) + startTime);
-		});
+		if (automation.pitch.length) {
+			automation.pitch.forEach((p) => {
+				osc.detune.linearRampToValueAtTime(this.detune + p.value * 100, beatsToSeconds(p.time, bpm) + startTime);
+			});
+		} else {
+			this.pitchEnvelope.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration);
+		}
 
 		automation.pan?.forEach((p) => {
 			panner.pan.linearRampToValueAtTime(p.value, beatsToSeconds(p.time, bpm) + startTime);

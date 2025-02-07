@@ -82,8 +82,8 @@ function envelopeToAutomation(env, bpm, duration, valueMultiplier = 1) {
 
 function getAutomationFromSynth(synth, bpm, duration) {
 	return synth.oscillators.map((o) => {
-		const gain = envelopeToAutomation(o.gainEnvelope, bpm, duration);
-		const pitch = envelopeToAutomation(o.pitchEnvelope, bpm, duration, 12);
+		const gain = [];//envelopeToAutomation(o.gainEnvelope, bpm, duration);
+		const pitch = [];//envelopeToAutomation(o.pitchEnvelope, bpm, duration, 12);
 		const pan = [];
 		return { gain, pitch, pan };
 	});
