@@ -335,8 +335,32 @@ function NoteManager(ac, output) {
 		return this.tracks[this.selectedTrack];
 	};
 
+	this.optimizeTrackForStorage = (track) => {
+		track.notes.forEach((n) => {
+			n.startTime = +n.startTime.toFixed(10);
+			n.duration = +n.duration.toFixed(10);
+			n.automations?.forEach((a) => {
+				a.gain?.forEach((g) => {
+					g.time = +g.time.toFixed(10);
+					g.value = +g.value.toFixed(10);
+				});
+				a.pitch?.forEach((g) => {
+					g.time = +g.time.toFixed(10);
+					g.value = +g.value.toFixed(10);
+				});
+				a.pan?.forEach((g) => {
+					g.time = +g.time.toFixed(10);
+					g.value = +g.value.toFixed(10);
+				});
+			});
+		});
+	};
+
 	this.getStringableTracks = () => {
-		return this.tracks.map((t) => ({ ...t, synth: t.synth.save(), fx: t.fx.save() }));
+		return this.tracks.map((t) => {
+			this.optimizeTrackForStorage(t);
+			return { ...t, synth: t.synth.save(), fx: t.fx.save() };
+		});
 	};
 
 	this.save = () => {
