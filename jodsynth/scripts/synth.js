@@ -153,6 +153,9 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.pitchEnvelope = pitchEnvelope;
 	this.modType = 0; // 0: FM, 1: AM
 	this.mod = mod;
+	this.mod1 = mod != null ? mod + 1 : 0;
+	this.mod2 = 0;
+	this.mod3 = 0;
 	this.isCarrier = () => this.mod === null;
 	this.isLFO = false;
 	this.fixedFreq = 1.0;
@@ -293,6 +296,10 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return makeSerializable(this);
 	};
 	this.load = (data) => {
+		if (data.mod1 === undefined) {
+			data.mod1 = data.mod != null ? data.mod + 1 : 0;
+			data.mod2 = data.mod3 = 0;
+		}
 		data.gainEnvelope = this.createEnvelopeFromObject(data.gainEnvelope);
 		data.pitchEnvelope = this.createEnvelopeFromObject(data.pitchEnvelope);
 		Object.assign(this, data);
@@ -359,13 +366,30 @@ function Synth(ac, output, fromObject) {
 		});
 
 		oscs.forEach((t, i) => {
-			const mod = this.oscillators[i].mod;
-			if (mod !== null && typeof mod === 'number') {
+			let mod = this.oscillators[i].mod1;
+			if (mod) {
+				mod--;
 				const modType = this.oscillators[i].modType;
 				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
 				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
+			}
+
+			mod = this.oscillators[i].mod2;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			}
+
+			mod = this.oscillators[i].mod3;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
 			}
 		});
 
@@ -387,13 +411,30 @@ function Synth(ac, output, fromObject) {
 		});
 
 		oscs.forEach((t, i) => {
-			const mod = this.oscillators[i].mod;
-			if (mod !== null && typeof mod === 'number') {
+			let mod = this.oscillators[i].mod1;
+			if (mod) {
+				mod--;
 				const modType = this.oscillators[i].modType;
 				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
 				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
+			}
+
+			mod = this.oscillators[i].mod2;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			}
+
+			mod = this.oscillators[i].mod3;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
 			}
 		});
 
@@ -432,13 +473,30 @@ function Synth(ac, output, fromObject) {
 		});
 
 		oscs.forEach((t, i) => {
-			const mod = this.oscillators[i].mod;
-			if (mod !== null && typeof mod === 'number') {
+			let mod = this.oscillators[i].mod1;
+			if (mod) {
+				mod--;
 				const modType = this.oscillators[i].modType;
 				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
 				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
+			}
+
+			mod = this.oscillators[i].mod2;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			}
+
+			mod = this.oscillators[i].mod3;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
 			}
 		});
 		return oscs;

@@ -1496,8 +1496,8 @@ function NoteManagerUI(noteManager) {
 		const gridX = /* this.gridSizeX;// */this.pxPerBeat / visColsMult;// Math.max(8, Math.min(100, this.pxPerBeat / visColsMult));
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = /* visibleBeats * colsPerBeat;// */this.width / gridX;
-		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone);
-		const offsetCols = Math.floor(-this.scrollX / gridX);
+		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone) + (this.scrollY >= 0);
+		const offsetCols = Math.floor(-this.scrollX / gridX) + (this.scrollX >= 0);
 		
 		// horizontal lines
 		ctx.beginPath();

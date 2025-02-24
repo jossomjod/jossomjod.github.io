@@ -94,7 +94,7 @@ function getAutomationFromSynth(synth, bpm, duration) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.version = 0;
+	this.version = 1;
 	this.bpm = 140;
 	this.lookaheadBeats = 0.09
 	this.intervalMs = 18;

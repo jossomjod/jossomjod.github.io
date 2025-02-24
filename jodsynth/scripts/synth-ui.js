@@ -241,21 +241,29 @@ function OscillatorUi(oscillator, container, name) {
 	});
 
 
-	// MODULATE SELECT
-	this.oscModulateSelectUI = this.oscUi.querySelector('#oscModulateSelect');
+	// MODULATE
+	this.oscModulate1UI = this.oscUi.querySelector('#oscModulate1');
+	this.oscModulate1UI.value = this.oscillator.mod1 ?? 0;
+	this.oscModulate2UI = this.oscUi.querySelector('#oscModulate2');
+	this.oscModulate2UI.value = this.oscillator.mod2 ?? 0;
+	this.oscModulate3UI = this.oscUi.querySelector('#oscModulate3');
+	this.oscModulate3UI.value = this.oscillator.mod3 ?? 0;
 
-	this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
-	this.oscModulateSelectUI.addEventListener('input', () => {
-		const val = this.oscModulateSelectUI.value;
-		this.oscillator.mod = val === 'none' ? null : +val;
+	this.oscModulate1UI.addEventListener('input', () => {
+		this.oscillator.mod1 = +(this.oscModulate1UI.value ?? 0);
 		this.setGainRange();
 		document.activeElement.blur();
 	});
-
-	this.updateModulateOptions = (newOptions) => {
-		this.oscModulateSelectUI.replaceChildren(...newOptions);
-		this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
-	};
+	this.oscModulate2UI.addEventListener('input', () => {
+		this.oscillator.mod2 = +(this.oscModulate2UI.value ?? 0);
+		this.setGainRange();
+		document.activeElement.blur();
+	});
+	this.oscModulate3UI.addEventListener('input', () => {
+		this.oscillator.mod3 = +(this.oscModulate3UI.value ?? 0);
+		this.setGainRange();
+		document.activeElement.blur();
+	});
 
 
 	// MODULATE MODE SELECT
@@ -332,7 +340,7 @@ function OscillatorUi(oscillator, container, name) {
 	
 
 	this.setGainRange = () => { // TODO: prevent hearing damage without compromising functionality
-		if (this.oscillator.mod === null /* || this.oscillator.modType > 0 */) {
+		if (!this.oscillator.mod1 /* || this.oscillator.modType > 0 */) {
 			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
 			this.oscGainControl.max = 1.0;
 			this.oscGainControl.speed = 1.0;
@@ -408,6 +416,9 @@ function SynthUi(synth) {
 
 	this.updateModulateOptions = () => {
 		this.oscillators.forEach((o, oi) => {
+			o.oscModulate1UI.max = o.oscModulate2UI.max = o.oscModulate3UI.max = this.oscillators.length;
+			return;
+
 			const none = document.createElement('option');
 			none.value = `none`;
 			none.innerHTML = `None`;
