@@ -156,32 +156,40 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.mod1 = mod != null ? mod + 1 : 0;
 	this.mod2 = 0;
 	this.mod3 = 0;
-	this.isCarrier = () => this.mod === null;
+	this.isCarrier = () => !this.mod1;
 	this.isLFO = false;
 	this.fixedFreq = 1.0;
 	this.name = '';
 	this.phase = phase;
-	this.customeWave;
+	this.customWave;
 	this.pan = 0.0;
+	this.rndGain = 0.0;
+	this.rndPitch = 0.0;
 
 	this.setWave = (waveform) => {
 		this.type = waveform;
-		this.customeWave = getPeriodicWave(ac, waveform, this.phase);
+		this.customWave = getPeriodicWave(ac, waveform, this.phase);
 	}
 	this.setWave(this.type);
 
 	this.setPhase = (phs) => {
 		this.phase = phs;
-		this.customeWave = getPeriodicWave(ac, this.type, this.phase);
+		this.customWave = getPeriodicWave(ac, this.type, this.phase);
 	}
 
+	this.getGain = (gain = this.gain) => {
+		return /* Math.random() * this.rndGain +  */gain;
+	};
+
+	this.getFreq = (freq) => {
+		return freq + Math.random() * this.rndPitch * freq;
+	};
+
 	this.start = (frequency, gainNode, panner, time = ac.currentTime) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
-		// You have to make a new osc every time
-		const osc = new OscillatorNode(ac, { /* type: this.type, */ detune: this.detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
-		
-		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const gain = this.getGain();
+		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
+		osc.setPeriodicWave(this.customWave);
 
 		gainNode.gain.value = gain;
 		osc.connect(panner).connect(gainNode);
@@ -200,11 +208,10 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	}
 
 	this.startWithFixedProperties = ({ frequency, gainNode, panner, detune, gain, pan }) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const thisGain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune + detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
-		
-		const thisGain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+		osc.setPeriodicWave(this.customWave);
 
 		gainNode.gain.value = thisGain * gain;
 		panner.pan = pan;
@@ -215,7 +222,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	}
 
 	this.updateFixedProperties = ({ osc, gainNode, panner, gain, pan, detune }) => {
-		const thisGain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+		const thisGain = this.gain;
 		osc.detune.setValueAtTime(this.detune + detune, ac.currentTime);
 		gainNode.gain.setValueAtTime(thisGain * gain, ac.currentTime);
 		panner.pan.setValueAtTime(pan, ac.currentTime);
@@ -226,11 +233,10 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	}
 
 	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const gain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
-
-		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+		osc.setPeriodicWave(this.customWave);
 
 		gainNode.gain.value = gain;
 		osc.connect(panner).connect(gainNode);
@@ -246,11 +252,11 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	}
 	
 	this.schedulePlaybackWithAutomation = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const gain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
-
-		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+		osc.setPeriodicWave(this.customWave);
+		
 		let endTime = startTime + duration;
 
 		gainNode.gain.value = gain;
@@ -465,7 +471,7 @@ function Synth(ac, output, fromObject) {
 			if (automation) {
 				if (monoPitch) {
 					automation.pitch = automations[0].pitch;
-					if (osc.mod === null) automation.gain = automations[0].gain;
+					if (osc.mod1 === 0) automation.gain = automations[0].gain;
 				}
 				oscillator = osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automation, bpm);
 			} else oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);

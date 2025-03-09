@@ -114,6 +114,7 @@
 .track-label {
 	overflow: hidden;
 	text-overflow: ellipsis;
+	hyphens: auto;
 	max-height: 100%;
 	width: 60px;
 	font-size: smaller;

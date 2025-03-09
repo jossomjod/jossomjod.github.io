@@ -415,21 +415,8 @@ function SynthUi(synth) {
 	}
 
 	this.updateModulateOptions = () => {
-		this.oscillators.forEach((o, oi) => {
+		this.oscillators.forEach((o) => {
 			o.oscModulate1UI.max = o.oscModulate2UI.max = o.oscModulate3UI.max = this.oscillators.length;
-			return;
-
-			const none = document.createElement('option');
-			none.value = `none`;
-			none.innerHTML = `None`;
-
-			const options = this.oscillators.map((o, i) => {
-				const option = document.createElement('option');
-				option.value = `${i}`;
-				option.innerHTML = `${o.name}`;
-				if (oi !== i) return option;
-			});
-			o.updateModulateOptions([ none, ...options ]);
 		});
 	};
 
