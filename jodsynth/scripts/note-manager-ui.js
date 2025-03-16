@@ -1330,13 +1330,6 @@ function NoteManagerUI(noteManager) {
 		nodeColor = jodColors.automationNode,
 		lineColor = jodColors.automationLine
 	) => {
-		const x = this.timeToX(note.startTime);
-		const y = this.toneToY(note.tone);
-		const w = note.duration * this.pxPerBeat;
-		const h = this.noteHeight;
-		this.ctx.fillStyle = jodColors.note;
-		this.ctx.fillRect(x, y, w, h);
-
 		if (!nodes?.length) return;
 
 		this.ctx.lineWidth = 4;
@@ -1427,11 +1420,13 @@ function NoteManagerUI(noteManager) {
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty]);
 					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				case EModes.panAutomation:
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty], true);
 					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				default:
 					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, shouldAnimate);
