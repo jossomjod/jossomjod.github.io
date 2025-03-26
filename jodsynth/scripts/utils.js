@@ -29,3 +29,15 @@ function makeSerializable(obj) {
 			return prev;
 		}, {});
 }
+
+
+function getRandomColor(range = 255) {
+	if (range > 255) range = 255;
+	if (range < 0) range = 0;
+	const diff = 255 - range;
+	const r = Math.floor(Math.random() * range + diff);
+	const g = Math.floor(Math.random() * range + diff);
+	const b = Math.floor(Math.random() * range + diff);
+	const col = r << 16 | g << 8 | b;
+	return `#${col.toString(16)}`;
+}

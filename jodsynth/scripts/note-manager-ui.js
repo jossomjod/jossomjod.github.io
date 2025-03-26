@@ -1635,7 +1635,7 @@ function NoteManagerUI(noteManager) {
 		if (!jodConfiguration.animations) return;
 		const element = this.getTrackElement(trackIndex);
 		playTrackAnimation(element, startsIn, duration, track.active);
-		if (track.screenFlash) this.screenFlasher.start();
+		if (track.screenFlash) this.screenFlasher.start(undefined, undefined, getRandomColor(120));
 		if (track.screenShake) this.screenShaker.start();
 	};
 

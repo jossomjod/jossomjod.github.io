@@ -67,8 +67,14 @@ class CssFlasher extends CssAnimator {
 		element.style.opacity = str;
 	};
 
+	start(duration = this.duration, strength = this.strength, color)  {
+		if (color) this.element.style.backgroundColor = color;
+		super.start(duration, strength);
+	}
+
 	reset() {
 		super.reset();
 		this.element.style.removeProperty('opacity');
+		this.element.style.removeProperty('background-color');
 	}
 }
