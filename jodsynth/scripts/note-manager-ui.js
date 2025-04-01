@@ -215,7 +215,7 @@ function NoteManagerUI(noteManager) {
 	this.ctx = this.canvas.getContext('2d');
 
 	this.overlay = document.querySelector('#jodOverlay');
-	this.screenFlasher = new CssFlasher(this.overlay, 650, 0.7);
+	this.screenFlasher = new CssFlasher(this.overlay, 450, 1.0);
 	this.screenShaker = new CssShaker(document.querySelector('.main-content'), 500, 8);
 
 	this.playBtn = new ToggleButton(document.querySelector('#jodrollBtnPlay'), () => this.togglePlayback());
