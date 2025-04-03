@@ -117,7 +117,7 @@
 	hyphens: auto;
 	max-height: 100%;
 	width: 60px;
-	font-size: smaller;
+	font-size: x-small;
 }
 .track-gain-and-btn-row {
 	display: flex;
