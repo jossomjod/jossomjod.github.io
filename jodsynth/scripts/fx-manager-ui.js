@@ -206,10 +206,11 @@ function FxManagerUi(fxManager) {
 	this.container = document.querySelector('.fx-container');
 	this.fxManager;
 	this.fxUis;
+	this.abortController = new AbortController();
 
 	this.container.addEventListener('dragend', (e) => {
 		console.log('DROPPED', e);
-	});
+	}, { signal: this.abortController.signal });
 
 	this.addFx = (type) => {
 		if (!fxTypes.includes(type)) return;
@@ -217,7 +218,7 @@ function FxManagerUi(fxManager) {
 		this.fxUis.push(createFxUi(fx, this.container, () => this.rmCallback(index)));
 		this.fxUis[index].container.addEventListener('dragstart', (e) => {
 			e.dataTransfer.setData('text/plain', `${index}`);
-		});
+		}, { signal: this.abortController.signal });
 	};
 
 	this.rmCallback = (index) => {
@@ -232,4 +233,8 @@ function FxManagerUi(fxManager) {
 	};
 
 	if (fxManager) this.setFxManager(fxManager);
+
+	this.destroy = () => {
+		this.abortController.abort();
+	};
 }
