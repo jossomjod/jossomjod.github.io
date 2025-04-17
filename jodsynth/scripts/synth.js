@@ -73,20 +73,24 @@ const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 // The web audio API doesn't support phase-shifting the oscillator
 // so we need to generate each waveform with a phase offset
-function getPhaseShiftedSawWave(ac, phaseOffset = 0.0) {
-	const numHarmonics = 30;
-	const real = new Float32Array(numHarmonics);
-	const imag = new Float32Array(numHarmonics);
+function getPhaseShiftedSawWave(audioContext, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
+	const numberOfHarmonics = 30;
+	const real = new Float32Array(numberOfHarmonics);
+	const imag = new Float32Array(numberOfHarmonics);
 	real[0] = 0.0;
 	imag[0] = 0.0;
 
-	for (let i = 1; i <= numHarmonics-1; i++) {
-		imag[i] = ((-1) ** (i + 1)) * (2 / (i * Math.PI + phaseOffset));
+	for (let i = 1; i < numberOfHarmonics; i++) {
+		imag[i] = -(1 ** (i + 1)) * (2 / (i * Math.PI));
+		real[i] = -imag[i] * Math.sin(phase);
+		imag[i] *= Math.cos(phase);
 	}
-	return ac.createPeriodicWave(real, imag);
+	return audioContext.createPeriodicWave(real, imag);
 }
 
 function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
 	const numHarmonics = 30;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
@@ -94,13 +98,16 @@ function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
 	real[0] = 0.0;
 	imag[0] = 0.0;
 
-	for (let i = 1; i <= numHarmonics-1; i++) {
-		imag[i] = (2 / ((i + phaseOffset) * Math.PI)) * (1 - (-1) ** i);
+	for (let i = 1; i < numHarmonics; i++) {
+		imag[i] = (2 / (i * Math.PI)) * (1 - (-1) ** i);
+		real[i] = -imag[i] * Math.sin(phase);
+		imag[i] *= Math.cos(phase);
 	}
 	return ac.createPeriodicWave(real, imag);
 }
 
 function getPhaseShiftedTriangleWave(ac, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
 	const numHarmonics = 30;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
@@ -108,24 +115,40 @@ function getPhaseShiftedTriangleWave(ac, phaseOffset = 0.0) {
 	real[0] = 0.0;
 	imag[0] = 0.0;
 
-	for (let i = 1; i <= numHarmonics-1; i++) {
-		const pii = (i + phaseOffset) * Math.PI;
+	for (let i = 1; i < numHarmonics; i++) {
+		const pii = i * Math.PI;
 		imag[i] = (8 * Math.sin(pii / 2)) / pii ** 2;
+		real[i] = -imag[i] * Math.sin(phase);
+		imag[i] *= Math.cos(phase);
 	}
 	return ac.createPeriodicWave(real, imag);
 }
 
 function getPhaseShiftedSineWave(ac, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
 	const numHarmonics = 2;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
 
-	real[0] = 0 + phaseOffset;
-	imag[0] = 0;
-	real[1] = 1 - phaseOffset;
-	imag[1] = 0;
+	real[0] = Math.cos(phase);
+	imag[0] = Math.sin(phase);
+	real[1] = Math.cos(phase);
+	imag[1] = Math.sin(Math.PI * 2 + phase);
 
 	return ac.createPeriodicWave(real, imag);
+}
+
+function getPhaseShiftedCustomWave(audioContext, harmonics, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
+	const numberOfHarmonics = harmonics.imag.length;
+
+	// Apply phase shift
+	for (let i = 0; i < numberOfHarmonics; i++) {
+		const tempReal = harmonics.real[i];
+		harmonics.real[i] = tempReal * Math.cos(phase) - harmonics.imag[i] * Math.sin(phase);
+		harmonics.imag[i] = tempReal * Math.sin(phase) + harmonics.imag[i] * Math.cos(phase);
+	}
+	return audioContext.createPeriodicWave(real, imag);
 }
 
 function getPeriodicWave(ac, type = 'sawtooth', phase) {
@@ -160,22 +183,28 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.isLFO = false;
 	this.fixedFreq = 1.0;
 	this.name = '';
-	this.phase = phase;
+	this.phase = phase ?? 0.0;
 	this.customWave;
+	this.customWaveform = getPeriodicWave(ac, 'sine', this.phase);
 	this.pan = 0.0;
 	this.rndGain = 0.0;
 	this.rndPitch = 0.0;
 
+	this.getPeriodicWave = (_type) => {
+		if (_type === 'custom') return this.customWaveform;
+		return getPeriodicWave(ac, _type, this.phase);
+	};
+
 	this.setWave = (waveform) => {
 		this.type = waveform;
-		this.customWave = getPeriodicWave(ac, waveform, this.phase);
-	}
+		this.customWave = this.getPeriodicWave(waveform);
+	};
 	this.setWave(this.type);
 
 	this.setPhase = (phs) => {
 		this.phase = phs;
-		this.customWave = getPeriodicWave(ac, this.type, this.phase);
-	}
+		this.customWave = this.getPeriodicWave(this.type);
+	};
 
 	this.getGain = (gain = this.gain) => {
 		return /* Math.random() * this.rndGain +  */gain;

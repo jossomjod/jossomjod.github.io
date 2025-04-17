@@ -85,8 +85,13 @@ class JodNumbElement extends HTMLElement {
 					this.lastValue = this.#value;
 					this.dragging = 1;
 					break;
+				case 2:
+					if (!this.dragging) break;
+					this.setValue(this.lastValue);
+					this.value = this.lastValue;
+					break;
 				case 4:
-					this.setValue(this._min ?? 0);
+					this.setValue(Math.max(this._min ?? 0, 0));
 					break;
 			}
 		});
@@ -100,10 +105,12 @@ class JodNumbElement extends HTMLElement {
 		document.addEventListener('mousemove', (e) => {
 			if (!e.buttons) this.dragging = 0;
 			if (this.dragging) {
+				const mod1 = e.ctrlKey || e.buttons & 8;
+				const mod2 = e.shiftKey || e.buttons & 16;
 				const x = Math.abs(e.clientX - this.offsetX);
 				const y = e.clientY - this.offsetY;
-				let mod = e.shiftKey ? 100 : e.ctrlKey ? 0.001 : 1;
-				let mult = (1 + Math.floor(x / 100)) * 0.01 * this._speed;
+				const mod = mod2 ? 100 : mod1 ? 0.001 : 1;
+				const mult = (1 + Math.floor(x / 100)) * 0.01 * this._speed;
 				let value = this.lastValue + y * mult * -mod;
 				value = value < this._min ? this._min : value > this._max ? this._max : value;
 				this.setValue(value);

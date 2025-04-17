@@ -249,7 +249,9 @@ function NoteManagerUI(noteManager) {
 	this.primaryAction = 1;
 	this.secondaryAction = 2;
 	this.scrollAction = 4;
-	this.timeLineAction = 8;
+	this.mod1Action = 8;
+	this.mod2Action = 16;
+	this.timeLineAction = 32;
 
 	this.beatsPerBar = 4; // the top number in the time signature
 	this.beatDivisor = 4; // the bottom number in the time signature
@@ -293,7 +295,11 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (e.button === 3 || e.button === 4) return;
 		document.activeElement.blur();
+		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
+		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
+		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
 
 		const rect = this.canvas.getBoundingClientRect();
 		const unFlippedY = e.y - rect.top;
@@ -304,7 +310,7 @@ function NoteManagerUI(noteManager) {
 
 		// PITCH AUTOMATION
 		if (!this.timeLineClicked && this.mode === EModes.pitchAutomation) {
-			switch (e.buttons) {
+			switch (buttons) {
 				case this.primaryAction:
 					const time = this.xToTime(realX);
 					const tone = this.yToTone(realY);
@@ -334,7 +340,7 @@ function NoteManagerUI(noteManager) {
 
 		// AUTOMATION
 		if (!this.timeLineClicked && this.mode >= EModes.automation) {
-			switch (e.buttons) {
+			switch (buttons) {
 				case this.primaryAction:
 					const note = this.getNoteAutomationAtPos(realX, unFlippedY);
 					this.clickedNote = note;
@@ -379,11 +385,11 @@ function NoteManagerUI(noteManager) {
 			return;
 		}
 
-		switch (e.buttons) {
+		switch (buttons) {
 			case this.primaryAction:
 				if (this.clickedNote) this.previewNote(false);
 				if (this.timeLineClicked) {
-					if (e.ctrlKey) {
+					if (mod1) {
 						this.timeLine.startSelecting(realX, e.shiftKey);
 						break;
 					}
@@ -392,7 +398,7 @@ function NoteManagerUI(noteManager) {
 				}
 				const clickedNote = this.getNoteAtPos(realX, realY);
 
-				if (e.ctrlKey) {
+				if (mod1) {
 					if (clickedNote) {
 						const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 						if (idx > -1) this.selectedNotes.splice(idx, 1);
@@ -406,12 +412,12 @@ function NoteManagerUI(noteManager) {
 					this.areaSelectAABB.bx = realX;
 					this.areaSelectAABB.by = realY;
 
-					if (e.shiftKey) this.isSelectingAllTracks = true;
+					if (mod2) this.isSelectingAllTracks = true;
 					else this.isSelectingArea = true;
 					break;
 				}
 
-				if (e.shiftKey) {
+				if (mod2) {
 					const time = this.xToTime(this.snapX ? this.snapToGridX(realX) : realX);
 					this.setLoopPoint(time);
 					break;
@@ -442,7 +448,12 @@ function NoteManagerUI(noteManager) {
 					break;
 				}
 
-				if (e.shiftKey) {
+				if (mod1) {
+					this.deleteSelectedNotes();
+					break;
+				}
+
+				if (mod2) {
 					const time = this.xToTime(this.snapX ? this.snapToGridX(realX) : realX);
 					this.setLoopPoint(time, false);
 					break;
@@ -463,7 +474,7 @@ function NoteManagerUI(noteManager) {
 				this.areaSelectAABB.bx = realX;
 				this.areaSelectAABB.by = realY;
 
-				if (e.shiftKey) this.isSelectingAllTracks = true;
+				if (mod2) this.isSelectingAllTracks = true;
 				else this.isSelectingArea = true;
 				break;
 		}
@@ -472,10 +483,12 @@ function NoteManagerUI(noteManager) {
 	this.onMouseUpOrEnter = (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (e.button === 3 || e.button === 4) return;
+		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
 
 		this.isCursorInside = true;
 		
-		if (~e.buttons & this.primaryAction) {
+		if (~buttons & this.primaryAction) {
 			if (this.isSelectingArea) {
 				this.isSelectingArea = false;
 				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
@@ -533,10 +546,12 @@ function NoteManagerUI(noteManager) {
 		this.cursorX = realX;
 		this.cursorTime = this.xToTime(this.cursorX);
 
+		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
+		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
 		const timeLineHovered = this.timeLine.isPointInside(realX, unFlippedY);
 		const timeLineClicked = +timeLineHovered * this.timeLineAction;
 		const scrollHack = +e.altKey * this.scrollAction; // alternative to middle mouse button
-		const fakeButtons = e.buttons | scrollHack | timeLineClicked;
+		const fakeButtons = (e.buttons | scrollHack | timeLineClicked) & ~this.mod1Action & ~this.mod2Action;
 
 		switch (fakeButtons) {
 			case this.primaryAction | this.scrollAction:
@@ -553,8 +568,8 @@ function NoteManagerUI(noteManager) {
 
 				if (this.mode === EModes.pitchAutomation) {
 					if (!this.clickedNode || !this.clickedNote) break;
-					if (!e.shiftKey && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
-					if (!e.ctrlKey && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
+					if (!mod2 && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
+					if (!mod1 && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
 					const dTime = this.xToTime(realX) - (this.clickedNote.startTime + this.clickedNode.time);
 					const dValue = this.yToTone(realY) - (this.clickedNote.tone + this.clickedNode.value);
 					this.movePitchAutomationNodeBy(this.clickedNode, dTime, dValue);
@@ -566,8 +581,8 @@ function NoteManagerUI(noteManager) {
 
 				if (this.mode >= EModes.automation) {
 					if (!this.clickedNode || !this.clickedNote) break;
-					if (e.ctrlKey) realX = this.snapToGridX(realX);
-					if (e.shiftKey) realY = this.snapToGridY(realY);
+					if (mod1) realX = this.snapToGridX(realX);
+					if (mod2) realY = this.snapToGridY(realY);
 					const pos = this.automationNodeToPos(this.clickedNote, this.clickedNode);
 					const dTime = this.xToTime(realX) - (this.clickedNote.startTime + this.clickedNode.time);
 					const dValue = (pos.y - unFlippedY) / this.automationBoxHeight;
@@ -578,8 +593,8 @@ function NoteManagerUI(noteManager) {
 					break;
 				}
 
-				if (this.snapX && !e.ctrlKey && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
-				if (this.snapY && !e.shiftKey && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
+				if (this.snapX && !mod1 && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
+				if (this.snapY && !mod2 && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
 
 				if (this.isSelectingArea || this.isSelectingAllTracks) {
 					this.areaSelectAABB.bx = realX;
@@ -626,7 +641,7 @@ function NoteManagerUI(noteManager) {
 		else if (timeLineHovered && prevIsCursorInside) this.render();
 
 		// TODO: better snap handling
-		if (this.snapX && !e.ctrlKey) realX = this.snapToGridX(realX);
+		if (this.snapX && !mod1) realX = this.snapToGridX(realX);
 		if (!this.isPlaying()) this.setTimeDisplay(this.xToTime(realX));
 	});
 

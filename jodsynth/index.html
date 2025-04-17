@@ -156,7 +156,14 @@
 					<option value="sine">Sine</option>
 					<option value="sawtooth">Sawtooth</option>
 					<option value="triangle">Triangle</option>
+					<option value="custom">Custom</option>
 				</select>
+				<button id="oscWaveformEditBtn">Edit</button>
+				<dialog id="oscWaveformEditorDialog" class="waveform-editor-panel">
+					<canvas id="waveform-preview"></canvas>
+					<div class="waveform-editor-controls">
+					</div>
+				</dialog>
 			</div>
 
 			<div class="control">
@@ -183,12 +190,12 @@
 				<label for="oscCoarse">Coarse</label>
 				<input class="detune" type="number" id="oscCoarse" name="oscCoarse" min="-1200" max="1200" step="1.0">
 				<label for="oscDetune">Detune</label>
-				<input class="detune" type="number" id="oscDetune" name="oscDetune" min="-100" max="100" step="1.0">
+				<jod-numb class="detune" id="oscDetune" name="oscDetune" min="-100" max="100" speed="0.1"></jod-numb>
 			</div>
 
 			<div class="control">
 				<label for="oscPhase">Phase</label>
-				<input class="phase" type="number" id="oscPhase" name="oscPhase" min="-10" max="10" step="0.01">
+				<jod-numb class="phase" id="oscPhase" name="oscPhase" min="-10" max="10" speed="0.01"></jod-numb>
 			</div>
 
 			<div class="control">
@@ -200,7 +207,7 @@
 
 			<div class="control">
 				<label for="oscPan">Pan</label>
-				<jod-numb  name="oscPan" id="oscPan" min="-1" max="1" step="0.01"></jod-numb>
+				<jod-numb  name="oscPan" id="oscPan" min="-1" max="1" speed="0.1"></jod-numb>
 			</div>
 		</div>
 		<div>Gainvelope</div>

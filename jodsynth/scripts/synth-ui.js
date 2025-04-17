@@ -240,6 +240,18 @@ function OscillatorUi(oscillator, container, name) {
 		document.activeElement.blur();
 	});
 
+	this.customWaveformEditorUI = this.oscUi.querySelector('#oscWaveformEditorDialog');
+	this.oscWaveformEditBtn = this.oscUi.querySelector('#oscWaveformEditBtn');
+	this.oscWaveformEditBtn.onclick = () => {
+		this.customWaveformEditorUI.showModal();
+	};
+	this.customWaveformEditorUI.onclick = (e) => {
+		const rect = this.customWaveformEditorUI.getBoundingClientRect();
+		const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+			rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+		if (!isInDialog) this.customWaveformEditorUI.close();
+	};
+
 
 	// MODULATE
 	this.oscModulate1UI = this.oscUi.querySelector('#oscModulate1');
@@ -283,24 +295,25 @@ function OscillatorUi(oscillator, container, name) {
 
 
 	// DETUNE
-	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune'); // TODO: Use jodnumb
+	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune');
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
 	const coarse = Math.round(this.oscillator.detune / 100);
 	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
 	this.oscDetuneUI.value = this.oscillator.detune - coarse * 100;
+	this.oscDetuneUI.setAttribute('value', this.oscDetuneUI.value + '');
 	
 	this.oscDetuneInput = () => {
 		this.oscillator.detune = +this.oscCoarseUI.value * 100 + +this.oscDetuneUI.value;
-		document.activeElement.blur();
 	}
 	this.oscCoarseUI.addEventListener('input', this.oscDetuneInput);
-	this.oscDetuneUI.addEventListener('input', this.oscDetuneInput);
+	this.oscDetuneUI.addEventListener('changed', this.oscDetuneInput);
 
 
 	// PHASE
 	this.oscPhaseUI = this.oscUi.querySelector('#oscPhase');
-	this.oscPhaseUI.value = '' + this.oscillator.phase;
-	this.oscPhaseUI.addEventListener('input', () => {
+	this.oscPhaseUI.value = this.oscillator.phase;
+	this.oscPhaseUI.setAttribute('value', this.oscillator.phase + '');
+	this.oscPhaseUI.addEventListener('changed', () => {
 		this.oscillator.setPhase(+this.oscPhaseUI.value);
 		document.activeElement.blur();
 	});

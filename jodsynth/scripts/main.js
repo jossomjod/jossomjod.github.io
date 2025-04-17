@@ -289,6 +289,11 @@ window.onbeforeunload = (e) => {
 	//SaveManager.autoSave(noteManager.save());
 };
 
+const 不要去 = (e) => {
+	if (e.button === 3 || e.button === 4) e.preventDefault();
+}
+document.addEventListener('mouseup', 不要去);
+
 
 // KEY STUFF
 
