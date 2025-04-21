@@ -386,7 +386,7 @@ function Synth(ac, output, fromObject) {
 			default:
 				this.oscillators = [
 					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, 0.0),
-					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 600.0), 0, 0.0),
+					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), 0, 0.0),
 				];
 		}
 	}
@@ -542,19 +542,19 @@ function Synth(ac, output, fromObject) {
 			ac,
 			'sine',
 			0.0,
-			new ArrayEnvelope(ac, osmanGainPoints, 0.0),
+			new ArrayEnvelope(ac, oscarGainPoints, 0.0),
 			new ArrayEnvelope(ac, pitchPoints, 600.0),
 			null,
 			0.0
 		));
 	}
 
-	this.generateSupersaw = (numOsc = 5) => {
+	this.generateSupersaw = (numOsc = 5, spread = 20) => {
 		const oscs = [];
 		for (let i = -numOsc; i < numOsc; i++) {
-			let mul = i % numOsc;
-			const detune = mul * mul;
-			const phase = mul * mul + Math.random() * 0.01;
+			let mul = i / numOsc;
+			const detune = mul * mul * spread;
+			const phase = mul * mul + mul < 0 ? -0.01 : 0.03;
 			oscs.push(new Oscillator(
 				ac,
 				'sawtooth',

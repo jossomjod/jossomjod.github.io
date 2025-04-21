@@ -796,8 +796,8 @@ function NoteManagerUI(noteManager) {
 			node = arr?.find((a) => {
 				const x = this.timeToX(n.startTime + a.time) - this.timeToX(time);
 				const y = this.toneToY(n.tone + a.value) - this.toneToY(tone);
-				const dist = Math.sqrt(x * x + y * y);
-				return dist <= this.nodeRadius;
+				const dist = x * x + y * y;
+				return dist <= this.nodeRadius * this.nodeRadius;
 			});
 			return !!node;
 		});
@@ -813,7 +813,9 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.getCurrentAutomationArray = (note, prop = this.automationProperty) => {
-		return note.automations?.[this.selectedOsc]?.[prop];
+		const automations = note.automations ?? (note.automations = []);
+		if (!automations[this.selectedOsc]) automations[this.selectedOsc] = { gain: [], detune: [], pan: [] };
+		return automations[this.selectedOsc][prop];
 	};
 
 	this.moveAutomationNodeBy = (node, dTime, dValue) => {
