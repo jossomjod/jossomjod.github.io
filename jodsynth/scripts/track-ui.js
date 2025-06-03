@@ -124,6 +124,7 @@ function createTrackEntryUi(track, trackHandler) {
 		e.stopPropagation();
 		e.preventDefault();
 		openContextMenu(div, [
+			{ name: 'Clear automation', callback: () => trackHandler.clearAutomationFromTrack(track) },
 			{ name: 'Delete', callback: () => trackHandler.deleteTrack(track) },
 		]);
 	});

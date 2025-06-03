@@ -335,6 +335,11 @@ function NoteManager(ac, output) {
 		return this.tracks[this.selectedTrack];
 	};
 
+	this.clearAutomationFromTrack = (track) => {
+		track.notes.forEach((n) => delete n.automations);
+		console.log('Yeeted all automation on every note in track ' + track.name);
+	};
+
 	this.optimizeTrackForStorage = (track) => {
 		track.notes.forEach((n) => {
 			let hasAutomations = false;

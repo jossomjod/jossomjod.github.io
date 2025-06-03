@@ -1225,6 +1225,11 @@ function NoteManagerUI(noteManager) {
 		}, 0);
 	};
 
+	this.clearAutomationFromTrack = (track) => {
+		noteManager.clearAutomationFromTrack(track);
+		this.render();
+	};
+
 	this.setTrackGain = (track, gain) => {
 		track.gain = gain;
 		track.fx.gain.gain.value = gain;
