@@ -46,6 +46,7 @@ class SaveManager {
 	}
 	
 	static parseTrackData(data) {
+		console.log(`Parsed data of size: ${data.length / 1000} kB`);
 		const parsed = JSON.parse(data);
 		return parsed.tracks ? parsed : { bpm: 140, tracks: parsed }; // for backwards compatibility
 	}
@@ -68,7 +69,7 @@ class SaveManager {
 	
 	static quickSave(saveData) {
 		const data = JSON.stringify(saveData);
-		navigator.clipboard.writeText(data).then(() => console.log('data copied to clipboard'));
+		navigator.clipboard.writeText(data).then(() => console.log(`data copied to clipboard. Size: ${data.length / 1000} kB`));
 		localStorage.setItem(this.quickSaveName, data);
 		this.hasUnsavedChanges = false;
 	}
@@ -85,7 +86,7 @@ class SaveManager {
 		console.log('Saving as ', saveName);
 
 		const stringData = JSON.stringify(data);
-		navigator.clipboard.writeText(stringData).then(() => console.log('data copied to clipboard'));
+		navigator.clipboard.writeText(stringData).then(() => console.log(`data copied to clipboard. Size: ${stringData.length / 1000} kB`));
 		localStorage.setItem(saveName, stringData);
 		this.hasUnsavedChanges = false;
 	}

@@ -94,7 +94,7 @@ function getAutomationFromSynth(synth, bpm, duration) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.version = 1;
+	this.version = 2;
 	this.bpm = 140;
 	this.lookaheadBeats = 0.09
 	this.intervalMs = 18;
@@ -337,6 +337,7 @@ function NoteManager(ac, output) {
 
 	this.optimizeTrackForStorage = (track) => {
 		track.notes.forEach((n) => {
+			let hasAutomations = false;
 			n.startTime = +n.startTime.toFixed(10);
 			n.duration = +n.duration.toFixed(10);
 			n.automations?.forEach((a) => {
@@ -352,8 +353,53 @@ function NoteManager(ac, output) {
 					g.time = +g.time.toFixed(10);
 					g.value = +g.value.toFixed(10);
 				});
+				if (!a.gain?.length) delete a.gain;
+				if (!a.pitch?.length) delete a.pitch;
+				if (!a.pan?.length) delete a.pan;
+				if (a.gain || a.pitch || a.pan) hasAutomations = true;
 			});
+			if (!hasAutomations) delete n.automations;
 		});
+	};
+
+	this.propNameLookup = {
+		s: 'startTime',
+		d: 'duration',
+		o: 'tone',
+		a: 'automations',
+		g: 'gain',
+		p: 'pitch',
+		n: 'pan',
+		t: 'time',
+		v: 'value',
+	};
+
+	this.shortNameLookup = Object.entries(this.propNameLookup).reduce((prev, [short, long]) => {
+		prev[long] = short;
+		return prev;
+	}, {});
+
+	// Should only be used on stringable data
+	this.shortenNames = (input) => {
+		if (!input) return input;
+		if (Array.isArray(input)) return input.map((i) => this.shortenNames(i));
+		else if (typeof input === 'object') return Object.entries(input).reduce((prev, [key, val]) => {
+			key = this.shortNameLookup[key] ?? key;
+			prev[key] = this.shortenNames(val);
+			return prev;
+		}, {});
+		return input;
+	};
+
+	this.expandNames = (input) => {
+		if (!input) return input;
+		if (Array.isArray(input)) return input.map((i) => this.expandNames(i));
+		else if (typeof input === 'object') return Object.entries(input).reduce((prev, [key, val]) => {
+			key = this.propNameLookup[key] ?? key;
+			prev[key] = this.expandNames(val);
+			return prev;
+		}, {});
+		return input;
 	};
 
 	this.getStringableTracks = () => {
@@ -367,7 +413,7 @@ function NoteManager(ac, output) {
 		return {
 			version: this.version,
 			bpm: this.bpm,
-			tracks: this.getStringableTracks(),
+			tracks: this.shortenNames(this.getStringableTracks()),
 		};
 	};
 
@@ -376,8 +422,9 @@ function NoteManager(ac, output) {
 		if (data.version !== this.version) {
 			console.warn('Version mismatch');
 		}
+		const tracks = data.version >= 2 ? this.expandNames(data.tracks) : data.tracks;
 		this.bpm = data.bpm ?? 140;
-		this.loadTracks(data.tracks);
+		this.loadTracks(tracks);
 	};
 
 	this.loadTracks = (tracks) => {

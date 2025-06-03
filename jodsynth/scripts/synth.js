@@ -175,6 +175,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.gainEnvelope = gainEnvelope;
 	this.pitchEnvelope = pitchEnvelope;
 	this.modType = 0; // 0: FM, 1: AM
+	/** @deprecated Use mod1 instead */
 	this.mod = mod;
 	this.mod1 = mod != null ? mod + 1 : 0;
 	this.mod2 = 0;
@@ -239,11 +240,11 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.startWithFixedProperties = ({ frequency, gainNode, panner, detune, gain, pan }) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
 		const thisGain = this.getGain();
-		const osc = new OscillatorNode(ac, { detune: this.detune + detune, frequency: freq });
+		const osc = new OscillatorNode(ac, { detune: this.detune + (detune ?? 0), frequency: freq });
 		osc.setPeriodicWave(this.customWave);
 
-		gainNode.gain.value = thisGain * gain;
-		panner.pan = pan;
+		gainNode.gain.value = thisGain * (gain ?? 1);
+		panner.pan = (pan ?? 0);
 		osc.connect(panner).connect(gainNode);
 		osc.start(ac.currentTime);
 
@@ -252,9 +253,9 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 
 	this.updateFixedProperties = ({ osc, gainNode, panner, gain, pan, detune }) => {
 		const thisGain = this.gain;
-		osc.detune.setValueAtTime(this.detune + detune, ac.currentTime);
-		gainNode.gain.setValueAtTime(thisGain * gain, ac.currentTime);
-		panner.pan.setValueAtTime(pan, ac.currentTime);
+		osc.detune.setValueAtTime(this.detune + (detune ?? 0), ac.currentTime);
+		gainNode.gain.setValueAtTime(thisGain * (gain ?? 1), ac.currentTime);
+		panner.pan.setValueAtTime(pan ?? 0, ac.currentTime);
 	};
 	
 	this.stopWithFixedProperties = (osc) => {
@@ -295,7 +296,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		
 		gainNode.gain.setValueAtTime(0, startTime);
 
-		if (automation.gain.length) {
+		if (automation.gain?.length) {
 			automation.gain.forEach((g) => {
 				const time = beatsToSeconds(g.time, bpm);
 				if (time <= duration) gainNode.gain.linearRampToValueAtTime(g.value * gain, time + startTime);
@@ -305,7 +306,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 			endTime += this.gainEnvelope.getRelease();
 		}
 
-		if (automation.pitch.length) {
+		if (automation.pitch?.length) {
 			automation.pitch.forEach((p) => {
 				osc.detune.linearRampToValueAtTime(this.detune + p.value * 100, beatsToSeconds(p.time, bpm) + startTime);
 			});
