@@ -496,15 +496,22 @@ function Synth(ac, output, fromObject) {
 		const oscs = this.oscillators.map((osc, i) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const automation = automations?.[i];
+			let automation = automations?.[i];
 			let oscillator;
-			if (automation) {
-				if (monoPitch) {
+
+			if (monoPitch) {
+				if (automation) {
 					automation.pitch = automations[0].pitch;
 					if (osc.mod1 === 0) automation.gain = automations[0].gain;
+				} else {
+					automation = automations?.[0];
 				}
+			}
+			if (automation) {
 				oscillator = osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automation, bpm);
-			} else oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
+			} else {
+				oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
+			}
 			return { gain, oscillator };
 		});
 

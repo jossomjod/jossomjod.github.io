@@ -814,7 +814,7 @@ function NoteManagerUI(noteManager) {
 
 	this.getCurrentAutomationArray = (note, prop = this.automationProperty) => {
 		const automations = note.automations ?? (note.automations = []);
-		if (!automations[this.selectedOsc]) automations[this.selectedOsc] = { gain: [], detune: [], pan: [] };
+		if (!automations[this.selectedOsc]) automations[this.selectedOsc] = {};
 		return automations[this.selectedOsc][prop] ?? (automations[this.selectedOsc][prop] = []);
 	};
 
@@ -852,7 +852,6 @@ function NoteManagerUI(noteManager) {
 
 	this.addAutomationNode = (note, x, y) => {
 		const nodeArray = this.getCurrentAutomationArray(note);
-		if (!nodeArray) return false;
 		const node = this.posToAutomation(note, x, y);
 		noteManager.addAutomationNode(nodeArray, node);
 		this.updateNoteAndAutomation(note, nodeArray);
@@ -861,7 +860,6 @@ function NoteManagerUI(noteManager) {
 
 	this.addPitchAutomationNode = (note, time, tone) => {
 		const nodeArray = this.getCurrentAutomationArray(note, 'pitch');
-		if (!nodeArray) return false;
 		const node = { time: time - note.startTime, value: tone - note.tone };
 		noteManager.addAutomationNode(nodeArray, node);
 		nodeArray.sort((a, b) =>  a.time - b.time);
@@ -1104,10 +1102,21 @@ function NoteManagerUI(noteManager) {
 		const time = this.clickedNode.time;
 		const pitchMode = this.mode === EModes.pitchAutomation;
 		const monoPitch = track.monoPitch ? note.automations[0]?.pitch : undefined;
+		// 哈巴哈
 
-		const valuesAtTime = note.automations.map((a, i) => {
-			const isCarrier = pitchMode && !track.synth.oscillators[i]?.mod1;
-			const gain = isCarrier ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
+		const valuesAtTime = track.synth.oscillators.map((osc, i) => {
+			const a = note.automations[i];
+			const isCarrier = pitchMode && !osc.mod1;
+			if (!a) {
+				if (!monoPitch || !note.automations[0]) return {};
+
+				const a0 = note.automations[0];
+				const gain = isCarrier || !a0.gain ? 1.0 : this.getAutomationValueAtTime(a0.gain, time);
+				const pan = this.getAutomationValueAtTime(a0.pan, time);
+				const detune = this.getAutomationValueAtTime(a0.pitch, time) * 100;
+				return { gain, pan, detune };
+			}
+			const gain = isCarrier || !a.gain ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
 			const pan = this.getAutomationValueAtTime(a.pan, time);
 			const detune = this.getAutomationValueAtTime(monoPitch ?? a.pitch, time) * 100;
 			return { gain, pan, detune };
@@ -1131,9 +1140,19 @@ function NoteManagerUI(noteManager) {
 		const pitchMode = this.mode === EModes.pitchAutomation;
 		const monoPitch = track.monoPitch ? note.automations[0]?.pitch : undefined;
 
-		const valuesAtTime = note.automations.map((a, i) => {
-			const isCarrier = pitchMode && !track.synth.oscillators[i]?.mod1;
-			const gain = isCarrier ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
+		const valuesAtTime = track.synth.oscillators.map((osc, i) => {
+			const a = note.automations[i];
+			const isCarrier = pitchMode && !osc.mod1;
+			if (!a) {
+				if (!monoPitch || !note.automations[0]) return {};
+
+				const a0 = note.automations[0];
+				const gain = isCarrier || !a0.gain ? 1.0 : this.getAutomationValueAtTime(a0.gain, time);
+				const pan = this.getAutomationValueAtTime(a0.pan, time);
+				const detune = this.getAutomationValueAtTime(a0.pitch, time) * 100;
+				return { gain, pan, detune };
+			}
+			const gain = isCarrier || !a.gain ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
 			const pan = this.getAutomationValueAtTime(a.pan, time);
 			const detune = this.getAutomationValueAtTime(monoPitch ?? a.pitch, time) * 100;
 			return { gain, pan, detune };
