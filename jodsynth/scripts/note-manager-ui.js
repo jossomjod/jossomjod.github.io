@@ -1526,13 +1526,14 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
-		//const pxPerBeat = Math.max(8, Math.min(600, this.pxPerBeat));
-		//const visibleBeats = this.width / this.pxPerBeat;
-		//const colsPerBeat = this.pxPerBeat / this.gridSizeX;
-		const visColsMult = 1 << Math.floor(this.pxPerBeat / 50);
-		const gridX = /* this.gridSizeX;// */this.pxPerBeat / visColsMult;// Math.max(8, Math.min(100, this.pxPerBeat / visColsMult));
+		const grug = Math.floor(this.pxPerBeat / 50);
+		//const grug2 = Math.log2(this.pxPerBeat / 25);
+		const blub = Math.pow(2, Math.ceil(Math.log(grug) / Math.log(2)));
+		//const blub2 = grug2 < 1 ? 1 / (grug2 * -1 + 1) : grug2;
+		const visColsMult = blub || (1 << Math.floor(this.pxPerBeat / 50));
+		const gridX = this.pxPerBeat / visColsMult;
 		const visibleRows = this.height / this.pxPerTone;
-		const visibleCols = /* visibleBeats * colsPerBeat;// */this.width / gridX;
+		const visibleCols = this.width / gridX;
 		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone) + (this.scrollY >= 0);
 		const offsetCols = Math.floor(-this.scrollX / gridX) + (this.scrollX >= 0);
 		
