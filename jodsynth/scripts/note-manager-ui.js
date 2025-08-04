@@ -1526,7 +1526,7 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
-		const grug = Math.floor(this.pxPerBeat / 50);
+		const grug = Math.floor(this.pxPerBeat / 30);
 		//const grug2 = Math.log2(this.pxPerBeat / 25);
 		const blub = Math.pow(2, Math.ceil(Math.log(grug) / Math.log(2)));
 		//const blub2 = grug2 < 1 ? 1 / (grug2 * -1 + 1) : grug2;
