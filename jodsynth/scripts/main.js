@@ -114,6 +114,8 @@ var saveNameInput = document.querySelector('#saveNameInput');
 var templateSelect = document.querySelector('#templateSelect');
 var saveSelect = document.querySelector('#saveSelect');
 
+var activeFileHandle = null;
+
 
 saveSelect.addEventListener('change', () => {
 	let name = saveSelect.value;
@@ -146,7 +148,7 @@ templateSelect.addEventListener('change', () => {
 	const index = +templateSelect.value;
 	const tracks = trackerTemplates[index]
 	if (!tracks) throw 'No template found for index' + index;
-	
+
 	noteManager.load(SaveManager.parseTrackData(tracks));
 	noteManagerUi.renderAll();
 	saveNameInput.value = saveSelect.value = null;
@@ -177,7 +179,7 @@ function saveAll(name) {
 function loadAll(name) {
 	const saveName = name || saveNameInput.value || saveNameInput.innerHTML;
 	if (!saveName) return;
-	
+
 	const data = SaveManager.loadAll(saveName);
 	if (data) {
 		noteManager.load(data);
@@ -193,6 +195,43 @@ async function loadFromClipboard() {
 	}
 }
 
+
+// TODO: chuck shit in the save manager
+async function saveAss() {
+	const suggestedName = saveNameInput.value;
+	const data = JSON.stringify(noteManager.save());
+	const startIn = activeFileHandle || 'documents';
+	const fileHandle = await window.showSaveFilePicker({ id: 'jod-save-file-picker-id', startIn, suggestedName });
+	const writable = await fileHandle.createWritable();
+  await writable.write(data);
+  await writable.close();
+	activeFileHandle = fileHandle;
+}
+
+async function loadFile() {
+	const startIn = activeFileHandle || 'documents';
+	const [fileHandle] = await window.showOpenFilePicker({ id: 'jod-open-file-picker-id', startIn });
+	const file = await fileHandle.getFile();
+	const text = await file.text();
+  const data = JSON.parse(text);
+	if (data) {
+		saveNameInput.value = file.name;
+		noteManager.load(data);
+		noteManagerUi.renderAll();
+	}
+	activeFileHandle = fileHandle;
+}
+
+async function quickSaveToFile() {
+	if (!activeFileHandle) {
+		await saveAss();
+		return;
+	}
+	const data = JSON.stringify(noteManager.save());
+	const writable = await activeFileHandle.createWritable();
+  await writable.write(data);
+  await writable.close();
+}
 
 
 
@@ -253,7 +292,7 @@ const synthBody = document.querySelector('.synth-body');
 const topBar = document.querySelector('.top-bar');
 
 synthBody.oncontextmenu = (e) => {
-  e.preventDefault();
+	e.preventDefault();
 };
 
 topBar.onkeydown = (e) => {
@@ -336,7 +375,7 @@ document.body.onkeydown = (e) => {
 			if (e.ctrlKey) noteManagerUi.pasteNotes();
 			break;
 		case 83: // S
-			if (e.ctrlKey) quickSave();
+			if (e.ctrlKey) quickSaveToFile();
 			break;
 		case 90: // Z
 			if (e.ctrlKey) quickLoad();
