@@ -202,10 +202,12 @@ async function saveAss() {
 	const data = JSON.stringify(noteManager.save());
 	const startIn = activeFileHandle || 'documents';
 	const fileHandle = await window.showSaveFilePicker({ id: 'jod-save-file-picker-id', startIn, suggestedName });
+	const file = await fileHandle.getFile();
 	const writable = await fileHandle.createWritable();
   await writable.write(data);
   await writable.close();
 	activeFileHandle = fileHandle;
+	saveNameInput.value = file.name;
 }
 
 async function loadFile() {
