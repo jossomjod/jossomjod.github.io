@@ -201,7 +201,9 @@ async function saveAss() {
 	const suggestedName = saveNameInput.value;
 	const data = JSON.stringify(noteManager.save());
 	const startIn = activeFileHandle || 'documents';
-	const fileHandle = await window.showSaveFilePicker({ id: 'jod-save-file-picker-id', startIn, suggestedName });
+	const types = [{ accept: { 'text/plain': ['.jsf', '.txt'] } }];
+	const options = { id: 'jod-save-file-picker-id', startIn, suggestedName, types };
+	const fileHandle = await window.showSaveFilePicker(options);
 	const file = await fileHandle.getFile();
 	const writable = await fileHandle.createWritable();
   await writable.write(data);
