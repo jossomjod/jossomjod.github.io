@@ -469,13 +469,18 @@ function NoteManagerUI(noteManager) {
 				this.pasteNotes();
 				break;
 			case this.primaryAction | this.secondaryAction:
-				this.areaSelectAABB.ax = realX;
-				this.areaSelectAABB.ay = realY;
-				this.areaSelectAABB.bx = realX;
-				this.areaSelectAABB.by = realY;
-
-				if (mod2) this.isSelectingAllTracks = true;
-				else this.isSelectingArea = true;
+				if (!this.clickedNote) {
+					this.areaSelectAABB.ax = realX;
+					this.areaSelectAABB.ay = realY;
+					this.areaSelectAABB.bx = realX;
+					this.areaSelectAABB.by = realY;
+	
+					if (mod2) this.isSelectingAllTracks = true;
+					else this.isSelectingArea = true;
+				} else {
+					this.isResizing = true;
+					this.previewNote(false);
+				}
 				break;
 		}
 	});
@@ -524,6 +529,16 @@ function NoteManagerUI(noteManager) {
 			this.isResizing = false;
 			this.timeLineClicked = false;
 			if (this.showCursorLine) this.render();
+		}
+		else if (~buttons & this.secondaryAction && buttons & this.primaryAction) {
+			if (this.clickedNote && this.isResizing) {
+				this.newNoteDuration = this.clickedNote.duration;
+				this.isResizing = false;
+				this.previewNote(true);
+				this.finalizeResizing();
+				this.updateEndTime();
+				this.render();
+			}
 		}
 	};
 
