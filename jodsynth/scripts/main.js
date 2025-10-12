@@ -235,6 +235,7 @@ async function quickSaveToFile() {
 	const writable = await activeFileHandle.createWritable();
   await writable.write(data);
   await writable.close();
+	noteManagerUi.screenFlasher.start(300, 0.25, '#aaffaa');
 }
 
 
