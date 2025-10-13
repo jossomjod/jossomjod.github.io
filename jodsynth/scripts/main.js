@@ -124,6 +124,7 @@ saveSelect.addEventListener('change', () => {
 			loadAll(name);
 		} catch {
 			name = 'ERROR';
+			noteManagerUi.screenFlasher.start(500, 0.4, '#ff8888');
 		}
 	}
 	saveNameInput.value = name;
