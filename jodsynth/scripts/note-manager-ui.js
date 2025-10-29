@@ -92,9 +92,24 @@ class TimelineUI {
 
 		const left = (-scrollX / (endTime * pxPerBeat)) * w;
 		const width = w * w / (pxPerBeat * endTime);
-		
 		ctx.fillStyle = this.color;
 		ctx.fillRect(left, y, width, h);
+
+		// draw bar lines
+		let count = endTime / 4;
+		if (count > 1) {
+			const divisor = Math.floor(count / 120);
+			if (divisor) count /= 2 * divisor;
+
+			ctx.beginPath();
+			ctx.strokeStyle = jodColors.gridBeat;
+			for (let i = 1; i < count; i++) {
+				const l = w * i / count;
+				ctx.moveTo(l, y);
+				ctx.lineTo(l, y + h);
+			}
+			ctx.stroke();
+		}
 		
 		const caretX = w * (caretTime / endTime);
 		tracks.forEach((t) => {
@@ -1648,7 +1663,15 @@ function NoteManagerUI(noteManager) {
 		if (this.displaySeconds) time = beatsToSeconds(time, noteManager.bpm);
 		const beats = Math.floor(time);
 		const decimals = (time - beats) * 100;
-		this.timeDisplay.innerHTML = beats.toString().padStart(2, '0');
+
+		if (this.displaySeconds) {
+			const minutes = Math.floor(beats / 60);
+			const seconds = beats % 60;
+			const min = minutes ? minutes.toString() + ':' : '';
+			this.timeDisplay.innerHTML = min + seconds.toString().padStart(2, '0');
+		} else {
+			this.timeDisplay.innerHTML = beats.toString().padStart(2, '0');
+		}
 		this.timeDecimalsDisplay.innerHTML = decimals.toString().slice(0, 2).replace('.', '').padStart(2, '0');
 		if (!jodConfiguration.animations) return;
 		const invTime = 1 - decimals * 0.01;
