@@ -108,6 +108,118 @@ const addFxBtn = document.querySelector('#addFxBtn');
 addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
 
+
+
+// MIDI ----------------------------------------
+
+var midi;
+navigator.requestMIDIAccess().then(
+	(value) => setupMIDI(value),
+	(reason) => console.warn('MIDI access not granted', reason)
+);
+
+/**
+ * @param {MIDIAccess} midiAccess 
+ */
+function setupMIDI(midiAccess) {
+	midi = midiAccess;
+	console.log('MIDI access:', midiAccess);
+	midiAccess.inputs.forEach((i) => i.onmidimessage = toggleMIDIKeys);
+}
+
+
+function onMIDIMessage(event) {
+  let str = `MIDI message received at timestamp ${event.timeStamp}[${event.data.length} bytes]: `;
+  for (const character of event.data) {
+    str += `0x${character.toString(16)} `;
+  }
+  console.log(str);
+}
+
+var midiMessageTypes = {
+	noteOn: 144,
+	sustainOrMod: 176,
+	pitchWheel: 224,
+};
+
+var midiKeys = {};
+var sustainedKeys = {};
+let midiSustain = false;
+var pitchBend = 0;
+var maxPitchBend = 2;
+
+/**
+ * @param {MIDIMessageEvent} e
+ */
+function toggleMIDIKeys(e) {
+	const [type, keyId, gain] = e.data;
+	console.log('MIDI event:', ...e.data);
+
+	switch (type) {
+		case 176:
+			if (keyId === 64) toggleSustain(!!gain);
+			else if (keyId === 1) setModulation(gain);
+			else if (100 > keyId && keyId > 1) setMidiGain(gain);
+			break;
+		case 224:
+			setPitch(gain);
+			break;
+	}
+
+	if (type !== midiMessageTypes.noteOn) return;
+	
+	const key = (midiKeys[keyId] ??= { keyId });
+
+	if (key.gain === gain) return;
+
+	key.gain = gain;
+
+	if (sustainedKeys[keyId]) {
+		if (!gain) return;
+		noteManager.getSelectedTrack().synth.restart(key.id, gain / 127);
+		return;
+	}
+
+	if (gain) {
+		const tone = key.keyId - 36 + (noteOffset + 1) + 12;
+		key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(tone + pitchBend * maxPitchBend), gain / 127);
+	} else {
+		if (midiSustain) sustainedKeys[keyId] = key;
+		else noteManager.getSelectedTrack().synth.stop(key.id);
+	}
+	return;
+}
+
+function toggleSustain(on) {
+	midiSustain = on;
+	if (!on) {
+		Object.values(sustainedKeys)
+			.filter((k) => !k.gain)
+			.forEach((k) => noteManager.getSelectedTrack().synth.stop(k.id));
+		sustainedKeys = {};
+	}
+}
+
+function setPitch(value) {
+	const pitch = (value / 127) * 2 - 1;
+	pitchBend = pitch;
+	Object.values(midiKeys).filter((k) => k.gain).forEach((k) => {
+		const tone = k.keyId - 36 + (noteOffset + 1) + 12;
+		k.id.forEach((pn) => pn.oscillator.frequency.value = toneToFreq(tone + pitch * maxPitchBend));
+	})
+}
+
+function setModulation(amount) {
+	// TODO
+}
+
+function setMidiGain(gain) {
+	// TODO
+}
+
+
+
+
 // SAVE / LOAD ---------------------------------
 
 var saveNameInput = document.querySelector('#saveNameInput');

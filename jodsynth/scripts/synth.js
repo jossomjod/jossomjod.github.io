@@ -215,9 +215,10 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return freq + Math.random() * this.rndPitch * freq;
 	};
 
-	this.start = (frequency, gainNode, panner, time = ac.currentTime) => {
+	this.start = (frequency, gainNode, panner, onset = 1) => {
+		const time = ac.currentTime;
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
-		const gain = this.getGain();
+		const gain = this.getGain(onset * this.gain);
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customWave);
 
@@ -231,11 +232,20 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return osc;
 	}
 
-	this.stop = (time, osc, gainNode) => {
+	this.stop = (osc, gainNode) => {
+		const time = ac.currentTime;
 		this.gainEnvelope.stop(gainNode.gain, 0.0);
 		this.pitchEnvelope.stop(osc.detune, this.detune);
 		osc.stop(time + this.gainEnvelope.getRelease());
 	}
+
+	this.restart = ({ oscillator, gain }, onset = 1) => {
+		const time = ac.currentTime;
+		this.gainEnvelope.start(gain.gain, 0.0, this.getGain(onset * this.gain), time);
+		this.pitchEnvelope.start(oscillator.detune, this.detune, 1200.0, time);
+	}
+
+
 
 	this.startWithFixedProperties = ({ frequency, gainNode, panner, detune, gain, pan }) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
@@ -393,11 +403,11 @@ function Synth(ac, output, fromObject) {
 	}
 
 	
-	this.start = (freq) => {
+	this.start = (freq, onset = 1) => {
 		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const oscillator = osc.start(freq, gain, pan);
+			const oscillator = osc.start(freq, gain, pan, !osc.mod1 ? onset : undefined);
 			return { gain, oscillator };
 		});
 
@@ -432,11 +442,15 @@ function Synth(ac, output, fromObject) {
 		return oscs;
 	};
 	
-	this.stop = (oscs, time = ac.currentTime) => {
+	this.stop = (oscs) => {
 		oscs.forEach((o, i) => {
-			this.oscillators[i]?.stop(time, o.oscillator, o.gain);
+			this.oscillators[i]?.stop(o.oscillator, o.gain);
 		});
 	};
+
+	this.restart = (oscs, onset = 1) => {
+		oscs.forEach((o, i) => this.oscillators[i]?.restart(o, onset));
+	}
 
 	this.startWithFixedProperties = (frequency, properties) => {
 		const oscs = this.oscillators.map((osc, i) => {
