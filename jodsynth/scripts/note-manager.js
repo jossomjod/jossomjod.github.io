@@ -185,6 +185,15 @@ function NoteManager(ac, output) {
 		});
 	};
 
+	this.playNote = (note) => {
+		const track = this.getSelectedTrack();
+		const automations = !track.disableNoteAutomation ? note.automations : null;
+		const startTime = ac.currentTime;
+		const duration = beatsToSeconds(note.duration, this.bpm);
+		const freq = toneToFreq(note.tone);
+		track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
+	}
+
 	// For use in the playback loop
 	this.scheduleTrackNotesPlayback = (track, trackIndex, currentBeats, loopEnd, beatsPastEnd, latestTime) => {
 		const ns = track.notes;
@@ -338,6 +347,11 @@ function NoteManager(ac, output) {
 	this.clearAutomationFromTrack = (track) => {
 		track.notes.forEach((n) => delete n.automations);
 		console.log('Yeeted all automation on every note in track ' + track.name);
+	};
+
+	this.fixCorruptDataInTrack = (track) => {
+		track.notes.filter((n) => n.automations).forEach((n) => n.automations = n.automations.filter((a) => a));
+		console.log('Fixed corrupt data in track ' + track.name);
 	};
 
 	this.optimizeTrackForStorage = (track) => {

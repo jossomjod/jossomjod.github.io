@@ -126,6 +126,7 @@ function createTrackEntryUi(track, trackHandler) {
 		openContextMenu(div, [
 			{ name: 'Select all', callback: () => trackHandler.selectAllNotesInTrack(track) },
 			{ name: 'Clear automation', callback: () => trackHandler.clearAutomationFromTrack(track) },
+			{ name: 'Fix corrupt data', callback: () => trackHandler.fixCorruptDataInTrack(track) },
 			{ name: 'Delete', callback: () => trackHandler.deleteTrack(track) },
 		]);
 	});

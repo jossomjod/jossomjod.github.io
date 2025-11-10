@@ -306,11 +306,14 @@ function NoteManagerUI(noteManager) {
 	this.timeLine = new TimelineUI({ x: 0, y: this.height - 100, w: this.width, h: 100 }, noteManager);
 	this.timeLineClicked = false;
 
+	this.mouseMovedSinceLastMouseDown = false;
+
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 		if (e.button === 3 || e.button === 4) return;
+
 		document.activeElement.blur();
 		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
 		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
@@ -477,6 +480,14 @@ function NoteManagerUI(noteManager) {
 				const index = this.getNoteIndexAtPos(realX, realY);
 				if (index > -1) this.deleteNote(index);
 				break;
+			case this.scrollAction:
+				if (this.mouseMovedSinceLastMouseDown) {
+					this.mouseMovedSinceLastMouseDown = false;
+					break;
+				}
+				const note = this.getNoteAtPos(realX, realY);
+				if (note) noteManager.playNote(note);
+				break;
 			case this.scrollAction | this.primaryAction:
 				this.copyNotes();
 				break;
@@ -569,6 +580,8 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer.addEventListener('mousemove', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		this.mouseMovedSinceLastMouseDown = true;
+
 		const rect = this.canvas.getBoundingClientRect();
 		const unFlippedY = e.y - rect.top;
 		let realX = e.x - rect.left;
@@ -1276,6 +1289,11 @@ function NoteManagerUI(noteManager) {
 
 	this.clearAutomationFromTrack = (track) => {
 		noteManager.clearAutomationFromTrack(track);
+		this.render();
+	};
+
+	this.fixCorruptDataInTrack = (track) => {
+		noteManager.fixCorruptDataInTrack(track);
 		this.render();
 	};
 
