@@ -296,6 +296,7 @@ function NoteManagerUI(noteManager) {
 	this.isCursorInside = false;
 	this.showCursorLine = true;
 	this.cursorX = 0;
+	this.cursorY = 0;
 	this.cursorTime = 0;
 	this.endTime = this.beatsPerBar;
 	this.displaySeconds = false;
@@ -587,6 +588,7 @@ function NoteManagerUI(noteManager) {
 		let realX = e.x - rect.left;
 		let realY = this.height - unFlippedY;
 		this.cursorX = realX;
+		this.cursorY = unFlippedY;
 		this.cursorTime = this.xToTime(this.cursorX);
 
 		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
@@ -1670,10 +1672,16 @@ function NoteManagerUI(noteManager) {
 
 	this.drawCursorLine = (ctx = this.ctx) => {
 		const x = this.snapX ? this.snapToGridX(this.cursorX) : this.cursorX;
+		const y = this.snapY ? this.snapToGridY(this.cursorY) : this.cursorY;
+
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.cursorLine;
 		ctx.moveTo(x, 0);
 		ctx.lineTo(x, this.height - this.timeLine.rect.h);
+
+		ctx.moveTo(0, y);
+		ctx.lineTo(this.width, y);
+
 		ctx.stroke();
 	};
 
