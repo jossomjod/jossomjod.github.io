@@ -349,6 +349,16 @@ function NoteManager(ac, output) {
 		console.log('Yeeted all automation on every note in track ' + track.name);
 	};
 
+	this.clearAutomationFromNotes = (notes) => {
+		notes.forEach((n) => delete n.automations);
+		console.log('Yeeted all automation on every selected note');
+	};
+
+	this.clearGainAutomationFromNotes = (notes) => {
+		notes.forEach((n) => n.automations?.forEach((a) => delete a.gain));
+		console.log('Yeeted all gain automation on every selected note');
+	};
+
 	this.fixCorruptDataInTrack = (track) => {
 		track.notes.filter((n) => n.automations).forEach((n) => n.automations = n.automations.filter((a) => a));
 		console.log('Fixed corrupt data in track ' + track.name);

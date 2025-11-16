@@ -233,6 +233,9 @@ function NoteManagerUI(noteManager) {
 	this.screenFlasher = new CssFlasher(this.overlay, 450, 1.0);
 	this.screenShaker = new CssShaker(document.querySelector('.main-content'), 500, 8);
 
+	this.contextMenuOpener = document.querySelector('#context-menu-opener-btn');
+	this.showContextMenuOpener = (show) => this.contextMenuOpener.classList.toggle('hidden', !show);
+
 	this.playBtn = new ToggleButton(document.querySelector('#jodrollBtnPlay'), () => this.togglePlayback());
 	this.toggleLoopingBtn = new ToggleButton(document.querySelector('#jodrollBtnLoop'), () => this.toggleLooping(), noteManager.loop.active);
 	this.toggleAutoScrollBtn = new ToggleButton(
@@ -371,12 +374,14 @@ function NoteManagerUI(noteManager) {
 							const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 							if (idx === -1) {
 								this.selectedNotes = [clickedNote];
+								this.onSelectionChanged();
 								this.render();
 							}
 	
 							this.clickedNote = clickedNote;
 						} else {
 							this.selectedNotes = [];
+							this.onSelectionChanged();
 							this.render();
 						}
 						break;
@@ -422,6 +427,7 @@ function NoteManagerUI(noteManager) {
 						const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 						if (idx > -1) this.selectedNotes.splice(idx, 1);
 						else this.selectedNotes.push(clickedNote);
+						this.onSelectionChanged();
 						this.render();
 						break;
 					}
@@ -446,6 +452,7 @@ function NoteManagerUI(noteManager) {
 					const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 					if (idx === -1) {
 						this.selectedNotes = [clickedNote];
+						this.onSelectionChanged();
 						this.render();
 					}
 
@@ -457,6 +464,7 @@ function NoteManagerUI(noteManager) {
 					if (this.snapX) realX = this.snapToGridX(realX);
 					this.addNote(realX, realY);
 					this.selectedNotes = [this.clickedNote];
+					this.onSelectionChanged();
 					this.render();
 				}
 				this.previewNote(true);
@@ -524,11 +532,13 @@ function NoteManagerUI(noteManager) {
 			if (this.isSelectingArea) {
 				this.isSelectingArea = false;
 				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
+				this.onSelectionChanged();
 				this.render();
 			}
 			else if (this.isSelectingAllTracks) {
 				this.isSelectingAllTracks = false;
 				this.selectedNotes = this.getAllNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
+				this.onSelectionChanged();
 				this.render();
 			}
 			else if (this.timeLine.isSelecting) {
@@ -540,6 +550,7 @@ function NoteManagerUI(noteManager) {
 				const bx = this.timeToX(end * this.endTime);
 				const func = allTracks ? this.getAllNotesInAABB : this.getNotesInAABB;
 				this.selectedNotes = func(ax, -9999, bx, 9999);
+				this.onSelectionChanged();
 				this.render();
 			}
 			else if (this.clickedNote) {
@@ -704,6 +715,10 @@ function NoteManagerUI(noteManager) {
 	});
 	
 	this.trackerContainer.appendChild(this.jodroll);
+
+	this.onSelectionChanged = () => {
+		this.showContextMenuOpener(!!this.selectedNotes.length);
+	};
 
 	this.timeToX = (time) => {
 		return this.scrollX + time * this.pxPerBeat;
@@ -985,11 +1000,13 @@ function NoteManagerUI(noteManager) {
 
 	this.selectAllNotes = () => {
 		this.selectedNotes = this.getAllNotes();
+		this.onSelectionChanged();
 		this.render();
 	};
 
 	this.selectAllNotesInTrack = (track = noteManager.getSelectedTrack()) => {
-		this.selectedNotes = track.notes;
+		this.selectedNotes = [...track.notes];
+		this.onSelectionChanged();
 		this.render();
 	};
 
@@ -1068,12 +1085,14 @@ function NoteManagerUI(noteManager) {
 	this.deleteNote = (index) => {
 		noteManager.getSelectedTrack().notes.splice(index, 1);
 		this.selectedNotes = [];
+		this.onSelectionChanged();
 		this.render();
 	};
 
 	this.deleteSelectedNotes = () => {
 		noteManager.tracks.forEach((t) => t.notes = t.notes.filter((n) => !this.selectedNotes.find((s) => s === n)));
 		this.selectedNotes = [];
+		this.onSelectionChanged();
 		this.render();
 	};
 
@@ -1114,6 +1133,7 @@ function NoteManagerUI(noteManager) {
 			this.selectedNotes.push(...sorted);
 		});
 
+		this.onSelectionChanged();
 		this.updateEndTime();
 		this.render();
 	};
@@ -1252,6 +1272,8 @@ function NoteManagerUI(noteManager) {
 		this.render();
 		this.renderTracks();
 		this.toggleLoopingBtn.toggle(noteManager.loop.active);
+		this.selectedNotes = [];
+		this.onSelectionChanged();
 	};
 
 	this.renderTracks = (tracks = noteManager.tracks) => {
@@ -1279,6 +1301,8 @@ function NoteManagerUI(noteManager) {
 	});
 
 	this.deleteTrack = (track) => {
+		this.selectedNotes = [];
+		this.onSelectionChanged();
 		noteManager.deleteTrack(track);
 		this.renderTracks();
 		this.updateEndTime();
@@ -1289,8 +1313,26 @@ function NoteManagerUI(noteManager) {
 		}, 0);
 	};
 
+	this.openSelectedNotesContextMenu = () => {
+		const el = document.querySelector('#context-menu-opener-btn');
+		openContextMenu(el, [
+			{ name: 'Clear automation from selected', callback: this.clearAutomationFromSelectedNotes },
+			{ name: 'Clear gain automation from selected', callback: this.clearGainAutomationFromSelectedNotes },
+		]);
+	};
+
 	this.clearAutomationFromTrack = (track) => {
 		noteManager.clearAutomationFromTrack(track);
+		this.render();
+	};
+
+	this.clearAutomationFromSelectedNotes = (notes = this.selectedNotes) => {
+		noteManager.clearAutomationFromNotes(notes);
+		this.render();
+	};
+
+	this.clearGainAutomationFromSelectedNotes = (notes = this.selectedNotes) => {
+		noteManager.clearGainAutomationFromNotes(notes);
 		this.render();
 	};
 
