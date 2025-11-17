@@ -455,7 +455,7 @@ document.addEventListener('mouseup', 不要去);
 // KEY STUFF
 
 document.body.onkeydown = (e) => {
-	if (e.repeat || e.isComposing || e.which === 229) return;
+	if (e.repeat || e.isComposing || e.which === 229 || e.code === 'F12') return;
 	e.preventDefault();
 	switch (e.which) {
 		case 9: // tab
