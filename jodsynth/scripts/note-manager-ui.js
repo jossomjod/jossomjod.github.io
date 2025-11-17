@@ -283,7 +283,7 @@ function NoteManagerUI(noteManager) {
 
 	this.clickedNote = null;
 	this.hoveredNote = null;
-	this.noteMinDuration = 0.01;
+	this.noteMinDuration = 0.25;
 	this.previewNoteId = null;
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
@@ -721,8 +721,9 @@ function NoteManagerUI(noteManager) {
 
 		switch (buttons) {
 			case this.secondaryAction:
-				if (this.newNoteDuration <= this.noteMinDuration) break;
 				this.newNoteDuration -= Math.sign(e.deltaY) * 0.25;
+				this.newNoteDuration = (Math.ceil(this.newNoteDuration * 4) / 4);
+				if (this.newNoteDuration < this.noteMinDuration) this.newNoteDuration = this.noteMinDuration;
 				break;
 			default:
 				const cursorTime = this.xToTime(this.cursorX);
