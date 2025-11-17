@@ -529,7 +529,11 @@ function NoteManagerUI(noteManager) {
 		if (e.button === 3 || e.button === 4) return;
 		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
 
-		this.isCursorInside = true;
+		const rect = this.canvas.getBoundingClientRect();
+		const unFlippedY = e.y - rect.top;
+		const realX = e.x - rect.left;
+		const timeLineHovered = this.timeLine.isPointInside(realX, unFlippedY);
+		this.isCursorInside = !timeLineHovered;
 		
 		if (~buttons & this.primaryAction) {
 			if (this.isSelectingArea) {
