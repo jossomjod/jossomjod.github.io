@@ -23,6 +23,7 @@ const jodColors = {
 	background: '#000000',
 	caret: '#e7fc8f68',
 	cursorLine: '#9ca5ff66',
+	cursorHighlight: '#9ca5ff33',
 	gridReference: '#579cef',
 	gridLine: '#a7cab322',
 	gridOctave: '#97a6ca64',
@@ -30,6 +31,7 @@ const jodColors = {
 	gridBeat: '#a3adba2c',
 	selectArea: '#88ccff66',
 	selectedNote: '#9259f2',
+	hoveredNote: '#c2a9f2',
 	note: '#6699ff',
 	resizeHandle: '#99c9ff',
 	fadedNote: '#6699ff3c',
@@ -280,6 +282,7 @@ function NoteManagerUI(noteManager) {
 	this.snapY = true;
 
 	this.clickedNote = null;
+	this.hoveredNote = null;
 	this.noteMinDuration = 0.01;
 	this.previewNoteId = null;
 	this.isResizing = false;
@@ -599,7 +602,7 @@ function NoteManagerUI(noteManager) {
 		let realX = e.x - rect.left;
 		let realY = this.height - unFlippedY;
 		this.cursorX = realX;
-		this.cursorY = unFlippedY;
+		this.cursorY = realY;
 		this.cursorTime = this.xToTime(this.cursorX);
 
 		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
@@ -689,11 +692,15 @@ function NoteManagerUI(noteManager) {
 				}
 				else this.scrollToAbsolute(realX);
 				break;
+			default:
+				const prev = this.hoveredNote;
+				this.hoveredNote = this.getNoteAtPos(realX, realY);
+				if (prev !== this.hoveredNote) this.render();
 		}
 
 		const prevIsCursorInside = this.isCursorInside;
 		this.isCursorInside = !timeLineHovered;
-		if (e.movementX && this.showCursorLine && this.isCursorInside) this.render();
+		if (this.showCursorLine && this.isCursorInside) this.render();
 		else if (timeLineHovered && prevIsCursorInside) this.render();
 
 		// TODO: better snap handling
@@ -705,13 +712,24 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer.addEventListener('wheel', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		const cursorTime = this.xToTime(this.cursorX);
-		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
-		this.pxPerBeat = Math.max(3, Math.min(600, this.pxPerBeat));
-		//this.gridSizeX = this.pxPerBeat;
-		this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
+
+		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
+		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
+		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
+
+		switch (buttons) {
+			case this.secondaryAction:
+				this.newNoteDuration -= Math.sign(e.deltaY) * 0.25;
+				break;
+			default:
+				const cursorTime = this.xToTime(this.cursorX);
+				this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
+				this.pxPerBeat = Math.max(3, Math.min(600, this.pxPerBeat));
+				//this.gridSizeX = this.pxPerBeat;
+				this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
+				//console.log('zoom:', this.gridSizeX, this.gridSizeTime, this.width / this.pxPerBeat);
+		}
 		this.render();
-		//console.log('zoom:', this.gridSizeX, this.gridSizeTime, this.width / this.pxPerBeat);
 	});
 	
 	this.trackerContainer.appendChild(this.jodroll);
@@ -1422,7 +1440,7 @@ function NoteManagerUI(noteManager) {
 			this.ctx.fillRect(x - thicc, y - thicc, w + thicc * 2, h + thicc * 2);
 		}
 
-		this.ctx.fillStyle = color;
+		this.ctx.fillStyle = this.hoveredNote === note ? jodColors.hoveredNote : color;
 		this.ctx.fillRect(x, y, w, h);
 
 		this.ctx.fillStyle = resizeColor;
@@ -1626,15 +1644,17 @@ function NoteManagerUI(noteManager) {
 		const gridX = this.pxPerBeat / visColsMult;
 		const visibleRows = this.height / this.pxPerTone;
 		const visibleCols = this.width / gridX;
-		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone) + (this.scrollY >= 0);
 		const offsetCols = Math.floor(-this.scrollX / gridX) + (this.scrollX >= 0);
+
+		const topTone = this.yToTone(0);
+		const toneOffset = topTone - Math.floor(topTone);
 		
 		// horizontal lines
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleRows; i++) {
-			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
-			const isOctave = (i - offsetRows) % 12 === 0;
+			const y = (i + toneOffset) * this.pxPerTone;
+			const isOctave = Math.ceil(i - topTone) % 12 === 0;
 
 			if (isOctave) {
 				ctx.stroke();
@@ -1713,18 +1733,24 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawCursorLine = (ctx = this.ctx) => {
+		if (this.isSelectingArea || this.isSelectingAllTracks || this.mode !== 0) return;
 		const x = this.snapX ? this.snapToGridX(this.cursorX) : this.cursorX;
-		const y = this.snapY ? this.snapToGridY(this.cursorY) : this.cursorY;
+		// gotta flip it before we snap it, then flip back smh TODO fix the math
+		const y = this.height - (this.snapY ? this.snapToGridY(this.cursorY) : this.cursorY) + this.pxPerTone;
 
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.cursorLine;
 		ctx.moveTo(x, 0);
 		ctx.lineTo(x, this.height - this.timeLine.rect.h);
-
-		ctx.moveTo(0, y);
-		ctx.lineTo(this.width, y);
-
 		ctx.stroke();
+
+		ctx.fillStyle = jodColors.cursorHighlight;
+		ctx.fillRect(0, y, this.width, -this.pxPerTone);
+
+		if (this.clickedNote || this.hoveredNote) return;
+
+		ctx.strokeStyle = jodColors.selectArea;
+		ctx.strokeRect(x, y, this.newNoteDuration * this.pxPerBeat, -this.pxPerTone);
 	};
 
 	this.setTimeDisplay = (time) => {
