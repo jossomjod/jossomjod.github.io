@@ -713,12 +713,11 @@ function NoteManagerUI(noteManager) {
 		e.preventDefault();
 		e.stopPropagation();
 
-		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
-		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
-		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
+		const buttons = e.buttons;
 
 		switch (buttons) {
 			case this.secondaryAction:
+				if (this.newNoteDuration <= this.noteMinDuration) break;
 				this.newNoteDuration -= Math.sign(e.deltaY) * 0.25;
 				break;
 			default:
