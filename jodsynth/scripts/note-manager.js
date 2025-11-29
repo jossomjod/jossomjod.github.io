@@ -124,7 +124,7 @@ function NoteManager(ac, output) {
 	this.addNote = (startTime, tone, duration) => {
 		const synth = this.getSelectedTrack().synth;
 		if (startTime < 0) startTime = 0;
-		const newNote = new Note(tone, startTime, duration, 1, getAutomationFromSynth(synth, this.bpm, duration));
+		const newNote = new Note(tone, startTime, duration, 1);
 		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
 	};
@@ -280,11 +280,11 @@ function NoteManager(ac, output) {
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(currentBeats, this.bpm);
 	};
 
-	this.createTrack = () => {
+	this.createTrack = (basedOn) => {
 		const index = this.tracks.length + 1;
 		const track = {
-			notes: [],
-			name: 'Track ' + index,
+			notes: basedOn?.notes ?? [],
+			name: basedOn?.name ?? 'Track ' + index,
 			active: true,
 			muted: false,
 			solo: false,

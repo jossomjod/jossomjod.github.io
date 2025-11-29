@@ -1118,6 +1118,11 @@ function NoteManagerUI(noteManager) {
 		this.render();
 	};
 
+	this.importTracks = (tracks) => {
+		tracks.filter((t) => t.notes.length).forEach((t) => this.addTrack(t));
+		this.render();
+	};
+
 	this.copyNotes = (notes = this.selectedNotes) => {
 		const tracks = noteManager.tracks.map((t) => t.notes.filter((tn) => notes?.find((sn) => tn === sn)));
 		const selectedTrack = noteManager.getSelectedTrack();
@@ -1309,11 +1314,12 @@ function NoteManagerUI(noteManager) {
 		this.trackContainer.replaceChildren(...trackElements);
 	};
 
-	this.addTrack = () => {
-		const track = noteManager.createTrack();
+	this.addTrack = (basedOn) => {
+		const track = noteManager.createTrack(basedOn);
 		const div = createTrackEntryUi(track, this);
 		this.trackContainer.appendChild(div);
 		this.selectTrack(div, track); 
+		return track;
 	};
 	
 	this.addTrackBtn.addEventListener('click', (e) => {

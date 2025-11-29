@@ -109,6 +109,24 @@ addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
 
 
+// MIDI files -----------------------------------
+
+
+var midiFileInput = document.querySelector('#midiFileInput');
+midiFileInput.addEventListener('change', (e) => {
+	/** @type {File} */
+	const file = midiFileInput.files[0];
+	if (!file) return;
+
+	file.arrayBuffer().then((arr) => {
+		const buffer = new Uint8Array(arr);
+		const parser = new MidiManager(buffer);
+		const result = parser.readBuffer(buffer);
+		noteManagerUi.importTracks(result.tracks);
+		console.log('RESULT', result);
+	});
+});
+
 
 // MIDI ----------------------------------------
 
@@ -153,7 +171,7 @@ var maxPitchBend = 2;
  */
 function toggleMIDIKeys(e) {
 	const [type, keyId, gain] = e.data;
-	console.log('MIDI event:', ...e.data);
+	//console.log('MIDI event:', ...e.data);
 
 	switch (type) {
 		case 176:
