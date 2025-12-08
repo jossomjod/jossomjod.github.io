@@ -514,7 +514,7 @@ document.body.onkeydown = (e) => {
 			if (e.ctrlKey) quickSaveToFile();
 			break;
 		case 90: // Z
-			if (e.ctrlKey) quickLoad();
+			//if (e.ctrlKey) quickLoad();
 			break;
 		case 114: // F3
 			noteManagerUi.snapX = !noteManagerUi.snapX;
