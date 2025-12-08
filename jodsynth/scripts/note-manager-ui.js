@@ -297,6 +297,7 @@ function NoteManagerUI(noteManager) {
 	this.selectedNotes = [];
 	this.isSelectingArea = false;
 	this.isSelectingAllTracks = false;
+	this.isSelectingRow = false;
 	this.areaSelectAABB = { ax: 0, ay: 0, bx: 0, by: 0 };
 
 	this.isCursorInside = false;
@@ -508,6 +509,8 @@ function NoteManagerUI(noteManager) {
 				break;
 			case this.primaryAction | this.secondaryAction:
 				if (!this.clickedNote) {
+					if (this.isSelectingArea) this.isSelectingRow = !this.isSelectingRow;
+
 					this.areaSelectAABB.ax = realX;
 					this.areaSelectAABB.ay = realY;
 					this.areaSelectAABB.bx = realX;
@@ -536,7 +539,11 @@ function NoteManagerUI(noteManager) {
 		this.isCursorInside = !timeLineHovered;
 		
 		if (~buttons & this.primaryAction) {
-			if (this.isSelectingArea) {
+			if (this.isSelectingRow) {
+				this.isSelectingArea = this.isSelectingAllTracks = this.isSelectingRow = false;
+				this.selectTrackNotesBetweenTones(this.yToTone(this.areaSelectAABB.ay), this.yToTone(this.areaSelectAABB.by));
+			}
+			else if (this.isSelectingArea) {
 				this.isSelectingArea = false;
 				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
 				this.onSelectionChanged();
@@ -625,7 +632,9 @@ function NoteManagerUI(noteManager) {
 						this.timeLine.updateSelection(realX);
 						this.drawTimeLine();
 					}
-					else this.scrollToAbsolute(realX);
+					else if (!this.isSelectingArea && !this.isSelectingAllTracks && !this.clickedNote && !this.clickedNode) {
+						this.scrollToAbsolute(realX);
+					}
 					break;
 				}
 
@@ -1028,6 +1037,15 @@ function NoteManagerUI(noteManager) {
 
 	this.selectAllNotesInTrack = (track = noteManager.getSelectedTrack()) => {
 		this.selectedNotes = [...track.notes];
+		this.onSelectionChanged();
+		this.render();
+	};
+
+	this.selectTrackNotesBetweenTones = (toneA, toneB) => {
+		const tA = Math.min(toneA, toneB);
+		const tB = Math.max(toneA, toneB);
+		const notes = noteManager.getSelectedTrack().notes;
+		this.selectedNotes = notes.filter((n) => n.tone > tA && n.tone < tB);
 		this.onSelectionChanged();
 		this.render();
 	};
@@ -1622,7 +1640,10 @@ function NoteManagerUI(noteManager) {
 		this.drawClear();
 		this.drawGrid();
 		this.drawAllTracks();
-		if (this.isSelectingArea || this.isSelectingAllTracks) this.drawAABB(this.areaSelectAABB);
+		if (this.isSelectingArea || this.isSelectingAllTracks) {
+			const aabb = this.isSelectingRow ? { ...this.areaSelectAABB, ax: 0, bx: this.width } : this.areaSelectAABB;
+			this.drawAABB(aabb);
+		}
 		this.drawLoopLines();
 		this.drawTimeLine();
 		if (this.showCursorLine && this.isCursorInside) this.drawCursorLine();
