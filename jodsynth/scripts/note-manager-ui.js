@@ -1364,6 +1364,7 @@ function NoteManagerUI(noteManager) {
 		openContextMenu(el, [
 			{ name: 'Clear automation from selected', callback: this.clearAutomationFromSelectedNotes },
 			{ name: 'Clear gain automation from selected', callback: this.clearGainAutomationFromSelectedNotes },
+			{ name: 'Purge deprecated properties from selected', callback: this.purgeDeprecatedNoteProperties },
 		]);
 	};
 
@@ -1379,6 +1380,11 @@ function NoteManagerUI(noteManager) {
 
 	this.clearGainAutomationFromSelectedNotes = (notes = this.selectedNotes) => {
 		noteManager.clearGainAutomationFromNotes(notes);
+		this.render();
+	};
+
+	this.purgeDeprecatedNoteProperties = (track) => {
+		noteManager.purgeDeprecatedNoteProperties(track);
 		this.render();
 	};
 

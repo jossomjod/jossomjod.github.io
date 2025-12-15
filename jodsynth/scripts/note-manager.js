@@ -344,6 +344,11 @@ function NoteManager(ac, output) {
 		return this.tracks[this.selectedTrack];
 	};
 
+	this.purgeDeprecatedNoteProperties = (track) => {
+		track.notes.forEach((n, i) => track.notes[i] = new Note(n.tone, n.startTime, n.duration, n.gain, n.automations));
+		console.log('Purged deprecated props from every note in track ' + track.name);
+	};
+
 	this.clearAutomationFromTrack = (track) => {
 		track.notes.forEach((n) => delete n.automations);
 		console.log('Yeeted all automation on every note in track ' + track.name);
