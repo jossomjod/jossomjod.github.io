@@ -1802,7 +1802,7 @@ function NoteManagerUI(noteManager) {
 		tones.forEach((t) => {
 			const y = this.toneToY(t);
 			ctx.fillStyle = jodColors.cursorHighlight;
-			ctx.fillRect(0, y, this.width, -this.pxPerTone);
+			ctx.fillRect(0, y, this.width, this.pxPerTone);
 		})
 	};
 
