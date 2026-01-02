@@ -1271,6 +1271,11 @@ function NoteManagerUI(noteManager) {
 		track.synth.updateFixedProperties(this.previewNoteId, valuesAtTime);
 	};
 
+	this.setActiveKeyHighlights = (arr) => {
+		this.activeKeys = arr;
+		this.render();
+	};
+
 	this.toggleMode = (mode) => {
 		if (this.mode > 0) this.stopAutomationPreview();
 		else this.previewNote(false);
@@ -1652,6 +1657,7 @@ function NoteManagerUI(noteManager) {
 		}
 		this.drawLoopLines();
 		this.drawTimeLine();
+		if (this.activeKeys?.length) this.drawToneHighlights(this.activeKeys);
 		if (this.showCursorLine && this.isCursorInside) this.drawCursorLine();
 		this.renderFnBusy = false;
 	};
@@ -1788,6 +1794,16 @@ function NoteManagerUI(noteManager) {
 
 		ctx.strokeStyle = jodColors.selectArea;
 		ctx.strokeRect(x, y, this.newNoteDuration * this.pxPerBeat, -this.pxPerTone);
+	};
+
+	this.drawToneHighlights = (tones) => {
+		const ctx = this.ctx;
+
+		tones.forEach((t) => {
+			const y = this.toneToY(t);
+			ctx.fillStyle = jodColors.cursorHighlight;
+			ctx.fillRect(0, y, this.width, -this.pxPerTone);
+		})
 	};
 
 	this.setTimeDisplay = (time) => {

@@ -147,6 +147,7 @@ class MidiManager {
 						continue;
 					case 0x20: // MIDI channel prefix (associate a channel with all following events)
 						channelPrefix = byteArrayToNumber(this.readBytes(len));
+						console.log('channelPrefix', channelPrefix);
 						continue;
 					case 0x2f: // end of track
 						endOfTrack = true;

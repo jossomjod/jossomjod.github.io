@@ -130,6 +130,9 @@ midiFileInput.addEventListener('change', (e) => {
 
 // MIDI ----------------------------------------
 
+
+const activeKeys = {};
+
 var midi;
 navigator.requestMIDIAccess().then(
 	(value) => setupMIDI(value),
@@ -201,20 +204,28 @@ function toggleMIDIKeys(e) {
 	if (gain) {
 		const tone = key.keyId - 36 + (noteOffset + 1) + 12;
 		key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(tone + pitchBend * maxPitchBend), gain / 127);
+		activeKeys[keyId] = tone;
 	} else {
 		if (midiSustain) sustainedKeys[keyId] = key;
-		else noteManager.getSelectedTrack().synth.stop(key.id);
+		else {
+			noteManager.getSelectedTrack().synth.stop(key.id);
+			delete activeKeys[keyId];
+		}
 	}
-	return;
+	noteManagerUi.setActiveKeyHighlights(Object.values(activeKeys));
 }
 
 function toggleSustain(on) {
 	midiSustain = on;
 	if (!on) {
-		Object.values(sustainedKeys)
-			.filter((k) => !k.gain)
-			.forEach((k) => noteManager.getSelectedTrack().synth.stop(k.id));
+		Object.entries(sustainedKeys)
+			.filter(([, v]) => !v.gain)
+			.forEach(([k, v]) => {
+				noteManager.getSelectedTrack().synth.stop(v.id);
+				delete activeKeys[k];
+			});
 		sustainedKeys = {};
+		noteManagerUi.setActiveKeyHighlights(Object.values(activeKeys));
 	}
 }
 
@@ -592,6 +603,8 @@ document.body.onkeyup = (e) => {
 	toggleKeys(e, false);
 };
 
+
+
 function toggleKeys(e, bool) {
 	//console.log('Key event - physical:', e.code, 'which:', e.which);
 	if (e.ctrlKey) return;
@@ -599,10 +612,16 @@ function toggleKeys(e, bool) {
 	if (noteManagerUi.mode) return;
 
 	const key = keyboardKeys[e.code];
-	if (key && key.down !== bool) {
-		key.down = bool;
-		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
-		else noteManager.getSelectedTrack().synth.stop(key.id);
-		return;
+	if (!(key && key.down !== bool)) return;
+
+	key.down = bool;
+	if (bool) {
+		const tone = key.index + noteOffset + 12 * octave;
+		key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(tone));
+		activeKeys[e.code] = tone;
+	} else {
+		noteManager.getSelectedTrack().synth.stop(key.id);
+		delete activeKeys[e.code];
 	}
+	noteManagerUi.setActiveKeyHighlights(Object.values(activeKeys));
 }
