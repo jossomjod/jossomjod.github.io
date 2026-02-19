@@ -81,6 +81,19 @@ function createTrackToggleButton({ track, property, label, onclick, inverse, css
 	return btn;
 }
 
+function createColorPicker(track, trackHandler, updateCallback) {
+	const picker = document.createElement('input');
+	picker.type = 'color';
+	picker.className = 'color-picker sandwich-btn';
+	picker.value = track.color?.main ?? jodColors.track;
+	picker.onclick = (e) => e.stopPropagation();
+	picker.onchange = () => {
+		trackHandler.setTrackColor(track, picker.value);
+		updateCallback();
+	};
+	return picker;
+}
+
 
 function createTrackEntryUi(track, trackHandler) {
 	const div = document.createElement('div');
@@ -89,6 +102,13 @@ function createTrackEntryUi(track, trackHandler) {
 	const btnColumn = document.createElement('div');
 	const label = document.createElement('span');
 	const gain = document.createElement('jod-numb');
+	const updateColor = () => {
+		const backgroundColor = track.active ? track.color.active : track.color.main;
+		const color = isColorDark(backgroundColor) ? '#ffffff' : '#000000';
+		div.style = `background-color: ${backgroundColor}`;
+		label.style = `color: ${color}`;
+	}
+	const colorPicker = createColorPicker(track, trackHandler, updateColor);
 	const nameEditor = createTrackNameEditor(label, track, trackHandler);
 
 	const screenShakeBtn = createTrackToggleButton({ track, property: 'screenShake', label: 'SH', onclick: () => {
@@ -105,15 +125,16 @@ function createTrackEntryUi(track, trackHandler) {
 	const automationBtn = createTrackToggleButton({ track, property: 'disableNoteAutomation', inverse: true, label: 'A', onclick: () => {
 		trackHandler.toggleDisableNoteAutomationForTrack(track);
 	}});
-	
-	btnRow.append(screenShakeBtn, screenFlashBtn, monoPitchBtn);
+
+	btnRow.append(screenShakeBtn, screenFlashBtn, monoPitchBtn, colorPicker);
 	gainAndBtnRowContainer.append(gain, btnRow);
 	btnColumn.append(soloBtn, muteBtn, automationBtn);
 	div.append(nameEditor, label, gainAndBtnRowContainer, btnColumn);
 	
 	div.id = 'track-entry-' + track.id;
 	div.classList.add('jodroll-track');
-	if (track.active) div.classList.add('active');
+	updateColor();
+	div.updateColor = updateColor;
 
 	div.addEventListener('click', (e) => {
 		e.stopPropagation();

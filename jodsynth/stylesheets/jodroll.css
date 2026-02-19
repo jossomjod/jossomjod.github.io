@@ -114,6 +114,8 @@
 .track-label {
 	overflow: hidden;
 	text-overflow: ellipsis;
+	text-shadow: 0 0 9px #ffffff;
+	color: #000000;
 	hyphens: auto;
 	max-height: 100%;
 	width: 60px;
@@ -147,11 +149,11 @@
 }
 
 .sandwich-btn {
-	width: 20px;
+	width: 16px;
 	height: 16px;
 	border-radius: 2px;
 	border: 1px solid #0066ff;
-	font-size: 0.7rem;
+	font-size: 0.55rem;
 	padding: 0;
 }
 

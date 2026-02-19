@@ -19,37 +19,6 @@ const AutomationProperties = [
 	'pan',
 ];
 
-const jodColors = {
-	background: '#000000',
-	caret: '#e7fc8f68',
-	cursorLine: '#9ca5ff66',
-	cursorHighlight: '#9ca5ff33',
-	gridReference: '#579cef',
-	gridLine: '#a7cab322',
-	gridOctave: '#97a6ca64',
-	gridBar: '#97a6ca64',
-	gridBeat: '#a3adba2c',
-	selectArea: '#88ccff66',
-	selectedNote: '#9259f2',
-	hoveredNote: '#c2a9f2',
-	note: '#6699ff',
-	resizeHandle: '#99c9ff',
-	fadedNote: '#6699ff3c',
-	fadedResizeHandle: '#99c9ff6c',
-	fadedSelectedNote: '#7c42e176',
-	playingNote: '#aceaff',
-	playingNoteBorder: '#aceaff',
-	mutedNote: '#55426253',
-	automationBox: '#384c6caa',
-	automationNode: '#eca592',
-	automationLine: '#3a8afc77',
-	fadedAutomationNode: '#eca59244',
-	fadedAutomationLine: '#ffff7044',
-	releaseBox: '#283e6299',
-	loopLine: '#58c34ab2',
-};
-
-
 class TimelineUI {
 	noteManager;
 	rect;
@@ -1404,6 +1373,12 @@ function NoteManagerUI(noteManager) {
 		track.muted = false;
 	};
 
+	// called only from the track ui
+	this.setTrackColor = (track, color) => {
+		track.color = colorManager.createCustomColor(color);
+		this.render();
+	};
+
 	this.toggleSoloTrack = (track) => {
 		noteManager.toggleSolo(track);
 	};
@@ -1417,8 +1392,11 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.selectTrack = (element, track) => {
-		this.trackContainer.childNodes.forEach((c) => c.classList.toggle('active', false));
 		noteManager.selectTrack(track);
+		this.trackContainer.childNodes.forEach((c) => {
+			c.classList.toggle('active', false);
+			c.updateColor?.();
+		});
 		this.render();
 		this.setSynthUi(track);
 		element.classList.toggle('active', true);
@@ -1462,7 +1440,14 @@ function NoteManagerUI(noteManager) {
 	};
 
 
-	this.drawNote = (note, color = jodColors.note, resizeColor = jodColors.resizeHandle, shouldAnimate = false) => {
+	this.drawNote = (
+		note,
+		color = jodColors.note,
+		resizeColor = jodColors.resizeHandle,
+		hoverColor = jodColors.hoveredNote,
+		shouldAnimate = false,
+		selected = false
+	) => {
 		const x = this.timeToX(note.startTime);
 		const y = this.toneToY(note.tone);
 		const w = note.duration * this.pxPerBeat;
@@ -1478,8 +1463,13 @@ function NoteManagerUI(noteManager) {
 			this.ctx.fillStyle = `rgb(200, 230, 255, ${ease / (dur * 2)})`;
 			this.ctx.fillRect(x - thicc, y - thicc, w + thicc * 2, h + thicc * 2);
 		}
+		
+		if (selected) {
+			this.ctx.fillStyle = color;
+			this.ctx.strokeRect(x-1, y-1, w+2, h+2);
+		}
 
-		this.ctx.fillStyle = this.hoveredNote === note ? jodColors.hoveredNote : color;
+		this.ctx.fillStyle = this.hoveredNote === note ? hoverColor : color;
 		this.ctx.fillRect(x, y, w, h);
 
 		this.ctx.fillStyle = resizeColor;
@@ -1582,16 +1572,17 @@ function NoteManagerUI(noteManager) {
 		this.ctx.lineWidth = 1;
 	};
 
-	this.drawNotes = ({ notes, active, muted, solo }) => {
+	this.drawNotes = ({ notes, active, muted, solo, color }) => {
 		const shouldAnimate = this.isPlaying() && jodConfiguration.animations && !muted && (!noteManager.soloTrack || solo);
-		let color = jodColors.note;
+		let mainColor = color.main ?? jodColors.note;
+		const hoverColor = color.highlight;
 		let resizeColor = jodColors.resizeHandle;
-		let selectedColor = jodColors.selectedNote;
+		let selectedColor = color.active;
 
 		if (!active) {
-			color = jodColors.fadedNote;
+			mainColor = color.faded ?? jodColors.fadedNote;
 			resizeColor = jodColors.fadedResizeHandle;
-			selectedColor = jodColors.fadedSelectedNote;
+			selectedColor = color.fadedActive;
 		}
 
 		notes.forEach((n) => {
@@ -1602,26 +1593,26 @@ function NoteManagerUI(noteManager) {
 
 			switch (this.mode) {
 				case EModes.pitchAutomation:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, shouldAnimate);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, hoverColor, shouldAnimate, true);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					if (!active) this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					else this.drawPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				case EModes.automation:
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty]);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				case EModes.panAutomation:
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty], true);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				default:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, shouldAnimate);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, hoverColor, shouldAnimate, true);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 			}
@@ -1630,8 +1621,10 @@ function NoteManagerUI(noteManager) {
 
 	this.drawAllTracks = () => {
 		noteManager.tracks.forEach((t) => {
+			if (t.active) return;
 			this.drawNotes(t);
 		});
+		this.drawNotes(noteManager.tracks[noteManager.selectedTrack]);
 	};
 
 	this.drawAABB = (aabb, color = jodColors.selectArea) => {

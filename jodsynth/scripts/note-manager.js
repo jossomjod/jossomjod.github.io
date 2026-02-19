@@ -290,6 +290,7 @@ function NoteManager(ac, output) {
 			solo: false,
 			monoPitch: false,
 			gain: 1,
+			color: colorManager.predefinedColors.default,
 			id: ++this.trackIdCounter,
 			disableNoteAutomation: false,
 		};
@@ -406,6 +407,13 @@ function NoteManager(ac, output) {
 		n: 'pan',
 		t: 'time',
 		v: 'value',
+		c: 'color',
+		h: 'highlight',
+		e: 'active',
+		i: 'disabled',
+		f: 'faded',
+		m: 'main',
+		l: 'fadedActive',
 	};
 
 	this.shortNameLookup = Object.entries(this.propNameLookup).reduce((prev, [short, long]) => {
@@ -479,6 +487,7 @@ function NoteManager(ac, output) {
 			const track = t;
 			track.fx = new FxManager(ac, output, t.fx, t.gain);
 			track.synth = new Synth(ac, track.fx.input, t.synth);
+			if (!track.color?.main) track.color = colorManager.predefinedColors.default;
 			if (track.id > this.trackIdCounter) this.trackIdCounter = track.id;
 			else if (!track.id) track.id = ++this.trackIdCounter;
 			return track;
