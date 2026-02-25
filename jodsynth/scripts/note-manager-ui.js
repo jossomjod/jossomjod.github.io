@@ -1463,17 +1463,22 @@ function NoteManagerUI(noteManager) {
 			this.ctx.fillStyle = `rgb(200, 230, 255, ${ease / (dur * 2)})`;
 			this.ctx.fillRect(x - thicc, y - thicc, w + thicc * 2, h + thicc * 2);
 		}
-		
-		if (selected) {
-			this.ctx.fillStyle = color;
-			this.ctx.strokeRect(x-1, y-1, w+2, h+2);
-		}
 
-		this.ctx.fillStyle = this.hoveredNote === note ? hoverColor : color;
+		this.ctx.fillStyle = color;
 		this.ctx.fillRect(x, y, w, h);
 
 		this.ctx.fillStyle = resizeColor;
 		this.ctx.fillRect(x + w - r, y, r, h);
+		
+		if (selected) {
+			this.ctx.fillStyle = '#ffffff88';
+			this.ctx.fillRect(x-1, y-1, w+2, h+2);
+		}
+
+		if (this.hoveredNote === note) {
+			this.ctx.fillStyle = '#ffffff55';
+			this.ctx.fillRect(x-2, y-2, w+4, h+4);
+		}
 	};
 
 	this.drawCircle = (x, y, r, color = jodColors.automationNode) => {
@@ -1593,7 +1598,7 @@ function NoteManagerUI(noteManager) {
 
 			switch (this.mode) {
 				case EModes.pitchAutomation:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, hoverColor, shouldAnimate, true);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate, true);
 					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					if (!active) this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					else this.drawPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
@@ -1611,7 +1616,7 @@ function NoteManagerUI(noteManager) {
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				default:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, hoverColor, shouldAnimate, true);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate, true);
 					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;

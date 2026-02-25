@@ -80,6 +80,10 @@ function fadeColor(col1, col2, t) {
 	return `#${(r << 16 | g << 8 | b).toString(16)}`;
 }
 
+function setHexAlpha(hex, a) {
+	return `${hex.slice(0, 7)}${a}`;
+}
+
 
 
 
@@ -126,13 +130,14 @@ class ColorManager {
 	};
 
 	createCustomColor(baseColor) {
+		const active = fadeColor(baseColor, '#ffffff', 0.6);
 		const color = {
 			main: baseColor,
-			active: fadeColor(baseColor, '#ffffff', 0.6),
+			active,
 			disabled: jodColors.mutedNote,
-			faded: fadeColor(baseColor, '#000000', 0.7),
+			faded: setHexAlpha(baseColor, '40'),
 			highlight: fadeColor(baseColor, '#ffffff', 0.3),
-			fadedActive: fadeColor(baseColor, '#000000', 0.5),
+			fadedActive: setHexAlpha(active, '50'),
 		};
 		return color;
 	}

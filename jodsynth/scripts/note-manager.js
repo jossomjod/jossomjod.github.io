@@ -288,7 +288,7 @@ function NoteManager(ac, output) {
 			active: true,
 			muted: false,
 			solo: false,
-			monoPitch: false,
+			monoPitch: true,
 			gain: 1,
 			color: colorManager.predefinedColors.default,
 			id: ++this.trackIdCounter,
