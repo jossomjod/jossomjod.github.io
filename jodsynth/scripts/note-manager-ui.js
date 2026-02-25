@@ -1463,17 +1463,17 @@ function NoteManagerUI(noteManager) {
 			this.ctx.fillStyle = `rgb(200, 230, 255, ${ease / (dur * 2)})`;
 			this.ctx.fillRect(x - thicc, y - thicc, w + thicc * 2, h + thicc * 2);
 		}
+		
+		if (selected) {
+			this.ctx.strokeStyle = '#ffffff';
+			this.ctx.strokeRect(x-1, y-1, w+2, h+2);
+		}
 
 		this.ctx.fillStyle = color;
 		this.ctx.fillRect(x, y, w, h);
 
 		this.ctx.fillStyle = resizeColor;
 		this.ctx.fillRect(x + w - r, y, r, h);
-		
-		if (selected) {
-			this.ctx.fillStyle = '#ffffff88';
-			this.ctx.fillRect(x-1, y-1, w+2, h+2);
-		}
 
 		if (this.hoveredNote === note) {
 			this.ctx.fillStyle = '#ffffff55';
