@@ -121,11 +121,9 @@ class JodNumbElement extends HTMLElement {
 		const style = document.createElement("style");
 		style.textContent = `
 			.wrapper {
-				padding: 5px;
-				min-width: 40px;
-				max-width: 100px;
-				min-height: 20px;
-				max-height: 40px;
+				font-size: 0.7rem;
+				padding: 0.26em;
+				max-width: 5.6em;
 				background-color: #3c4a5b;
 				color: #cfdcff;
 				border: 1px solid #345;
