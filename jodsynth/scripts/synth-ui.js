@@ -298,7 +298,7 @@ function OscillatorUi(oscillator, container, name) {
 	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune');
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
 	const coarse = Math.round(this.oscillator.detune / 100);
-	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
+	this.oscCoarseUI.value = coarse;
 	this.oscDetuneUI.value = this.oscillator.detune - coarse * 100;
 	this.oscDetuneUI.setAttribute('value', this.oscDetuneUI.value + '');
 	
@@ -318,15 +318,15 @@ function OscillatorUi(oscillator, container, name) {
 		document.activeElement.blur();
 	});
 
-
 	// LFO
 	this.oscLFOFreqUI = this.oscUi.querySelector('#oscLFOFreq');
 	this.oscLFOFreqUI.value = this.oscillator.fixedFreq;
+	this.oscLFOFreqUI.setAttribute('value', this.oscillator.fixedFreq + '');
 	this.oscLFOFreqUI.addEventListener('changed', () => {
 		this.oscillator.fixedFreq = +this.oscLFOFreqUI.value;
 	});
 	this.oscLFOToggleUI = this.oscUi.querySelector('#oscLFOToggle');
-	this.oscLFOToggleUI.value = !!this.oscillator.isLFO;
+	this.oscLFOToggleUI.checked = !!this.oscillator.isLFO;
 	this.oscLFOToggleUI.addEventListener('change', () => {
 		this.oscillator.isLFO = this.oscLFOToggleUI.checked;
 	});
