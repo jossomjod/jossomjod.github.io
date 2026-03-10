@@ -140,7 +140,7 @@ navigator.requestMIDIAccess().then(
 );
 
 /**
- * @param {MIDIAccess} midiAccess 
+ * @param {MIDIAccess} midiAccess
  */
 function setupMIDI(midiAccess) {
 	midi = midiAccess;
@@ -188,7 +188,7 @@ function toggleMIDIKeys(e) {
 	}
 
 	if (type !== midiMessageTypes.noteOn) return;
-	
+
 	const key = (midiKeys[keyId] ??= { keyId });
 
 	if (key.gain === gain) return;
@@ -240,6 +240,7 @@ function setPitch(value) {
 
 function setModulation(amount) {
 	// TODO
+	console.log('mod', amount);
 }
 
 function setMidiGain(gain) {
@@ -416,7 +417,7 @@ jodOverlay.onclick = () => {
 };
 
 /**
- * @param {HTMLElement} element 
+ * @param {HTMLElement} element
  */
 function openPopup(element, style = { left: 0, top: 0 }) {
 	jodOverlayContent.replaceChildren(element);
@@ -458,7 +459,7 @@ topBar.onkeyup = (e) => {
 saveNameInput.onkeydown = (e) => {
 	e.stopPropagation();
 };
-/* 
+/*
 window.onload = () => {
 	const autoSave = SaveManager.loadAutoSave();
 	if (!autoSave) return;
