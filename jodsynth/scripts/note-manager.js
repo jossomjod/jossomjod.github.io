@@ -46,7 +46,7 @@ function envelopeToAutomation(env, bpm, duration, valueMultiplier = 1) {
 	return arr;
 	if (!arr.length) return arr;
 	if (arr.length < 2) return arr; // TODO: handle better
-	
+
 	const penult = arr.at(-2);
 	const release = arr.at(-1).time - penult.time;
 
@@ -94,7 +94,7 @@ function getAutomationFromSynth(synth, bpm, duration) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.version = 2;
+	this.version = 3;
 	this.bpm = 140;
 	this.lookaheadBeats = 0.09
 	this.intervalMs = 18;
@@ -221,7 +221,7 @@ function NoteManager(ac, output) {
 			const duration = beatsToSeconds(durationBeats, this.bpm);
 			const freq = toneToFreq(n.tone);
 			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
-			
+
 			const delay = (startTime - ac.currentTime) * 1000;
 			this.onNoteScheduled(trackIndex, delay, duration * 1000, track);
 		}
@@ -232,7 +232,7 @@ function NoteManager(ac, output) {
 		this.intervalBeats = secondsToBeats(0.001 * this.intervalMs, this.bpm);
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
 		this.latestNoteStartTime = -0.00001;
-		
+
 		if (this.isPlaying) return;
 		this.isPlaying = true;
 
@@ -306,7 +306,7 @@ function NoteManager(ac, output) {
 
 		const index = this.tracks.findIndex((t) => t.id === track.id);
 		let selectedIdx = this.tracks.findIndex((t) => t.id === this.selectedTrackId);
-		
+
 		this.tracks.splice(index, 1);
 		if (index <= selectedIdx) selectedIdx = Math.max(0, selectedIdx - 1);
 		this.selectTrackByIndex(selectedIdx);
