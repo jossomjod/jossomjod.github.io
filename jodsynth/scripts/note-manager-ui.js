@@ -81,7 +81,7 @@ class TimelineUI {
 			}
 			ctx.stroke();
 		}
-		
+
 		const caretX = w * (caretTime / endTime);
 		tracks.forEach((t) => {
 			const shouldAnimate = isPlaying && jodConfiguration.animations && !t.muted && (!this.noteManager.soloTrack || t.solo);
@@ -93,7 +93,7 @@ class TimelineUI {
 
 				ctx.fillStyle = t.active ? jodColors.note : jodColors.fadedNote;
 				ctx.fillRect(nx, ny, nw, 1);
-				
+
 				const time = (caretX - nx) / nw;
 				const dur = 1.5;
 				if (shouldAnimate && time >= 0 && time <= dur) {
@@ -109,7 +109,7 @@ class TimelineUI {
 		if (this.isSelecting) this.drawSelectionBox(ctx);
 	}
 
-	/** 
+	/**
 	 * @param {CanvasRenderingContext2D} ctx
 	 * @param {number} pos A number between 0 and 1, where 1 is the end time.
 	 */
@@ -350,7 +350,7 @@ function NoteManagerUI(noteManager) {
 								this.onSelectionChanged();
 								this.render();
 							}
-	
+
 							this.clickedNote = clickedNote;
 						} else {
 							this.selectedNotes = [];
@@ -484,7 +484,7 @@ function NoteManagerUI(noteManager) {
 					this.areaSelectAABB.ay = realY;
 					this.areaSelectAABB.bx = realX;
 					this.areaSelectAABB.by = realY;
-	
+
 					if (mod2) this.isSelectingAllTracks = true;
 					else this.isSelectingArea = true;
 				} else {
@@ -506,7 +506,7 @@ function NoteManagerUI(noteManager) {
 		const realX = e.x - rect.left;
 		const timeLineHovered = this.timeLine.isPointInside(realX, unFlippedY);
 		this.isCursorInside = !timeLineHovered;
-		
+
 		if (~buttons & this.primaryAction) {
 			if (this.isSelectingRow) {
 				this.isSelectingArea = this.isSelectingAllTracks = this.isSelectingRow = false;
@@ -713,7 +713,7 @@ function NoteManagerUI(noteManager) {
 		}
 		this.render();
 	});
-	
+
 	this.trackerContainer.appendChild(this.jodroll);
 
 	this.onSelectionChanged = () => {
@@ -1310,10 +1310,10 @@ function NoteManagerUI(noteManager) {
 		const track = noteManager.createTrack(basedOn);
 		const div = createTrackEntryUi(track, this);
 		this.trackContainer.appendChild(div);
-		this.selectTrack(div, track); 
+		this.selectTrack(div, track);
 		return track;
 	};
-	
+
 	this.addTrackBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
 		e.preventDefault();
@@ -1463,7 +1463,7 @@ function NoteManagerUI(noteManager) {
 			this.ctx.fillStyle = `rgb(200, 230, 255, ${ease / (dur * 2)})`;
 			this.ctx.fillRect(x - thicc, y - thicc, w + thicc * 2, h + thicc * 2);
 		}
-		
+
 		if (selected) {
 			this.ctx.strokeStyle = '#ffffff';
 			this.ctx.strokeRect(x-1, y-1, w+2, h+2);
@@ -1558,7 +1558,7 @@ function NoteManagerUI(noteManager) {
 		this.ctx.fillStyle = jodColors.releaseBox;
 		this.ctx.fillRect(x + w, y, releaseW, h);
 
-		
+
 		this.ctx.lineWidth = 4;
 		let prevX = x;
 		let prevY = y + h * (zeroCentered ? 0.5 : 0);
@@ -1689,7 +1689,7 @@ function NoteManagerUI(noteManager) {
 
 		const topTone = this.yToTone(0);
 		const toneOffset = topTone - Math.floor(topTone);
-		
+
 		// horizontal lines
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.gridLine;
@@ -1828,7 +1828,7 @@ function NoteManagerUI(noteManager) {
 		const caretPos = this.timeToX(time);
 		this.caretPos = caretPos;
 		this.caretTime = time;
-		
+
 		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.25;
 		this.renderFn();
 		this.drawCaret(caretPos);
