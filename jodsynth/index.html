@@ -37,10 +37,10 @@
 					<input id="saveNameInput" class="text-input" placeholder="Save name">
 					<button onclick="saveAll()">Save</button>
 					<button onclick="saveAss()">as...</button>
-					<button onclick="loadFile()">Load</button>
-					<button onclick="loadFromClipboard()">Load from clipboard</button>
+					<button onclick="loadFile()">Load file</button>
+					<button onclick="exportUrl()">Copy URL</button>
 					<div class="select-box">
-						<label for="saveSelect">Load project</label>
+						<label for="saveSelect">Load local</label>
 						<select id="saveSelect" placeholder="Select project..."></select>
 					</div>
 					<select id="templateSelect">
@@ -59,10 +59,6 @@
 				<div class="select-box">
 					<label for="midiFileInput">Import MIDI</label>
 					<input id="midiFileInput" type="file" accept=".mid,audio/midi">
-				</div>
-				<div>
-					<label for="bpmUi">BPM</label>
-					<input class="detune" id="bpmUi" type="number">
 				</div>
 				<div>
 					<div onclick="toggleHelp()" class="circle clickable help-icon end">?</div>
@@ -99,6 +95,10 @@
 							</div>
 						</div>
 						<div class="jodroll-transport-right">
+							<div>
+								<label for="bpmUi">BPM</label>
+								<input class="detune" id="bpmUi" type="number">
+							</div>
 							<button id="jodrollBtnLoop">Loop</button>
 							<button id="jodrollBtnAutoScroll">Auto-scroll</button>
 							<!-- <button id="jodrollBtnSnapH">SnapH</button>
@@ -150,14 +150,14 @@
 
 <template id="fx-template">
 	<div class="fx-contents">
-		
+
 	</div>
 </template>
 
 <template id="oscillator-template">
 	<div class="oscillator-container">
 		<p id="oscillator-name" class="ocillator-name">Oscillator</p>
-		
+
 		<div class="controls-container">
 			<div class="control">
 				<label for="oscWaveform">Waveform</label>

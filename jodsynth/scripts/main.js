@@ -134,7 +134,7 @@ midiFileInput.addEventListener('change', (e) => {
 const activeKeys = {};
 
 var midi;
-navigator.requestMIDIAccess().then(
+navigator.requestMIDIAccess?.().then(
 	(value) => setupMIDI(value),
 	(reason) => console.warn('MIDI access not granted', reason)
 );
@@ -313,9 +313,13 @@ function saveAll(name) {
 	if (!saveName) return;
 
 	const data = noteManager.save();
-	if (saveName.length < 250) SaveManager.saveAll(data, saveName);
-	else saveNameInput.value = '';
-
+	if (saveName.length < 250) {
+		SaveManager.saveAll(data, saveName).then(() => {
+			generateSaveSelectOptions();
+		});
+		return;
+	}
+	saveNameInput.value = '';
 	generateSaveSelectOptions();
 }
 
@@ -323,11 +327,11 @@ function loadAll(name) {
 	const saveName = name || saveNameInput.value || saveNameInput.innerHTML;
 	if (!saveName) return;
 
-	const data = SaveManager.loadAll(saveName);
-	if (data) {
+	SaveManager.loadAll(saveName).then((data) => {
+		if (!data) return;
 		noteManager.load(data);
 		noteManagerUi.renderAll();
-	}
+	});
 }
 
 async function loadFromClipboard() {
@@ -338,8 +342,28 @@ async function loadFromClipboard() {
 	}
 }
 
+async function exportUrl() {
+	SaveManager.exportUrl(noteManager.save());
+}
 
-// TODO: chuck shit in the save manager
+async function initialize() {
+	const query = document.location.search;
+	if (!query) return;
+
+	const sp = new URLSearchParams(query);
+	if (!sp.has('project')) return;
+
+	SaveManager.importBase64(sp.get('project')).then((d) => {
+		if (!d) return;
+		noteManager.load(d);
+		noteManagerUi.renderAll();
+	});
+}
+
+initialize(); // ------------------ woooooooo
+
+
+// TODO: save as compressed binary
 async function saveAss() {
 	const suggestedName = saveNameInput.value;
 	const data = JSON.stringify(noteManager.save());

@@ -94,7 +94,7 @@ function getAutomationFromSynth(synth, bpm, duration) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.version = 3;
+	this.version = 4;
 	this.bpm = 140;
 	this.lookaheadBeats = 0.09
 	this.intervalMs = 18;
@@ -398,22 +398,51 @@ function NoteManager(ac, output) {
 	};
 
 	this.propNameLookup = {
-		s: 'startTime',
-		d: 'duration',
-		o: 'tone',
 		a: 'automations',
-		g: 'gain',
-		p: 'pitch',
-		n: 'pan',
-		t: 'time',
-		v: 'value',
+		b: 'notes',
 		c: 'color',
-		h: 'highlight',
+		d: 'duration',
 		e: 'active',
-		i: 'disabled',
 		f: 'faded',
-		m: 'main',
+		g: 'gain',
+		h: 'highlight',
+		i: 'disabled',
+		j: 'detune',
+		k: 'type',
 		l: 'fadedActive',
+		m: 'main',
+		n: 'pan',
+		o: 'tone',
+		p: 'pitch',
+		q: 'points',
+		r: 'version',
+		s: 'startTime',
+		t: 'time',
+		u: 'synth',
+		v: 'value',
+		w: 'tracks',
+		y: 'bpm',
+		A: 'monoPitch',
+		B: 'muted',
+		C: 'customWave',
+		D: 'disableNoteAutomation',
+		E: 'isLFO',
+		F: 'fixedFreq',
+		G: 'gainEnvelope',
+		H: 'rndGain',
+		I: 'rndPitch',
+		J: 'mod1',
+		K: 'mod2',
+		L: 'mod3',
+		M: 'multiplier',
+		N: 'modType',
+		O: 'oscillators',
+		P: 'pitchEnvelope',
+		Q: 'name',
+		R: 'phase',
+		S: 'solo',
+		T: 'type',
+		W: 'customWaveform',
 	};
 
 	this.shortNameLookup = Object.entries(this.propNameLookup).reduce((prev, [short, long]) => {
@@ -453,20 +482,22 @@ function NoteManager(ac, output) {
 
 	this.save = () => {
 		return {
-			version: this.version,
-			bpm: this.bpm,
-			tracks: this.shortenNames(this.getStringableTracks()),
+			r: this.version,
+			y: this.bpm,
+			w: this.shortenNames(this.getStringableTracks()),
 		};
 	};
 
 	this.load = (data) => {
 		this.toggleLooping(false);
-		if (data.version !== this.version) {
+		if (data.r !== this.version) {
 			console.warn('Version mismatch');
 		}
-		const tracks = data.version >= 2 ? this.expandNames(data.tracks) : data.tracks;
-		this.bpm = data.bpm ?? 140;
+		const trx = data.w ?? data.tracks;
+		const tracks = (data.r ?? data.version) >= 2 ? this.expandNames(trx) : trx;
+		this.bpm = data.y ?? data.bpm ?? 140;
 		this.loadTracks(tracks);
+		console.log(data, tracks);
 	};
 
 	this.loadTracks = (tracks) => {

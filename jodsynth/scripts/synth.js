@@ -43,7 +43,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 
 		let prevVal = base;
 
-/* 
+/*
 		const pts = this.points.filter((p, i) => p.time < duration && i !== this.points.length - 1);
 		pts.forEach((p) => {
 			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
@@ -175,8 +175,6 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.gainEnvelope = gainEnvelope;
 	this.pitchEnvelope = pitchEnvelope;
 	this.modType = 0; // 0: FM, 1: AM
-	/** @deprecated Use mod1 instead */
-	this.mod = mod;
 	this.mod1 = mod != null ? mod + 1 : 0;
 	this.mod2 = 0;
 	this.mod3 = 0;
@@ -267,7 +265,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		gainNode.gain.setValueAtTime(thisGain * (gain ?? 1), ac.currentTime);
 		panner.pan.setValueAtTime(pan ?? 0, ac.currentTime);
 	};
-	
+
 	this.stopWithFixedProperties = (osc) => {
 		osc.stop(ac.currentTime);
 	}
@@ -290,20 +288,20 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 
 		return osc;
 	}
-	
+
 	this.schedulePlaybackWithAutomation = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
 		const gain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
 		osc.setPeriodicWave(this.customWave);
-		
+
 		let endTime = startTime + duration;
 
 		gainNode.gain.value = gain;
 		osc.connect(panner).connect(gainNode);
 		osc.start(startTime);
 
-		
+
 		gainNode.gain.setValueAtTime(0, startTime);
 
 		if (automation.gain?.length) {
@@ -402,7 +400,7 @@ function Synth(ac, output, fromObject) {
 		}
 	}
 
-	
+
 	this.start = (freq, onset = 1) => {
 		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
@@ -441,7 +439,7 @@ function Synth(ac, output, fromObject) {
 
 		return oscs;
 	};
-	
+
 	this.stop = (oscs) => {
 		oscs.forEach((o, i) => {
 			this.oscillators[i]?.stop(o.oscillator, o.gain);
@@ -499,7 +497,7 @@ function Synth(ac, output, fromObject) {
 			this.oscillators[i]?.updateFixedProperties({ osc, gainNode, panner, ...properties[i] });
 		});
 	};
-	
+
 	this.stopWithFixedProperties = (oscs) => {
 		oscs.forEach((o, i) => {
 			this.oscillators[i]?.stopWithFixedProperties(o.oscillator);

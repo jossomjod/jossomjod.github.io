@@ -63,6 +63,7 @@
 	justify-self: right;
 	height: 3em;
 	align-items: center;
+	gap: 3px;
 }
 
 .jodroll-playback-time {

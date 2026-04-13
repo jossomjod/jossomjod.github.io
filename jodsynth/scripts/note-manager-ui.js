@@ -91,7 +91,7 @@ class TimelineUI {
 				const ny = y + (h - n.tone);
 				const nw = w * n.duration / endTime;
 
-				ctx.fillStyle = t.active ? jodColors.note : jodColors.fadedNote;
+				ctx.fillStyle = t.active ? t.color.main ?? jodColors.note : t.color.faded ?? jodColors.fadedNote;
 				ctx.fillRect(nx, ny, nw, 1);
 
 				const time = (caretX - nx) / nw;
