@@ -292,6 +292,7 @@ templateSelect.addEventListener('change', () => {
 	const tracks = trackerTemplates[index]
 	if (!tracks) throw 'No template found for index' + index;
 
+	activeFileHandle = null;
 	noteManager.load(SaveManager.parseTrackData(tracks));
 	noteManagerUi.renderAll();
 	saveNameInput.value = saveSelect.value = null;
@@ -329,6 +330,7 @@ function loadAll(name) {
 
 	SaveManager.loadAll(saveName).then((data) => {
 		if (!data) return;
+		activeFileHandle = null;
 		noteManager.load(data);
 		noteManagerUi.renderAll();
 	});

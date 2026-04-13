@@ -57,7 +57,7 @@
 					</select>
 				</div>
 				<div class="select-box">
-					<label for="midiFileInput">Import MIDI</label>
+					<label for="midiFileInput">Import MIDI (WIP)</label>
 					<input id="midiFileInput" type="file" accept=".mid,audio/midi">
 				</div>
 				<div>
@@ -371,13 +371,29 @@
 		<div class="help-box-section" id="helpBoxSection4">
 			<div>
 				<p>
-					The save system is currently a bit experimental and unconventional.<br>
-					Clicking "Save" stores the current tracks and synths locally on your device under the name specified in the text input.<br>
-					This will also copy the saved data to the clipboard so you can paste it into a text file.<br>
-					To load the saved data, type in the name you saved it under and click "Load", or just select it from the project list.<br>
-					Alternatively, you can paste the saved data directly into the save name field and click "Load".<br>
-					You can also quick-save / quick-load with <span class="key">F8</span> / <span class="key">F9</span> or <span class="key">Ctrl</span> + <span class="key">S</span> / <span class="key">Ctrl</span> + <span class="key">Z</span><br>
-					Quick-saving overwrites the previous quick-save, and is not a reliable means of long-term storage.
+					The save system is still a bit experimental and unconventional.<br>
+					And no, you can't mix down to an audio file yet.
+				</p>
+				<p>
+					Clicking "Save" stores the current project locally on your device under the name specified in the text input.<br>
+					To load the saved data, select it from the project list.<br>
+					Click "as..." to save the project locally as a file. Does not work in Firefox.<br>
+					<span class="key">Ctrl</span> + <span class="key">S</span> to save over the most recently saved/loaded file.<br><br>
+					Project files are currently saved as plain JSON, but will later be compressed binary data. The save system will remain backwards-compatible.
+				</p>
+				<p>
+					You can also quick-save / quick-load with <span class="key">F8</span> / <span class="key">F9</span><br>
+					Quick-saving overwrites the previous quick-save, and is not reliable for long-term storage.
+				</p>
+			</div>
+		</div>
+		<h2 class="help-header" onclick="toggleHelpSection('#helpBoxSection7')">MIDI (Work In Progress)</h2>
+		<div class="help-box-section" id="helpBoxSection7">
+			<div>
+				<p>
+					MIDI import is half-assed and cursed. It works for some MIDI files, but not all.<br>
+					MIDI input should work quite well. Just make sure your MIDI device is plugged in and turned on. Refresh the page if necessary.<br>
+					The pitch wheel works, but is hardcoded to max ±2 semitones. The modulation wheel is not currently in use.
 				</p>
 			</div>
 		</div>

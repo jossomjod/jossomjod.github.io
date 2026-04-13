@@ -1,5 +1,5 @@
 /**
- * @param {Uint8Array<ArrayBuffer>} bytes 
+ * @param {Uint8Array<ArrayBuffer>} bytes
  * @returns {number}
  */
 function byteArrayToNumber(bytes) {
@@ -75,7 +75,7 @@ class MidiManager {
 		let byte = this.buffer[this.index++];
 		let value = byte;
 		if (!(byte & 0xff)) return value;
-		
+
 		while (byte & 0x80) {
 			byte = this.buffer[this.index++];
 			value = (value << 8) | byte;
@@ -89,7 +89,7 @@ class MidiManager {
 		console.log('first 4 bytes of track', ...firstFourBytes);
 		const chunkType = String.fromCharCode(...firstFourBytes);
 		if (chunkType !== 'MTrk') console.warn(`This chunk ain\'t a normal track bro: ${chunkType} at index ${this.index - 4}`);
-		
+
 		const length = byteArrayToNumber(this.readBytes(4));
 		console.log('chunkType, length', chunkType, length);
 
@@ -180,7 +180,7 @@ class MidiManager {
 				continue;
 			}
 			//console.log('EVENT ID:', eventId);
-			
+
 			switch (eventType & 0xf0) {
 				/* case 0xff:
 					const len = this.readEvent();
@@ -194,7 +194,7 @@ class MidiManager {
 							break;
 					}
 					break; */
-				
+
 				case 0x80: // note off
 					const chnl2 = eventType & 0x0f;
 					const tone2 = this.readByte();
@@ -205,6 +205,7 @@ class MidiManager {
 					}
 					const note = { ...channels[chnl2][tone2] };
 					note.duration = currentTime / ticksPerBeat - note.startTime;
+					if (note.duration < 0.1) break;
 					note.tone -= 20;
 					notes.push(note);
 					break;
@@ -215,6 +216,7 @@ class MidiManager {
 					if (channels[chnl]?.[tone] && !velocity) { // velocity == 0 counts as note off
 						const note = { ...channels[chnl][tone] };
 						note.duration = currentTime / ticksPerBeat - note.startTime;
+						if (note.duration < 0.1) break;
 						note.tone -= 20;
 						notes.push(note);
 						break;
@@ -239,6 +241,7 @@ class MidiManager {
 							channels[channel]?.forEach((n) => {
 								const note = { ...n };
 								note.duration = currentTime / ticksPerBeat - note.startTime;
+								if (note.duration < 0.1) return;
 								note.tone -= 20;
 								notes.push(note);
 							});
@@ -288,7 +291,7 @@ class MidiManager {
 
 		const headerChunkType = String.fromCharCode(...buffer.slice(0, 4));
 		if (headerChunkType !== 'MThd') throw new Error('File is not MIDI');
-		
+
 		const headerLength = byteArrayToNumber(buffer.slice(4, 8));
 
 		const format = byteArrayToNumber(buffer.slice(8, 10));
@@ -305,7 +308,7 @@ class MidiManager {
 
 		this.index = 8 + headerLength;
 		const tracks = [];
-		
+
 		for (let i = 0; i < ntrcks; i++) {
 			if (this.index >= this.buffer.length - 4) {
 				console.warn('mf lied about the amount of tracks bro', i, ntrcks);
