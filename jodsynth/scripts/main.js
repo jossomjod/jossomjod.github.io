@@ -566,10 +566,10 @@ document.body.onkeydown = (e) => {
 			noteManagerUi.autoScrollOnPlayback = !noteManagerUi.autoScrollOnPlayback;
 			break;
 		case 119: // F8
-			quickSave();
+			//quickSave();
 			break;
 		case 120: // F9
-			quickLoad();
+			//quickLoad();
 			break;
 	}
 
