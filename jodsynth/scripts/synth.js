@@ -43,7 +43,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 
 		let prevVal = base;
 
-/* 
+/*
 		const pts = this.points.filter((p, i) => p.time < duration && i !== this.points.length - 1);
 		pts.forEach((p) => {
 			prop.linearRampToValueAtTime(base + p.value * mult, startTime + p.time);
@@ -73,20 +73,24 @@ const waveforms = ['square', 'sine', 'sawtooth', 'triangle'];
 
 // The web audio API doesn't support phase-shifting the oscillator
 // so we need to generate each waveform with a phase offset
-function getPhaseShiftedSawWave(ac, phaseOffset = 0.0) {
-	const numHarmonics = 30;
-	const real = new Float32Array(numHarmonics);
-	const imag = new Float32Array(numHarmonics);
+function getPhaseShiftedSawWave(audioContext, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
+	const numberOfHarmonics = 30;
+	const real = new Float32Array(numberOfHarmonics);
+	const imag = new Float32Array(numberOfHarmonics);
 	real[0] = 0.0;
 	imag[0] = 0.0;
 
-	for (let i = 1; i <= numHarmonics-1; i++) {
-		imag[i] = ((-1) ** (i + 1)) * (2 / (i * Math.PI + phaseOffset));
+	for (let i = 1; i < numberOfHarmonics; i++) {
+		imag[i] = -(1 ** (i + 1)) * (2 / (i * Math.PI));
+		real[i] = -imag[i] * Math.sin(phase);
+		imag[i] *= Math.cos(phase);
 	}
-	return ac.createPeriodicWave(real, imag);
+	return audioContext.createPeriodicWave(real, imag);
 }
 
 function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
 	const numHarmonics = 30;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
@@ -94,13 +98,16 @@ function getPhaseShiftedSquareWave(ac, phaseOffset = 0.0) {
 	real[0] = 0.0;
 	imag[0] = 0.0;
 
-	for (let i = 1; i <= numHarmonics-1; i++) {
-		imag[i] = (2 / ((i + phaseOffset) * Math.PI)) * (1 - (-1) ** i);
+	for (let i = 1; i < numHarmonics; i++) {
+		imag[i] = (2 / (i * Math.PI)) * (1 - (-1) ** i);
+		real[i] = -imag[i] * Math.sin(phase);
+		imag[i] *= Math.cos(phase);
 	}
 	return ac.createPeriodicWave(real, imag);
 }
 
 function getPhaseShiftedTriangleWave(ac, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
 	const numHarmonics = 30;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
@@ -108,24 +115,40 @@ function getPhaseShiftedTriangleWave(ac, phaseOffset = 0.0) {
 	real[0] = 0.0;
 	imag[0] = 0.0;
 
-	for (let i = 1; i <= numHarmonics-1; i++) {
-		const pii = (i + phaseOffset) * Math.PI;
+	for (let i = 1; i < numHarmonics; i++) {
+		const pii = i * Math.PI;
 		imag[i] = (8 * Math.sin(pii / 2)) / pii ** 2;
+		real[i] = -imag[i] * Math.sin(phase);
+		imag[i] *= Math.cos(phase);
 	}
 	return ac.createPeriodicWave(real, imag);
 }
 
 function getPhaseShiftedSineWave(ac, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
 	const numHarmonics = 2;
 	const real = new Float32Array(numHarmonics);
 	const imag = new Float32Array(numHarmonics);
 
-	real[0] = 0 + phaseOffset;
-	imag[0] = 0;
-	real[1] = 1 - phaseOffset;
-	imag[1] = 0;
+	real[0] = Math.cos(phase);
+	imag[0] = Math.sin(phase);
+	real[1] = Math.cos(phase);
+	imag[1] = Math.sin(Math.PI * 2 + phase);
 
 	return ac.createPeriodicWave(real, imag);
+}
+
+function getPhaseShiftedCustomWave(audioContext, harmonics, phaseOffset = 0.0) {
+	const phase = phaseOffset * Math.PI * 2;
+	const numberOfHarmonics = harmonics.imag.length;
+
+	// Apply phase shift
+	for (let i = 0; i < numberOfHarmonics; i++) {
+		const tempReal = harmonics.real[i];
+		harmonics.real[i] = tempReal * Math.cos(phase) - harmonics.imag[i] * Math.sin(phase);
+		harmonics.imag[i] = tempReal * Math.sin(phase) + harmonics.imag[i] * Math.cos(phase);
+	}
+	return audioContext.createPeriodicWave(real, imag);
 }
 
 function getPeriodicWave(ac, type = 'sawtooth', phase) {
@@ -152,33 +175,50 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	this.gainEnvelope = gainEnvelope;
 	this.pitchEnvelope = pitchEnvelope;
 	this.modType = 0; // 0: FM, 1: AM
-	this.mod = mod;
-	this.isCarrier = () => this.mod === null;
+	this.mod1 = mod != null ? mod + 1 : 0;
+	this.mod2 = 0;
+	this.mod3 = 0;
+	this.isCarrier = () => !this.mod1;
 	this.isLFO = false;
 	this.fixedFreq = 1.0;
 	this.name = '';
-	this.phase = phase;
-	this.customeWave;
+	this.phase = phase ?? 0.0;
+	this.customWave;
+	this.customWaveform = getPeriodicWave(ac, 'sine', this.phase);
 	this.pan = 0.0;
+	this.rndGain = 0.0;
+	this.rndPitch = 0.0;
+
+	this.getPeriodicWave = (_type) => {
+		if (_type === 'custom') return this.customWaveform;
+		return getPeriodicWave(ac, _type, this.phase);
+	};
 
 	this.setWave = (waveform) => {
 		this.type = waveform;
-		this.customeWave = getPeriodicWave(ac, waveform, this.phase);
-	}
+		this.customWave = this.getPeriodicWave(waveform);
+	};
 	this.setWave(this.type);
 
 	this.setPhase = (phs) => {
 		this.phase = phs;
-		this.customeWave = getPeriodicWave(ac, this.type, this.phase);
-	}
+		this.customWave = this.getPeriodicWave(this.type);
+	};
 
-	this.start = (frequency, gainNode, panner, time = ac.currentTime) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
-		// You have to make a new osc every time
-		const osc = new OscillatorNode(ac, { /* type: this.type, */ detune: this.detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
-		
-		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+	this.getGain = (gain = this.gain) => {
+		return /* Math.random() * this.rndGain +  */gain;
+	};
+
+	this.getFreq = (freq) => {
+		return freq + Math.random() * this.rndPitch * freq;
+	};
+
+	this.start = (frequency, gainNode, panner, onset = 1) => {
+		const time = ac.currentTime;
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const gain = this.getGain(onset * this.gain);
+		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
+		osc.setPeriodicWave(this.customWave);
 
 		gainNode.gain.value = gain;
 		osc.connect(panner).connect(gainNode);
@@ -190,21 +230,29 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return osc;
 	}
 
-	this.stop = (time, osc, gainNode) => {
+	this.stop = (osc, gainNode) => {
+		const time = ac.currentTime;
 		this.gainEnvelope.stop(gainNode.gain, 0.0);
 		this.pitchEnvelope.stop(osc.detune, this.detune);
 		osc.stop(time + this.gainEnvelope.getRelease());
 	}
 
-	this.startWithFixedProperties = ({ frequency, gainNode, panner, detune, gain, pan }) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
-		const osc = new OscillatorNode(ac, { detune: this.detune + detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
-		
-		const thisGain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+	this.restart = ({ oscillator, gain }, onset = 1) => {
+		const time = ac.currentTime;
+		this.gainEnvelope.start(gain.gain, 0.0, this.getGain(onset * this.gain), time);
+		this.pitchEnvelope.start(oscillator.detune, this.detune, 1200.0, time);
+	}
 
-		gainNode.gain.value = thisGain * gain;
-		panner.pan = pan;
+
+
+	this.startWithFixedProperties = ({ frequency, gainNode, panner, detune, gain, pan }) => {
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const thisGain = this.getGain();
+		const osc = new OscillatorNode(ac, { detune: this.detune + (detune ?? 0), frequency: freq });
+		osc.setPeriodicWave(this.customWave);
+
+		gainNode.gain.value = thisGain * (gain ?? 1);
+		panner.pan = (pan ?? 0);
 		osc.connect(panner).connect(gainNode);
 		osc.start(ac.currentTime);
 
@@ -212,22 +260,21 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	}
 
 	this.updateFixedProperties = ({ osc, gainNode, panner, gain, pan, detune }) => {
-		const thisGain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
-		osc.detune.setValueAtTime(this.detune + detune, ac.currentTime);
-		gainNode.gain.setValueAtTime(thisGain * gain, ac.currentTime);
-		panner.pan.setValueAtTime(pan, ac.currentTime);
+		const thisGain = this.gain;
+		osc.detune.setValueAtTime(this.detune + (detune ?? 0), ac.currentTime);
+		gainNode.gain.setValueAtTime(thisGain * (gain ?? 1), ac.currentTime);
+		panner.pan.setValueAtTime(pan ?? 0, ac.currentTime);
 	};
-	
+
 	this.stopWithFixedProperties = (osc) => {
 		osc.stop(ac.currentTime);
 	}
 
 	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const gain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
-
-		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
+		osc.setPeriodicWave(this.customWave);
 
 		gainNode.gain.value = gain;
 		osc.connect(panner).connect(gainNode);
@@ -243,28 +290,37 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 	}
 
 	this.schedulePlaybackWithAutomation = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
-		const freq = this.isLFO ? this.fixedFreq : frequency;
+		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
+		const gain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
-		osc.setPeriodicWave(this.customeWave);
+		osc.setPeriodicWave(this.customWave);
 
-		const gain = this.modType !== 1 ? this.gain : this.gain - this.gain / Math.max(freq, 1);
-		const endTime = startTime + duration;
+		let endTime = startTime + duration;
 
 		gainNode.gain.value = gain;
 		osc.connect(panner).connect(gainNode);
 		osc.start(startTime);
 
-		
+
 		gainNode.gain.setValueAtTime(0, startTime);
 
-		automation.gain.forEach((g) => {
-			const time = beatsToSeconds(g.time, bpm);
-			if (time <= duration) gainNode.gain.linearRampToValueAtTime(g.value * gain, time + startTime);
-		});
+		if (automation.gain?.length) {
+			automation.gain.forEach((g) => {
+				const time = beatsToSeconds(g.time, bpm);
+				if (time <= duration) gainNode.gain.linearRampToValueAtTime(g.value * gain, time + startTime);
+			});
+		} else {
+			this.gainEnvelope.schedulePlayback(gainNode.gain, 0.0, gain, startTime, duration);
+			endTime += this.gainEnvelope.getRelease();
+		}
 
-		automation.pitch.forEach((p) => {
-			osc.detune.linearRampToValueAtTime(this.detune + p.value * 100, beatsToSeconds(p.time, bpm) + startTime);
-		});
+		if (automation.pitch?.length) {
+			automation.pitch.forEach((p) => {
+				osc.detune.linearRampToValueAtTime(this.detune + p.value * 100, beatsToSeconds(p.time, bpm) + startTime);
+			});
+		} else {
+			this.pitchEnvelope.schedulePlayback(osc.detune, this.detune, 1200.0, startTime, duration);
+		}
 
 		automation.pan?.forEach((p) => {
 			panner.pan.linearRampToValueAtTime(p.value, beatsToSeconds(p.time, bpm) + startTime);
@@ -284,6 +340,10 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return makeSerializable(this);
 	};
 	this.load = (data) => {
+		if (data.mod1 === undefined) {
+			data.mod1 = data.mod != null ? data.mod + 1 : 0;
+			data.mod2 = data.mod3 = 0;
+		}
 		data.gainEnvelope = this.createEnvelopeFromObject(data.gainEnvelope);
 		data.pitchEnvelope = this.createEnvelopeFromObject(data.pitchEnvelope);
 		Object.assign(this, data);
@@ -335,39 +395,60 @@ function Synth(ac, output, fromObject) {
 			default:
 				this.oscillators = [
 					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, 0.0),
-					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, osmanGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 600.0), 0, 0.0),
+					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), 0, 0.0),
 				];
 		}
 	}
 
-	
-	this.start = (freq) => {
+
+	this.start = (freq, onset = 1) => {
 		const oscs = this.oscillators.map((osc) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const oscillator = osc.start(freq, gain, pan);
+			const oscillator = osc.start(freq, gain, pan, !osc.mod1 ? onset : undefined);
 			return { gain, oscillator };
 		});
 
 		oscs.forEach((t, i) => {
-			const mod = this.oscillators[i].mod;
-			if (mod !== null && typeof mod === 'number') {
+			let mod = this.oscillators[i].mod1;
+			if (mod) {
+				mod--;
 				const modType = this.oscillators[i].modType;
 				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
 				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
 			}
+
+			mod = this.oscillators[i].mod2;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			}
+
+			mod = this.oscillators[i].mod3;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			}
 		});
 
 		return oscs;
 	};
-	
-	this.stop = (oscs, time = ac.currentTime) => {
+
+	this.stop = (oscs) => {
 		oscs.forEach((o, i) => {
-			this.oscillators[i]?.stop(time, o.oscillator, o.gain);
+			this.oscillators[i]?.stop(o.oscillator, o.gain);
 		});
 	};
+
+	this.restart = (oscs, onset = 1) => {
+		oscs.forEach((o, i) => this.oscillators[i]?.restart(o, onset));
+	}
 
 	this.startWithFixedProperties = (frequency, properties) => {
 		const oscs = this.oscillators.map((osc, i) => {
@@ -378,13 +459,30 @@ function Synth(ac, output, fromObject) {
 		});
 
 		oscs.forEach((t, i) => {
-			const mod = this.oscillators[i].mod;
-			if (mod !== null && typeof mod === 'number') {
+			let mod = this.oscillators[i].mod1;
+			if (mod) {
+				mod--;
 				const modType = this.oscillators[i].modType;
 				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
 				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
+			}
+
+			mod = this.oscillators[i].mod2;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			}
+
+			mod = this.oscillators[i].mod3;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
 			}
 		});
 
@@ -399,7 +497,7 @@ function Synth(ac, output, fromObject) {
 			this.oscillators[i]?.updateFixedProperties({ osc, gainNode, panner, ...properties[i] });
 		});
 	};
-	
+
 	this.stopWithFixedProperties = (oscs) => {
 		oscs.forEach((o, i) => {
 			this.oscillators[i]?.stopWithFixedProperties(o.oscillator);
@@ -410,26 +508,50 @@ function Synth(ac, output, fromObject) {
 		const oscs = this.oscillators.map((osc, i) => {
 			const gain = ac.createGain();
 			const pan = new StereoPannerNode(ac, { pan: osc.pan });
-			const automation = automations?.[i];
+			let automation = automations?.[i];
 			let oscillator;
-			if (automation) {
-				if (monoPitch) {
+
+			if (monoPitch) {
+				if (automation) {
 					automation.pitch = automations[0].pitch;
-					if (osc.mod === null) automation.gain = automations[0].gain;
+					if (osc.mod1 === 0) automation.gain = automations[0].gain;
+				} else {
+					automation = automations?.[0];
 				}
+			}
+			if (automation) {
 				oscillator = osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automation, bpm);
-			} else oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
+			} else {
+				oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
+			}
 			return { gain, oscillator };
 		});
 
 		oscs.forEach((t, i) => {
-			const mod = this.oscillators[i].mod;
-			if (mod !== null && typeof mod === 'number') {
+			let mod = this.oscillators[i].mod1;
+			if (mod) {
+				mod--;
 				const modType = this.oscillators[i].modType;
 				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
 				else t.gain.connect(oscs[mod].oscillator.frequency);
 			} else {
 				t.gain.connect(this.gain);
+			}
+
+			mod = this.oscillators[i].mod2;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
+			}
+
+			mod = this.oscillators[i].mod3;
+			if (mod) {
+				mod--;
+				const modType = this.oscillators[i].modType;
+				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
+				else t.gain.connect(oscs[mod].oscillator.frequency);
 			}
 		});
 		return oscs;
@@ -440,19 +562,19 @@ function Synth(ac, output, fromObject) {
 			ac,
 			'sine',
 			0.0,
-			new ArrayEnvelope(ac, osmanGainPoints, 0.0),
+			new ArrayEnvelope(ac, oscarGainPoints, 0.0),
 			new ArrayEnvelope(ac, pitchPoints, 600.0),
 			null,
 			0.0
 		));
 	}
 
-	this.generateSupersaw = (numOsc = 5) => {
+	this.generateSupersaw = (numOsc = 5, spread = 20) => {
 		const oscs = [];
 		for (let i = -numOsc; i < numOsc; i++) {
-			let mul = i % numOsc;
-			const detune = mul * mul;
-			const phase = mul * mul + Math.random() * 0.01;
+			let mul = i / numOsc;
+			const detune = mul * mul * spread;
+			const phase = mul * mul + mul < 0 ? -0.01 : 0.03;
 			oscs.push(new Oscillator(
 				ac,
 				'sawtooth',

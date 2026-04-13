@@ -108,11 +108,155 @@ const addFxBtn = document.querySelector('#addFxBtn');
 addFxBtn.onclick = () => noteManagerUi.addFx(fxAddSelect.value);
 
 
+
+// MIDI files -----------------------------------
+
+
+var midiFileInput = document.querySelector('#midiFileInput');
+midiFileInput.addEventListener('change', (e) => {
+	/** @type {File} */
+	const file = midiFileInput.files[0];
+	if (!file) return;
+
+	file.arrayBuffer().then((arr) => {
+		const buffer = new Uint8Array(arr);
+		const parser = new MidiManager(buffer);
+		const result = parser.readBuffer(buffer);
+		noteManagerUi.importTracks(result.tracks);
+		console.log('RESULT', result);
+	});
+});
+
+
+// MIDI ----------------------------------------
+
+
+const activeKeys = {};
+
+var midi;
+navigator.requestMIDIAccess?.().then(
+	(value) => setupMIDI(value),
+	(reason) => console.warn('MIDI access not granted', reason)
+);
+
+/**
+ * @param {MIDIAccess} midiAccess
+ */
+function setupMIDI(midiAccess) {
+	midi = midiAccess;
+	console.log('MIDI access:', midiAccess);
+	midiAccess.inputs.forEach((i) => i.onmidimessage = toggleMIDIKeys);
+}
+
+
+function onMIDIMessage(event) {
+  let str = `MIDI message received at timestamp ${event.timeStamp}[${event.data.length} bytes]: `;
+  for (const character of event.data) {
+    str += `0x${character.toString(16)} `;
+  }
+  console.log(str);
+}
+
+var midiMessageTypes = {
+	noteOn: 144,
+	sustainOrMod: 176,
+	pitchWheel: 224,
+};
+
+var midiKeys = {};
+var sustainedKeys = {};
+let midiSustain = false;
+var pitchBend = 0;
+var maxPitchBend = 2;
+
+/**
+ * @param {MIDIMessageEvent} e
+ */
+function toggleMIDIKeys(e) {
+	const [type, keyId, gain] = e.data;
+	//console.log('MIDI event:', ...e.data);
+
+	switch (type) {
+		case 176:
+			if (keyId === 64) toggleSustain(!!gain);
+			else if (keyId === 1) setModulation(gain);
+			else if (100 > keyId && keyId > 1) setMidiGain(gain);
+			break;
+		case 224:
+			setPitch(gain);
+			break;
+	}
+
+	if (type !== midiMessageTypes.noteOn) return;
+
+	const key = (midiKeys[keyId] ??= { keyId });
+
+	if (key.gain === gain) return;
+
+	key.gain = gain;
+
+	if (sustainedKeys[keyId]) {
+		if (!gain) return;
+		noteManager.getSelectedTrack().synth.restart(key.id, gain / 127);
+		return;
+	}
+
+	if (gain) {
+		const tone = key.keyId - 36 + (noteOffset + 1) + 12;
+		key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(tone + pitchBend * maxPitchBend), gain / 127);
+		activeKeys[keyId] = tone;
+	} else {
+		if (midiSustain) sustainedKeys[keyId] = key;
+		else {
+			noteManager.getSelectedTrack().synth.stop(key.id);
+			delete activeKeys[keyId];
+		}
+	}
+	noteManagerUi.setActiveKeyHighlights(Object.values(activeKeys));
+}
+
+function toggleSustain(on) {
+	midiSustain = on;
+	if (!on) {
+		Object.entries(sustainedKeys)
+			.filter(([, v]) => !v.gain)
+			.forEach(([k, v]) => {
+				noteManager.getSelectedTrack().synth.stop(v.id);
+				delete activeKeys[k];
+			});
+		sustainedKeys = {};
+		noteManagerUi.setActiveKeyHighlights(Object.values(activeKeys));
+	}
+}
+
+function setPitch(value) {
+	const pitch = (value / 127) * 2 - 1;
+	pitchBend = pitch;
+	Object.values(midiKeys).filter((k) => k.gain).forEach((k) => {
+		const tone = k.keyId - 36 + (noteOffset + 1) + 12;
+		k.id.forEach((pn) => pn.oscillator.frequency.value = toneToFreq(tone + pitch * maxPitchBend));
+	})
+}
+
+function setModulation(amount) {
+	// TODO
+	console.log('mod', amount);
+}
+
+function setMidiGain(gain) {
+	// TODO
+}
+
+
+
+
 // SAVE / LOAD ---------------------------------
 
 var saveNameInput = document.querySelector('#saveNameInput');
 var templateSelect = document.querySelector('#templateSelect');
 var saveSelect = document.querySelector('#saveSelect');
+
+var activeFileHandle = null;
 
 
 saveSelect.addEventListener('change', () => {
@@ -122,6 +266,7 @@ saveSelect.addEventListener('change', () => {
 			loadAll(name);
 		} catch {
 			name = 'ERROR';
+			noteManagerUi.screenFlasher.start(500, 0.4, '#ff8888');
 		}
 	}
 	saveNameInput.value = name;
@@ -146,11 +291,14 @@ templateSelect.addEventListener('change', () => {
 	const index = +templateSelect.value;
 	const tracks = trackerTemplates[index]
 	if (!tracks) throw 'No template found for index' + index;
-	
-	noteManager.load(SaveManager.parseTrackData(tracks));
-	noteManagerUi.renderAll();
-	saveNameInput.value = saveSelect.value = null;
-	document.activeElement.blur();
+
+	activeFileHandle = null;
+	SaveManager.parseTrackData(tracks).then((parsed) => {
+		noteManager.load(parsed);
+		noteManagerUi.renderAll();
+		saveNameInput.value = saveSelect.value = null;
+		document.activeElement.blur();
+	});
 });
 
 function quickSave() {
@@ -168,23 +316,98 @@ function saveAll(name) {
 	if (!saveName) return;
 
 	const data = noteManager.save();
-	if (saveName.length < 250) SaveManager.saveAll(data, saveName);
-	else saveNameInput.value = '';
-
+	if (saveName.length < 250) {
+		SaveManager.saveAll(data, saveName).then(() => {
+			generateSaveSelectOptions();
+		});
+		return;
+	}
+	saveNameInput.value = '';
 	generateSaveSelectOptions();
 }
 
 function loadAll(name) {
 	const saveName = name || saveNameInput.value || saveNameInput.innerHTML;
 	if (!saveName) return;
-	
-	const data = SaveManager.loadAll(saveName);
+
+	SaveManager.loadAll(saveName).then((data) => {
+		if (!data) return;
+		activeFileHandle = null;
+		noteManager.load(data);
+		noteManagerUi.renderAll();
+	});
+}
+
+async function loadFromClipboard() {
+	const data = await SaveManager.loadFromClipboard();
 	if (data) {
 		noteManager.load(data);
 		noteManagerUi.renderAll();
 	}
 }
 
+async function exportUrl() {
+	SaveManager.exportUrl(noteManager.save());
+}
+
+async function initialize() {
+	const query = document.location.search;
+	if (!query) return;
+
+	const sp = new URLSearchParams(query);
+	if (!sp.has('project')) return;
+
+	SaveManager.importBase64(sp.get('project')).then((d) => {
+		if (!d) return;
+		noteManager.load(d);
+		noteManagerUi.renderAll();
+	});
+}
+
+initialize(); // ------------------ woooooooo
+
+
+// TODO: save as compressed binary
+async function saveAss() {
+	const suggestedName = saveNameInput.value;
+	const data = JSON.stringify(noteManager.save());
+	const startIn = activeFileHandle || 'documents';
+	//const types = [{ accept: { 'text/plain': ['.jsf', '.txt'] } }];
+	const options = { id: 'jod-save-file-picker-id', startIn, suggestedName };
+	const fileHandle = await window.showSaveFilePicker(options);
+	const file = await fileHandle.getFile();
+	const writable = await fileHandle.createWritable();
+  await writable.write(data);
+  await writable.close();
+	activeFileHandle = fileHandle;
+	saveNameInput.value = file.name;
+}
+
+async function loadFile() {
+	const startIn = activeFileHandle || 'documents';
+	const [fileHandle] = await window.showOpenFilePicker({ id: 'jod-open-file-picker-id', startIn });
+	const file = await fileHandle.getFile();
+	const text = await file.text();
+  const data = JSON.parse(text);
+	if (data) {
+		saveNameInput.value = file.name;
+		noteManager.load(data);
+		noteManagerUi.renderAll();
+	}
+	activeFileHandle = fileHandle;
+}
+
+async function quickSaveToFile() {
+	if (!activeFileHandle) {
+		await saveAss();
+		return;
+	}
+	const data = JSON.stringify(noteManager.save());
+	const writable = await activeFileHandle.createWritable();
+  await writable.write(data);
+  await writable.close();
+	noteManagerUi.screenFlasher.start(300, 0.25, '#aaffaa');
+}
 
 
 
@@ -222,7 +445,7 @@ jodOverlay.onclick = () => {
 };
 
 /**
- * @param {HTMLElement} element 
+ * @param {HTMLElement} element
  */
 function openPopup(element, style = { left: 0, top: 0 }) {
 	jodOverlayContent.replaceChildren(element);
@@ -245,7 +468,7 @@ const synthBody = document.querySelector('.synth-body');
 const topBar = document.querySelector('.top-bar');
 
 synthBody.oncontextmenu = (e) => {
-  e.preventDefault();
+	e.preventDefault();
 };
 
 topBar.onkeydown = (e) => {
@@ -264,7 +487,7 @@ topBar.onkeyup = (e) => {
 saveNameInput.onkeydown = (e) => {
 	e.stopPropagation();
 };
-/* 
+/*
 window.onload = () => {
 	const autoSave = SaveManager.loadAutoSave();
 	if (!autoSave) return;
@@ -281,11 +504,16 @@ window.onbeforeunload = (e) => {
 	//SaveManager.autoSave(noteManager.save());
 };
 
+const 不要去 = (e) => {
+	if (e.button === 3 || e.button === 4) e.preventDefault();
+}
+document.addEventListener('mouseup', 不要去);
+
 
 // KEY STUFF
 
 document.body.onkeydown = (e) => {
-	if (e.repeat || e.isComposing || e.which === 229) return;
+	if (e.repeat || e.isComposing || e.which === 229 || e.code === 'F12') return;
 	e.preventDefault();
 	switch (e.which) {
 		case 9: // tab
@@ -323,10 +551,10 @@ document.body.onkeydown = (e) => {
 			if (e.ctrlKey) noteManagerUi.pasteNotes();
 			break;
 		case 83: // S
-			if (e.ctrlKey) quickSave();
+			if (e.ctrlKey) quickSaveToFile();
 			break;
 		case 90: // Z
-			if (e.ctrlKey) quickLoad();
+			//if (e.ctrlKey) quickLoad();
 			break;
 		case 114: // F3
 			noteManagerUi.snapX = !noteManagerUi.snapX;
@@ -338,10 +566,10 @@ document.body.onkeydown = (e) => {
 			noteManagerUi.autoScrollOnPlayback = !noteManagerUi.autoScrollOnPlayback;
 			break;
 		case 119: // F8
-			quickSave();
+			//quickSave();
 			break;
 		case 120: // F9
-			quickLoad();
+			//quickLoad();
 			break;
 	}
 
@@ -404,6 +632,8 @@ document.body.onkeyup = (e) => {
 	toggleKeys(e, false);
 };
 
+
+
 function toggleKeys(e, bool) {
 	//console.log('Key event - physical:', e.code, 'which:', e.which);
 	if (e.ctrlKey) return;
@@ -411,10 +641,16 @@ function toggleKeys(e, bool) {
 	if (noteManagerUi.mode) return;
 
 	const key = keyboardKeys[e.code];
-	if (key && key.down !== bool) {
-		key.down = bool;
-		if (bool) key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(key.index + noteOffset + 12 * octave));
-		else noteManager.getSelectedTrack().synth.stop(key.id);
-		return;
+	if (!(key && key.down !== bool)) return;
+
+	key.down = bool;
+	if (bool) {
+		const tone = key.index + noteOffset + 12 * octave;
+		key.id = noteManager.getSelectedTrack().synth.start(toneToFreq(tone));
+		activeKeys[e.code] = tone;
+	} else {
+		noteManager.getSelectedTrack().synth.stop(key.id);
+		delete activeKeys[e.code];
 	}
+	noteManagerUi.setActiveKeyHighlights(Object.values(activeKeys));
 }

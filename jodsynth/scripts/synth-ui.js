@@ -240,22 +240,42 @@ function OscillatorUi(oscillator, container, name) {
 		document.activeElement.blur();
 	});
 
+	this.customWaveformEditorUI = this.oscUi.querySelector('#oscWaveformEditorDialog');
+	this.oscWaveformEditBtn = this.oscUi.querySelector('#oscWaveformEditBtn');
+	this.oscWaveformEditBtn.onclick = () => {
+		this.customWaveformEditorUI.showModal();
+	};
+	this.customWaveformEditorUI.onclick = (e) => {
+		const rect = this.customWaveformEditorUI.getBoundingClientRect();
+		const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+			rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+		if (!isInDialog) this.customWaveformEditorUI.close();
+	};
 
-	// MODULATE SELECT
-	this.oscModulateSelectUI = this.oscUi.querySelector('#oscModulateSelect');
 
-	this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
-	this.oscModulateSelectUI.addEventListener('input', () => {
-		const val = this.oscModulateSelectUI.value;
-		this.oscillator.mod = val === 'none' ? null : +val;
+	// MODULATE
+	this.oscModulate1UI = this.oscUi.querySelector('#oscModulate1');
+	this.oscModulate1UI.value = this.oscillator.mod1 ?? 0;
+	this.oscModulate2UI = this.oscUi.querySelector('#oscModulate2');
+	this.oscModulate2UI.value = this.oscillator.mod2 ?? 0;
+	this.oscModulate3UI = this.oscUi.querySelector('#oscModulate3');
+	this.oscModulate3UI.value = this.oscillator.mod3 ?? 0;
+
+	this.oscModulate1UI.addEventListener('input', () => {
+		this.oscillator.mod1 = +(this.oscModulate1UI.value ?? 0);
 		this.setGainRange();
 		document.activeElement.blur();
 	});
-
-	this.updateModulateOptions = (newOptions) => {
-		this.oscModulateSelectUI.replaceChildren(...newOptions);
-		this.oscModulateSelectUI.value = `${this.oscillator.mod ?? 'none'}`;
-	};
+	this.oscModulate2UI.addEventListener('input', () => {
+		this.oscillator.mod2 = +(this.oscModulate2UI.value ?? 0);
+		this.setGainRange();
+		document.activeElement.blur();
+	});
+	this.oscModulate3UI.addEventListener('input', () => {
+		this.oscillator.mod3 = +(this.oscModulate3UI.value ?? 0);
+		this.setGainRange();
+		document.activeElement.blur();
+	});
 
 
 	// MODULATE MODE SELECT
@@ -275,37 +295,38 @@ function OscillatorUi(oscillator, container, name) {
 
 
 	// DETUNE
-	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune'); // TODO: Use jodnumb
+	this.oscDetuneUI = this.oscUi.querySelector('#oscDetune');
 	this.oscCoarseUI = this.oscUi.querySelector('#oscCoarse');
 	const coarse = Math.round(this.oscillator.detune / 100);
-	this.oscCoarseUI.value = Math.round(this.oscillator.detune / 100);
+	this.oscCoarseUI.value = coarse;
 	this.oscDetuneUI.value = this.oscillator.detune - coarse * 100;
+	this.oscDetuneUI.setAttribute('value', this.oscDetuneUI.value + '');
 	
 	this.oscDetuneInput = () => {
 		this.oscillator.detune = +this.oscCoarseUI.value * 100 + +this.oscDetuneUI.value;
-		document.activeElement.blur();
 	}
 	this.oscCoarseUI.addEventListener('input', this.oscDetuneInput);
-	this.oscDetuneUI.addEventListener('input', this.oscDetuneInput);
+	this.oscDetuneUI.addEventListener('changed', this.oscDetuneInput);
 
 
 	// PHASE
 	this.oscPhaseUI = this.oscUi.querySelector('#oscPhase');
-	this.oscPhaseUI.value = '' + this.oscillator.phase;
-	this.oscPhaseUI.addEventListener('input', () => {
+	this.oscPhaseUI.value = this.oscillator.phase;
+	this.oscPhaseUI.setAttribute('value', this.oscillator.phase + '');
+	this.oscPhaseUI.addEventListener('changed', () => {
 		this.oscillator.setPhase(+this.oscPhaseUI.value);
 		document.activeElement.blur();
 	});
 
-
 	// LFO
 	this.oscLFOFreqUI = this.oscUi.querySelector('#oscLFOFreq');
 	this.oscLFOFreqUI.value = this.oscillator.fixedFreq;
+	this.oscLFOFreqUI.setAttribute('value', this.oscillator.fixedFreq + '');
 	this.oscLFOFreqUI.addEventListener('changed', () => {
 		this.oscillator.fixedFreq = +this.oscLFOFreqUI.value;
 	});
 	this.oscLFOToggleUI = this.oscUi.querySelector('#oscLFOToggle');
-	this.oscLFOToggleUI.value = !!this.oscillator.isLFO;
+	this.oscLFOToggleUI.checked = !!this.oscillator.isLFO;
 	this.oscLFOToggleUI.addEventListener('change', () => {
 		this.oscillator.isLFO = this.oscLFOToggleUI.checked;
 	});
@@ -332,7 +353,7 @@ function OscillatorUi(oscillator, container, name) {
 	
 
 	this.setGainRange = () => { // TODO: prevent hearing damage without compromising functionality
-		if (this.oscillator.mod === null /* || this.oscillator.modType > 0 */) {
+		if (!this.oscillator.mod1 /* || this.oscillator.modType > 0 */) {
 			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
 			this.oscGainControl.max = 1.0;
 			this.oscGainControl.speed = 1.0;
@@ -407,18 +428,8 @@ function SynthUi(synth) {
 	}
 
 	this.updateModulateOptions = () => {
-		this.oscillators.forEach((o, oi) => {
-			const none = document.createElement('option');
-			none.value = `none`;
-			none.innerHTML = `None`;
-
-			const options = this.oscillators.map((o, i) => {
-				const option = document.createElement('option');
-				option.value = `${i}`;
-				option.innerHTML = `${o.name}`;
-				if (oi !== i) return option;
-			});
-			o.updateModulateOptions([ none, ...options ]);
+		this.oscillators.forEach((o) => {
+			o.oscModulate1UI.max = o.oscModulate2UI.max = o.oscModulate3UI.max = this.oscillators.length;
 		});
 	};
 

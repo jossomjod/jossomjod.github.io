@@ -36,7 +36,7 @@ body {
 
 .jod-overlay.overlay-visible {
 	pointer-events: all;
-	background-color: #0a000a;
+	background-color: var(--color-backdrop);
 	opacity: 0.8;
 }
 
@@ -143,6 +143,16 @@ body {
 	z-index: 3;
 }
 
+.waveform-editor-panel {
+	width: 400px;
+	height: 200px;
+	background-color: var(--color-panel);
+}
+.waveform-editor-panel::backdrop {
+	background-color: var(--color-backdrop);
+	opacity: 0.8;
+}
+
 .help-icon {
 	width: 26px;
 	height: 26px;
@@ -158,7 +168,7 @@ body {
 	border-radius: 10px;
 	box-shadow: 1px 1px 12px 2px #000;
 	overflow-y: auto;
-	background-color: #04152e;
+	background-color: var(--color-panel);
 	color: #cfeaff;
 	line-height: 1.6em;
 	z-index: 999;

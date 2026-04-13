@@ -85,8 +85,13 @@ class JodNumbElement extends HTMLElement {
 					this.lastValue = this.#value;
 					this.dragging = 1;
 					break;
+				case 2:
+					if (!this.dragging) break;
+					this.setValue(this.lastValue);
+					this.value = this.lastValue;
+					break;
 				case 4:
-					this.setValue(this._min ?? 0);
+					this.setValue(Math.max(this._min ?? 0, 0));
 					break;
 			}
 		});
@@ -100,10 +105,12 @@ class JodNumbElement extends HTMLElement {
 		document.addEventListener('mousemove', (e) => {
 			if (!e.buttons) this.dragging = 0;
 			if (this.dragging) {
+				const mod1 = e.ctrlKey || e.buttons & 8;
+				const mod2 = e.shiftKey || e.buttons & 16;
 				const x = Math.abs(e.clientX - this.offsetX);
 				const y = e.clientY - this.offsetY;
-				let mod = e.shiftKey ? 100 : e.ctrlKey ? 0.001 : 1;
-				let mult = (1 + Math.floor(x / 100)) * 0.01 * this._speed;
+				const mod = mod2 ? 100 : mod1 ? 0.001 : 1;
+				const mult = (1 + Math.floor(x / 100)) * 0.01 * this._speed;
 				let value = this.lastValue + y * mult * -mod;
 				value = value < this._min ? this._min : value > this._max ? this._max : value;
 				this.setValue(value);
@@ -114,11 +121,9 @@ class JodNumbElement extends HTMLElement {
 		const style = document.createElement("style");
 		style.textContent = `
 			.wrapper {
-				padding: 5px;
-				min-width: 40px;
-				max-width: 100px;
-				min-height: 20px;
-				max-height: 40px;
+				font-size: 0.7rem;
+				padding: 0.26em;
+				max-width: 5.6em;
 				background-color: #3c4a5b;
 				color: #cfdcff;
 				border: 1px solid #345;

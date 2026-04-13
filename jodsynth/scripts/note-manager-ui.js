@@ -19,35 +19,6 @@ const AutomationProperties = [
 	'pan',
 ];
 
-const jodColors = {
-	background: '#000000',
-	caret: '#e7fc8f68',
-	cursorLine: '#9ca5ff66',
-	gridReference: '#579cef',
-	gridLine: '#a7cab322',
-	gridOctave: '#97a6ca64',
-	gridBar: '#97a6ca64',
-	gridBeat: '#a3adba2c',
-	selectArea: '#88ccff66',
-	selectedNote: '#9259f2',
-	note: '#6699ff',
-	resizeHandle: '#99c9ff',
-	fadedNote: '#6699ff3c',
-	fadedResizeHandle: '#99c9ff6c',
-	fadedSelectedNote: '#7c42e176',
-	playingNote: '#aceaff',
-	playingNoteBorder: '#aceaff',
-	mutedNote: '#55426253',
-	automationBox: '#384c6caa',
-	automationNode: '#eca592',
-	automationLine: '#3a8afc77',
-	fadedAutomationNode: '#eca59244',
-	fadedAutomationLine: '#ffff7044',
-	releaseBox: '#283e6299',
-	loopLine: '#58c34ab2',
-};
-
-
 class TimelineUI {
 	noteManager;
 	rect;
@@ -92,10 +63,25 @@ class TimelineUI {
 
 		const left = (-scrollX / (endTime * pxPerBeat)) * w;
 		const width = w * w / (pxPerBeat * endTime);
-		
 		ctx.fillStyle = this.color;
 		ctx.fillRect(left, y, width, h);
-		
+
+		// draw bar lines
+		let count = endTime / 4;
+		if (count > 1) {
+			const divisor = Math.floor(count / 120);
+			if (divisor) count /= 2 * divisor;
+
+			ctx.beginPath();
+			ctx.strokeStyle = jodColors.gridBeat;
+			for (let i = 1; i < count; i++) {
+				const l = w * i / count;
+				ctx.moveTo(l, y);
+				ctx.lineTo(l, y + h);
+			}
+			ctx.stroke();
+		}
+
 		const caretX = w * (caretTime / endTime);
 		tracks.forEach((t) => {
 			const shouldAnimate = isPlaying && jodConfiguration.animations && !t.muted && (!this.noteManager.soloTrack || t.solo);
@@ -105,9 +91,9 @@ class TimelineUI {
 				const ny = y + (h - n.tone);
 				const nw = w * n.duration / endTime;
 
-				ctx.fillStyle = t.active ? jodColors.note : jodColors.fadedNote;
+				ctx.fillStyle = t.active ? t.color.main ?? jodColors.note : t.color.faded ?? jodColors.fadedNote;
 				ctx.fillRect(nx, ny, nw, 1);
-				
+
 				const time = (caretX - nx) / nw;
 				const dur = 1.5;
 				if (shouldAnimate && time >= 0 && time <= dur) {
@@ -123,7 +109,7 @@ class TimelineUI {
 		if (this.isSelecting) this.drawSelectionBox(ctx);
 	}
 
-	/** 
+	/**
 	 * @param {CanvasRenderingContext2D} ctx
 	 * @param {number} pos A number between 0 and 1, where 1 is the end time.
 	 */
@@ -215,8 +201,11 @@ function NoteManagerUI(noteManager) {
 	this.ctx = this.canvas.getContext('2d');
 
 	this.overlay = document.querySelector('#jodOverlay');
-	this.screenFlasher = new CssFlasher(this.overlay, 650, 0.7);
+	this.screenFlasher = new CssFlasher(this.overlay, 450, 1.0);
 	this.screenShaker = new CssShaker(document.querySelector('.main-content'), 500, 8);
+
+	this.contextMenuOpener = document.querySelector('#context-menu-opener-btn');
+	this.showContextMenuOpener = (show) => this.contextMenuOpener.classList.toggle('hidden', !show);
 
 	this.playBtn = new ToggleButton(document.querySelector('#jodrollBtnPlay'), () => this.togglePlayback());
 	this.toggleLoopingBtn = new ToggleButton(document.querySelector('#jodrollBtnLoop'), () => this.toggleLooping(), noteManager.loop.active);
@@ -249,7 +238,9 @@ function NoteManagerUI(noteManager) {
 	this.primaryAction = 1;
 	this.secondaryAction = 2;
 	this.scrollAction = 4;
-	this.timeLineAction = 8;
+	this.mod1Action = 8;
+	this.mod2Action = 16;
+	this.timeLineAction = 32;
 
 	this.beatsPerBar = 4; // the top number in the time signature
 	this.beatDivisor = 4; // the bottom number in the time signature
@@ -260,7 +251,8 @@ function NoteManagerUI(noteManager) {
 	this.snapY = true;
 
 	this.clickedNote = null;
-	this.noteMinDuration = 0.01;
+	this.hoveredNote = null;
+	this.noteMinDuration = 0.25;
 	this.previewNoteId = null;
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
@@ -274,11 +266,13 @@ function NoteManagerUI(noteManager) {
 	this.selectedNotes = [];
 	this.isSelectingArea = false;
 	this.isSelectingAllTracks = false;
+	this.isSelectingRow = false;
 	this.areaSelectAABB = { ax: 0, ay: 0, bx: 0, by: 0 };
 
 	this.isCursorInside = false;
 	this.showCursorLine = true;
 	this.cursorX = 0;
+	this.cursorY = 0;
 	this.cursorTime = 0;
 	this.endTime = this.beatsPerBar;
 	this.displaySeconds = false;
@@ -289,11 +283,18 @@ function NoteManagerUI(noteManager) {
 	this.timeLine = new TimelineUI({ x: 0, y: this.height - 100, w: this.width, h: 100 }, noteManager);
 	this.timeLineClicked = false;
 
+	this.mouseMovedSinceLastMouseDown = false;
+
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (e.button === 3 || e.button === 4) return;
+
 		document.activeElement.blur();
+		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
+		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
+		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
 
 		const rect = this.canvas.getBoundingClientRect();
 		const unFlippedY = e.y - rect.top;
@@ -304,7 +305,7 @@ function NoteManagerUI(noteManager) {
 
 		// PITCH AUTOMATION
 		if (!this.timeLineClicked && this.mode === EModes.pitchAutomation) {
-			switch (e.buttons) {
+			switch (buttons) {
 				case this.primaryAction:
 					const time = this.xToTime(realX);
 					const tone = this.yToTone(realY);
@@ -334,7 +335,7 @@ function NoteManagerUI(noteManager) {
 
 		// AUTOMATION
 		if (!this.timeLineClicked && this.mode >= EModes.automation) {
-			switch (e.buttons) {
+			switch (buttons) {
 				case this.primaryAction:
 					const note = this.getNoteAutomationAtPos(realX, unFlippedY);
 					this.clickedNote = note;
@@ -346,12 +347,14 @@ function NoteManagerUI(noteManager) {
 							const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 							if (idx === -1) {
 								this.selectedNotes = [clickedNote];
+								this.onSelectionChanged();
 								this.render();
 							}
-	
+
 							this.clickedNote = clickedNote;
 						} else {
 							this.selectedNotes = [];
+							this.onSelectionChanged();
 							this.render();
 						}
 						break;
@@ -379,11 +382,11 @@ function NoteManagerUI(noteManager) {
 			return;
 		}
 
-		switch (e.buttons) {
+		switch (buttons) {
 			case this.primaryAction:
 				if (this.clickedNote) this.previewNote(false);
 				if (this.timeLineClicked) {
-					if (e.ctrlKey) {
+					if (mod1) {
 						this.timeLine.startSelecting(realX, e.shiftKey);
 						break;
 					}
@@ -392,11 +395,12 @@ function NoteManagerUI(noteManager) {
 				}
 				const clickedNote = this.getNoteAtPos(realX, realY);
 
-				if (e.ctrlKey) {
+				if (mod1) {
 					if (clickedNote) {
 						const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 						if (idx > -1) this.selectedNotes.splice(idx, 1);
 						else this.selectedNotes.push(clickedNote);
+						this.onSelectionChanged();
 						this.render();
 						break;
 					}
@@ -406,12 +410,12 @@ function NoteManagerUI(noteManager) {
 					this.areaSelectAABB.bx = realX;
 					this.areaSelectAABB.by = realY;
 
-					if (e.shiftKey) this.isSelectingAllTracks = true;
+					if (mod2) this.isSelectingAllTracks = true;
 					else this.isSelectingArea = true;
 					break;
 				}
 
-				if (e.shiftKey) {
+				if (mod2) {
 					const time = this.xToTime(this.snapX ? this.snapToGridX(realX) : realX);
 					this.setLoopPoint(time);
 					break;
@@ -421,6 +425,7 @@ function NoteManagerUI(noteManager) {
 					const idx = this.selectedNotes.findIndex((s) => s === clickedNote);
 					if (idx === -1) {
 						this.selectedNotes = [clickedNote];
+						this.onSelectionChanged();
 						this.render();
 					}
 
@@ -432,6 +437,7 @@ function NoteManagerUI(noteManager) {
 					if (this.snapX) realX = this.snapToGridX(realX);
 					this.addNote(realX, realY);
 					this.selectedNotes = [this.clickedNote];
+					this.onSelectionChanged();
 					this.render();
 				}
 				this.previewNote(true);
@@ -442,7 +448,12 @@ function NoteManagerUI(noteManager) {
 					break;
 				}
 
-				if (e.shiftKey) {
+				if (mod1) {
+					this.deleteSelectedNotes();
+					break;
+				}
+
+				if (mod2) {
 					const time = this.xToTime(this.snapX ? this.snapToGridX(realX) : realX);
 					this.setLoopPoint(time, false);
 					break;
@@ -451,6 +462,14 @@ function NoteManagerUI(noteManager) {
 				const index = this.getNoteIndexAtPos(realX, realY);
 				if (index > -1) this.deleteNote(index);
 				break;
+			case this.scrollAction:
+				if (this.mouseMovedSinceLastMouseDown) {
+					this.mouseMovedSinceLastMouseDown = false;
+					break;
+				}
+				const note = this.getNoteAtPos(realX, realY);
+				if (note) noteManager.playNote(note);
+				break;
 			case this.scrollAction | this.primaryAction:
 				this.copyNotes();
 				break;
@@ -458,13 +477,20 @@ function NoteManagerUI(noteManager) {
 				this.pasteNotes();
 				break;
 			case this.primaryAction | this.secondaryAction:
-				this.areaSelectAABB.ax = realX;
-				this.areaSelectAABB.ay = realY;
-				this.areaSelectAABB.bx = realX;
-				this.areaSelectAABB.by = realY;
+				if (!this.clickedNote) {
+					if (this.isSelectingArea) this.isSelectingRow = !this.isSelectingRow;
 
-				if (e.shiftKey) this.isSelectingAllTracks = true;
-				else this.isSelectingArea = true;
+					this.areaSelectAABB.ax = realX;
+					this.areaSelectAABB.ay = realY;
+					this.areaSelectAABB.bx = realX;
+					this.areaSelectAABB.by = realY;
+
+					if (mod2) this.isSelectingAllTracks = true;
+					else this.isSelectingArea = true;
+				} else {
+					this.isResizing = true;
+					this.previewNote(false);
+				}
 				break;
 		}
 	});
@@ -472,18 +498,30 @@ function NoteManagerUI(noteManager) {
 	this.onMouseUpOrEnter = (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (e.button === 3 || e.button === 4) return;
+		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
 
-		this.isCursorInside = true;
-		
-		if (~e.buttons & this.primaryAction) {
-			if (this.isSelectingArea) {
+		const rect = this.canvas.getBoundingClientRect();
+		const unFlippedY = e.y - rect.top;
+		const realX = e.x - rect.left;
+		const timeLineHovered = this.timeLine.isPointInside(realX, unFlippedY);
+		this.isCursorInside = !timeLineHovered;
+
+		if (~buttons & this.primaryAction) {
+			if (this.isSelectingRow) {
+				this.isSelectingArea = this.isSelectingAllTracks = this.isSelectingRow = false;
+				this.selectTrackNotesBetweenTones(this.yToTone(this.areaSelectAABB.ay), this.yToTone(this.areaSelectAABB.by));
+			}
+			else if (this.isSelectingArea) {
 				this.isSelectingArea = false;
 				this.selectedNotes = this.getNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
+				this.onSelectionChanged();
 				this.render();
 			}
 			else if (this.isSelectingAllTracks) {
 				this.isSelectingAllTracks = false;
 				this.selectedNotes = this.getAllNotesInAABB(this.areaSelectAABB.ax, this.areaSelectAABB.ay, this.areaSelectAABB.bx, this.areaSelectAABB.by);
+				this.onSelectionChanged();
 				this.render();
 			}
 			else if (this.timeLine.isSelecting) {
@@ -495,6 +533,7 @@ function NoteManagerUI(noteManager) {
 				const bx = this.timeToX(end * this.endTime);
 				const func = allTracks ? this.getAllNotesInAABB : this.getNotesInAABB;
 				this.selectedNotes = func(ax, -9999, bx, 9999);
+				this.onSelectionChanged();
 				this.render();
 			}
 			else if (this.clickedNote) {
@@ -512,6 +551,16 @@ function NoteManagerUI(noteManager) {
 			this.timeLineClicked = false;
 			if (this.showCursorLine) this.render();
 		}
+		else if (~buttons & this.secondaryAction && buttons & this.primaryAction) {
+			if (this.clickedNote && this.isResizing) {
+				this.newNoteDuration = this.clickedNote.duration;
+				this.isResizing = false;
+				this.previewNote(true);
+				this.finalizeResizing();
+				this.updateEndTime();
+				this.render();
+			}
+		}
 	};
 
 	this.trackerContainer.addEventListener('mouseup', this.onMouseUpOrEnter);
@@ -526,17 +575,22 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer.addEventListener('mousemove', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		this.mouseMovedSinceLastMouseDown = true;
+
 		const rect = this.canvas.getBoundingClientRect();
 		const unFlippedY = e.y - rect.top;
 		let realX = e.x - rect.left;
 		let realY = this.height - unFlippedY;
 		this.cursorX = realX;
+		this.cursorY = realY;
 		this.cursorTime = this.xToTime(this.cursorX);
 
+		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
+		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
 		const timeLineHovered = this.timeLine.isPointInside(realX, unFlippedY);
 		const timeLineClicked = +timeLineHovered * this.timeLineAction;
 		const scrollHack = +e.altKey * this.scrollAction; // alternative to middle mouse button
-		const fakeButtons = e.buttons | scrollHack | timeLineClicked;
+		const fakeButtons = (e.buttons | scrollHack | timeLineClicked) & ~this.mod1Action & ~this.mod2Action;
 
 		switch (fakeButtons) {
 			case this.primaryAction | this.scrollAction:
@@ -547,14 +601,16 @@ function NoteManagerUI(noteManager) {
 						this.timeLine.updateSelection(realX);
 						this.drawTimeLine();
 					}
-					else this.scrollToAbsolute(realX);
+					else if (!this.isSelectingArea && !this.isSelectingAllTracks && !this.clickedNote && !this.clickedNode) {
+						this.scrollToAbsolute(realX);
+					}
 					break;
 				}
 
 				if (this.mode === EModes.pitchAutomation) {
 					if (!this.clickedNode || !this.clickedNote) break;
-					if (!e.shiftKey && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
-					if (!e.ctrlKey && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
+					if (!mod2 && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
+					if (!mod1 && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
 					const dTime = this.xToTime(realX) - (this.clickedNote.startTime + this.clickedNode.time);
 					const dValue = this.yToTone(realY) - (this.clickedNote.tone + this.clickedNode.value);
 					this.movePitchAutomationNodeBy(this.clickedNode, dTime, dValue);
@@ -566,8 +622,8 @@ function NoteManagerUI(noteManager) {
 
 				if (this.mode >= EModes.automation) {
 					if (!this.clickedNode || !this.clickedNote) break;
-					if (e.ctrlKey) realX = this.snapToGridX(realX);
-					if (e.shiftKey) realY = this.snapToGridY(realY);
+					if (mod1) realX = this.snapToGridX(realX);
+					if (mod2) realY = this.snapToGridY(realY);
 					const pos = this.automationNodeToPos(this.clickedNote, this.clickedNode);
 					const dTime = this.xToTime(realX) - (this.clickedNote.startTime + this.clickedNode.time);
 					const dValue = (pos.y - unFlippedY) / this.automationBoxHeight;
@@ -578,8 +634,8 @@ function NoteManagerUI(noteManager) {
 					break;
 				}
 
-				if (this.snapX && !e.ctrlKey && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
-				if (this.snapY && !e.shiftKey && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
+				if (this.snapX && !mod1 && !(fakeButtons & this.scrollAction)) realX = this.snapToGridX(realX);
+				if (this.snapY && !mod2 && !(fakeButtons & this.scrollAction)) realY = this.snapToGridY(realY);
 
 				if (this.isSelectingArea || this.isSelectingAllTracks) {
 					this.areaSelectAABB.bx = realX;
@@ -618,15 +674,19 @@ function NoteManagerUI(noteManager) {
 				}
 				else this.scrollToAbsolute(realX);
 				break;
+			default:
+				const prev = this.hoveredNote;
+				this.hoveredNote = this.getNoteAtPos(realX, realY);
+				if (prev !== this.hoveredNote) this.render();
 		}
 
 		const prevIsCursorInside = this.isCursorInside;
 		this.isCursorInside = !timeLineHovered;
-		if (e.movementX && this.showCursorLine && this.isCursorInside) this.render();
+		if (this.showCursorLine && this.isCursorInside) this.render();
 		else if (timeLineHovered && prevIsCursorInside) this.render();
 
 		// TODO: better snap handling
-		if (this.snapX && !e.ctrlKey) realX = this.snapToGridX(realX);
+		if (this.snapX && !mod1) realX = this.snapToGridX(realX);
 		if (!this.isPlaying()) this.setTimeDisplay(this.xToTime(realX));
 	});
 
@@ -634,16 +694,31 @@ function NoteManagerUI(noteManager) {
 	this.trackerContainer.addEventListener('wheel', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		const cursorTime = this.xToTime(this.cursorX);
-		this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
-		this.pxPerBeat = Math.max(3, Math.min(600, this.pxPerBeat));
-		//this.gridSizeX = this.pxPerBeat;
-		this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
+
+		const buttons = e.buttons;
+
+		switch (buttons) {
+			case this.secondaryAction:
+				this.newNoteDuration -= Math.sign(e.deltaY) * 0.25;
+				this.newNoteDuration = (Math.ceil(this.newNoteDuration * 4) / 4);
+				if (this.newNoteDuration < this.noteMinDuration) this.newNoteDuration = this.noteMinDuration;
+				break;
+			default:
+				const cursorTime = this.xToTime(this.cursorX);
+				this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
+				this.pxPerBeat = Math.max(3, Math.min(600, this.pxPerBeat));
+				//this.gridSizeX = this.pxPerBeat;
+				this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
+				//console.log('zoom:', this.gridSizeX, this.gridSizeTime, this.width / this.pxPerBeat);
+		}
 		this.render();
-		//console.log('zoom:', this.gridSizeX, this.gridSizeTime, this.width / this.pxPerBeat);
 	});
-	
+
 	this.trackerContainer.appendChild(this.jodroll);
+
+	this.onSelectionChanged = () => {
+		this.showContextMenuOpener(!!this.selectedNotes.length);
+	};
 
 	this.timeToX = (time) => {
 		return this.scrollX + time * this.pxPerBeat;
@@ -781,8 +856,8 @@ function NoteManagerUI(noteManager) {
 			node = arr?.find((a) => {
 				const x = this.timeToX(n.startTime + a.time) - this.timeToX(time);
 				const y = this.toneToY(n.tone + a.value) - this.toneToY(tone);
-				const dist = Math.sqrt(x * x + y * y);
-				return dist <= this.nodeRadius;
+				const dist = x * x + y * y;
+				return dist <= this.nodeRadius * this.nodeRadius;
 			});
 			return !!node;
 		});
@@ -798,7 +873,9 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.getCurrentAutomationArray = (note, prop = this.automationProperty) => {
-		return note.automations?.[this.selectedOsc]?.[prop];
+		const automations = note.automations ?? (note.automations = []);
+		if (!automations[this.selectedOsc]) automations[this.selectedOsc] = {};
+		return automations[this.selectedOsc][prop] ?? (automations[this.selectedOsc][prop] = []);
 	};
 
 	this.moveAutomationNodeBy = (node, dTime, dValue) => {
@@ -835,7 +912,6 @@ function NoteManagerUI(noteManager) {
 
 	this.addAutomationNode = (note, x, y) => {
 		const nodeArray = this.getCurrentAutomationArray(note);
-		if (!nodeArray) return false;
 		const node = this.posToAutomation(note, x, y);
 		noteManager.addAutomationNode(nodeArray, node);
 		this.updateNoteAndAutomation(note, nodeArray);
@@ -844,7 +920,6 @@ function NoteManagerUI(noteManager) {
 
 	this.addPitchAutomationNode = (note, time, tone) => {
 		const nodeArray = this.getCurrentAutomationArray(note, 'pitch');
-		if (!nodeArray) return false;
 		const node = { time: time - note.startTime, value: tone - note.tone };
 		noteManager.addAutomationNode(nodeArray, node);
 		nodeArray.sort((a, b) =>  a.time - b.time);
@@ -925,11 +1000,22 @@ function NoteManagerUI(noteManager) {
 
 	this.selectAllNotes = () => {
 		this.selectedNotes = this.getAllNotes();
+		this.onSelectionChanged();
 		this.render();
 	};
 
 	this.selectAllNotesInTrack = (track = noteManager.getSelectedTrack()) => {
-		this.selectedNotes = track.notes;
+		this.selectedNotes = [...track.notes];
+		this.onSelectionChanged();
+		this.render();
+	};
+
+	this.selectTrackNotesBetweenTones = (toneA, toneB) => {
+		const tA = Math.min(toneA, toneB);
+		const tB = Math.max(toneA, toneB);
+		const notes = noteManager.getSelectedTrack().notes;
+		this.selectedNotes = notes.filter((n) => n.tone > tA && n.tone < tB);
+		this.onSelectionChanged();
 		this.render();
 	};
 
@@ -1008,12 +1094,19 @@ function NoteManagerUI(noteManager) {
 	this.deleteNote = (index) => {
 		noteManager.getSelectedTrack().notes.splice(index, 1);
 		this.selectedNotes = [];
+		this.onSelectionChanged();
 		this.render();
 	};
 
 	this.deleteSelectedNotes = () => {
 		noteManager.tracks.forEach((t) => t.notes = t.notes.filter((n) => !this.selectedNotes.find((s) => s === n)));
 		this.selectedNotes = [];
+		this.onSelectionChanged();
+		this.render();
+	};
+
+	this.importTracks = (tracks) => {
+		tracks.filter((t) => t.notes.length).forEach((t) => this.addTrack(t));
 		this.render();
 	};
 
@@ -1054,6 +1147,7 @@ function NoteManagerUI(noteManager) {
 			this.selectedNotes.push(...sorted);
 		});
 
+		this.onSelectionChanged();
 		this.updateEndTime();
 		this.render();
 	};
@@ -1087,10 +1181,21 @@ function NoteManagerUI(noteManager) {
 		const time = this.clickedNode.time;
 		const pitchMode = this.mode === EModes.pitchAutomation;
 		const monoPitch = track.monoPitch ? note.automations[0]?.pitch : undefined;
+		// 哈巴哈
 
-		const valuesAtTime = note.automations.map((a, i) => {
-			const isCarrier = pitchMode && track.synth.oscillators[i]?.mod === null;
-			const gain = isCarrier ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
+		const valuesAtTime = track.synth.oscillators.map((osc, i) => {
+			const a = note.automations[i];
+			const isCarrier = pitchMode && !osc.mod1;
+			if (!a) {
+				if (!monoPitch || !note.automations[0]) return {};
+
+				const a0 = note.automations[0];
+				const gain = isCarrier || !a0.gain ? 1.0 : this.getAutomationValueAtTime(a0.gain, time);
+				const pan = this.getAutomationValueAtTime(a0.pan, time);
+				const detune = this.getAutomationValueAtTime(a0.pitch, time) * 100;
+				return { gain, pan, detune };
+			}
+			const gain = isCarrier || !a.gain ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
 			const pan = this.getAutomationValueAtTime(a.pan, time);
 			const detune = this.getAutomationValueAtTime(monoPitch ?? a.pitch, time) * 100;
 			return { gain, pan, detune };
@@ -1114,15 +1219,30 @@ function NoteManagerUI(noteManager) {
 		const pitchMode = this.mode === EModes.pitchAutomation;
 		const monoPitch = track.monoPitch ? note.automations[0]?.pitch : undefined;
 
-		const valuesAtTime = note.automations.map((a, i) => {
-			const isCarrier = pitchMode && track.synth.oscillators[i]?.mod === null;
-			const gain = isCarrier ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
+		const valuesAtTime = track.synth.oscillators.map((osc, i) => {
+			const a = note.automations[i];
+			const isCarrier = pitchMode && !osc.mod1;
+			if (!a) {
+				if (!monoPitch || !note.automations[0]) return {};
+
+				const a0 = note.automations[0];
+				const gain = isCarrier || !a0.gain ? 1.0 : this.getAutomationValueAtTime(a0.gain, time);
+				const pan = this.getAutomationValueAtTime(a0.pan, time);
+				const detune = this.getAutomationValueAtTime(a0.pitch, time) * 100;
+				return { gain, pan, detune };
+			}
+			const gain = isCarrier || !a.gain ? 1.0 : this.getAutomationValueAtTime(a.gain, time);
 			const pan = this.getAutomationValueAtTime(a.pan, time);
 			const detune = this.getAutomationValueAtTime(monoPitch ?? a.pitch, time) * 100;
 			return { gain, pan, detune };
 		});
 
 		track.synth.updateFixedProperties(this.previewNoteId, valuesAtTime);
+	};
+
+	this.setActiveKeyHighlights = (arr) => {
+		this.activeKeys = arr;
+		this.render();
 	};
 
 	this.toggleMode = (mode) => {
@@ -1171,6 +1291,8 @@ function NoteManagerUI(noteManager) {
 		this.render();
 		this.renderTracks();
 		this.toggleLoopingBtn.toggle(noteManager.loop.active);
+		this.selectedNotes = [];
+		this.onSelectionChanged();
 	};
 
 	this.renderTracks = (tracks = noteManager.tracks) => {
@@ -1184,13 +1306,14 @@ function NoteManagerUI(noteManager) {
 		this.trackContainer.replaceChildren(...trackElements);
 	};
 
-	this.addTrack = () => {
-		const track = noteManager.createTrack();
+	this.addTrack = (basedOn) => {
+		const track = noteManager.createTrack(basedOn);
 		const div = createTrackEntryUi(track, this);
 		this.trackContainer.appendChild(div);
-		this.selectTrack(div, track); 
+		this.selectTrack(div, track);
+		return track;
 	};
-	
+
 	this.addTrackBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
 		e.preventDefault();
@@ -1198,6 +1321,8 @@ function NoteManagerUI(noteManager) {
 	});
 
 	this.deleteTrack = (track) => {
+		this.selectedNotes = [];
+		this.onSelectionChanged();
 		noteManager.deleteTrack(track);
 		this.renderTracks();
 		this.updateEndTime();
@@ -1208,10 +1333,50 @@ function NoteManagerUI(noteManager) {
 		}, 0);
 	};
 
+	this.openSelectedNotesContextMenu = () => {
+		const el = document.querySelector('#context-menu-opener-btn');
+		openContextMenu(el, [
+			{ name: 'Clear automation from selected', callback: this.clearAutomationFromSelectedNotes },
+			{ name: 'Clear gain automation from selected', callback: this.clearGainAutomationFromSelectedNotes },
+			{ name: 'Purge deprecated properties from selected', callback: this.purgeDeprecatedNoteProperties },
+		]);
+	};
+
+	this.clearAutomationFromTrack = (track) => {
+		noteManager.clearAutomationFromTrack(track);
+		this.render();
+	};
+
+	this.clearAutomationFromSelectedNotes = (notes = this.selectedNotes) => {
+		noteManager.clearAutomationFromNotes(notes);
+		this.render();
+	};
+
+	this.clearGainAutomationFromSelectedNotes = (notes = this.selectedNotes) => {
+		noteManager.clearGainAutomationFromNotes(notes);
+		this.render();
+	};
+
+	this.purgeDeprecatedNoteProperties = (track) => {
+		noteManager.purgeDeprecatedNoteProperties(track);
+		this.render();
+	};
+
+	this.fixCorruptDataInTrack = (track) => {
+		noteManager.fixCorruptDataInTrack(track);
+		this.render();
+	};
+
 	this.setTrackGain = (track, gain) => {
 		track.gain = gain;
 		track.fx.gain.gain.value = gain;
 		track.muted = false;
+	};
+
+	// called only from the track ui
+	this.setTrackColor = (track, color) => {
+		track.color = colorManager.createCustomColor(color);
+		this.render();
 	};
 
 	this.toggleSoloTrack = (track) => {
@@ -1227,8 +1392,11 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.selectTrack = (element, track) => {
-		this.trackContainer.childNodes.forEach((c) => c.classList.toggle('active', false));
 		noteManager.selectTrack(track);
+		this.trackContainer.childNodes.forEach((c) => {
+			c.classList.toggle('active', false);
+			c.updateColor?.();
+		});
 		this.render();
 		this.setSynthUi(track);
 		element.classList.toggle('active', true);
@@ -1252,9 +1420,9 @@ function NoteManagerUI(noteManager) {
 
 
 		if (this.currentFxUi) {
+			this.currentFxUi.destroy();
 			const container = document.querySelector('.fx-container');
-			while (container.firstChild) container.removeChild(container.firstChild);
-			delete this.currentFxUi;
+			container.replaceChildren();
 		}
 		this.currentFxUi = new FxManagerUi(track.fx);
 	};
@@ -1272,7 +1440,14 @@ function NoteManagerUI(noteManager) {
 	};
 
 
-	this.drawNote = (note, color = jodColors.note, resizeColor = jodColors.resizeHandle, shouldAnimate = false) => {
+	this.drawNote = (
+		note,
+		color = jodColors.note,
+		resizeColor = jodColors.resizeHandle,
+		hoverColor = jodColors.hoveredNote,
+		shouldAnimate = false,
+		selected = false
+	) => {
 		const x = this.timeToX(note.startTime);
 		const y = this.toneToY(note.tone);
 		const w = note.duration * this.pxPerBeat;
@@ -1289,11 +1464,21 @@ function NoteManagerUI(noteManager) {
 			this.ctx.fillRect(x - thicc, y - thicc, w + thicc * 2, h + thicc * 2);
 		}
 
+		if (selected) {
+			this.ctx.strokeStyle = '#ffffff';
+			this.ctx.strokeRect(x-1, y-1, w+2, h+2);
+		}
+
 		this.ctx.fillStyle = color;
 		this.ctx.fillRect(x, y, w, h);
 
 		this.ctx.fillStyle = resizeColor;
 		this.ctx.fillRect(x + w - r, y, r, h);
+
+		if (this.hoveredNote === note) {
+			this.ctx.fillStyle = '#ffffff55';
+			this.ctx.fillRect(x-2, y-2, w+4, h+4);
+		}
 	};
 
 	this.drawCircle = (x, y, r, color = jodColors.automationNode) => {
@@ -1331,13 +1516,6 @@ function NoteManagerUI(noteManager) {
 		nodeColor = jodColors.automationNode,
 		lineColor = jodColors.automationLine
 	) => {
-		const x = this.timeToX(note.startTime);
-		const y = this.toneToY(note.tone);
-		const w = note.duration * this.pxPerBeat;
-		const h = this.noteHeight;
-		this.ctx.fillStyle = jodColors.note;
-		this.ctx.fillRect(x, y, w, h);
-
 		if (!nodes?.length) return;
 
 		this.ctx.lineWidth = 4;
@@ -1380,7 +1558,7 @@ function NoteManagerUI(noteManager) {
 		this.ctx.fillStyle = jodColors.releaseBox;
 		this.ctx.fillRect(x + w, y, releaseW, h);
 
-		
+
 		this.ctx.lineWidth = 4;
 		let prevX = x;
 		let prevY = y + h * (zeroCentered ? 0.5 : 0);
@@ -1399,16 +1577,17 @@ function NoteManagerUI(noteManager) {
 		this.ctx.lineWidth = 1;
 	};
 
-	this.drawNotes = ({ notes, active, muted, solo }) => {
+	this.drawNotes = ({ notes, active, muted, solo, color }) => {
 		const shouldAnimate = this.isPlaying() && jodConfiguration.animations && !muted && (!noteManager.soloTrack || solo);
-		let color = jodColors.note;
+		let mainColor = color.main ?? jodColors.note;
+		const hoverColor = color.highlight;
 		let resizeColor = jodColors.resizeHandle;
-		let selectedColor = jodColors.selectedNote;
+		let selectedColor = color.active;
 
 		if (!active) {
-			color = jodColors.fadedNote;
+			mainColor = color.faded ?? jodColors.fadedNote;
 			resizeColor = jodColors.fadedResizeHandle;
-			selectedColor = jodColors.fadedSelectedNote;
+			selectedColor = color.fadedActive;
 		}
 
 		notes.forEach((n) => {
@@ -1419,24 +1598,26 @@ function NoteManagerUI(noteManager) {
 
 			switch (this.mode) {
 				case EModes.pitchAutomation:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, shouldAnimate);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate, true);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					if (!active) this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					else this.drawPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				case EModes.automation:
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty]);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
+					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				case EModes.panAutomation:
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty], true);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
+					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				default:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, selectedColor, resizeColor, shouldAnimate);
-					else this.drawNote(n, color, resizeColor, shouldAnimate);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate, true);
+					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 			}
@@ -1445,8 +1626,10 @@ function NoteManagerUI(noteManager) {
 
 	this.drawAllTracks = () => {
 		noteManager.tracks.forEach((t) => {
+			if (t.active) return;
 			this.drawNotes(t);
 		});
+		this.drawNotes(noteManager.tracks[noteManager.selectedTrack]);
 	};
 
 	this.drawAABB = (aabb, color = jodColors.selectArea) => {
@@ -1466,9 +1649,13 @@ function NoteManagerUI(noteManager) {
 		this.drawClear();
 		this.drawGrid();
 		this.drawAllTracks();
-		if (this.isSelectingArea || this.isSelectingAllTracks) this.drawAABB(this.areaSelectAABB);
+		if (this.isSelectingArea || this.isSelectingAllTracks) {
+			const aabb = this.isSelectingRow ? { ...this.areaSelectAABB, ax: 0, bx: this.width } : this.areaSelectAABB;
+			this.drawAABB(aabb);
+		}
 		this.drawLoopLines();
 		this.drawTimeLine();
+		if (this.activeKeys?.length) this.drawToneHighlights(this.activeKeys);
 		if (this.showCursorLine && this.isCursorInside) this.drawCursorLine();
 		this.renderFnBusy = false;
 	};
@@ -1490,22 +1677,25 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawGrid = (ctx = this.ctx) => {
-		//const pxPerBeat = Math.max(8, Math.min(600, this.pxPerBeat));
-		//const visibleBeats = this.width / this.pxPerBeat;
-		//const colsPerBeat = this.pxPerBeat / this.gridSizeX;
-		const visColsMult = 1 << Math.floor(this.pxPerBeat / 50);
-		const gridX = /* this.gridSizeX;// */this.pxPerBeat / visColsMult;// Math.max(8, Math.min(100, this.pxPerBeat / visColsMult));
+		const grug = Math.floor(this.pxPerBeat / 30);
+		//const grug2 = Math.log2(this.pxPerBeat / 25);
+		const blub = Math.pow(2, Math.ceil(Math.log(grug) / Math.log(2)));
+		//const blub2 = grug2 < 1 ? 1 / (grug2 * -1 + 1) : grug2;
+		const visColsMult = blub || (1 << Math.floor(this.pxPerBeat / 50));
+		const gridX = this.pxPerBeat / visColsMult;
 		const visibleRows = this.height / this.pxPerTone;
-		const visibleCols = /* visibleBeats * colsPerBeat;// */this.width / gridX;
-		const offsetRows = Math.floor(-this.scrollY / this.pxPerTone);
-		const offsetCols = Math.floor(-this.scrollX / gridX);
-		
+		const visibleCols = this.width / gridX;
+		const offsetCols = Math.floor(-this.scrollX / gridX) + (this.scrollX >= 0);
+
+		const topTone = this.yToTone(0);
+		const toneOffset = topTone - Math.floor(topTone);
+
 		// horizontal lines
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.gridLine;
 		for (let i = 0; i < visibleRows; i++) {
-			const y = i * this.pxPerTone - this.scrollY % this.pxPerTone;
-			const isOctave = (i - offsetRows) % 12 === 0;
+			const y = (i + toneOffset) * this.pxPerTone;
+			const isOctave = Math.ceil(i - topTone) % 12 === 0;
 
 			if (isOctave) {
 				ctx.stroke();
@@ -1584,19 +1774,49 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.drawCursorLine = (ctx = this.ctx) => {
+		if (this.isSelectingArea || this.isSelectingAllTracks || this.mode !== 0) return;
 		const x = this.snapX ? this.snapToGridX(this.cursorX) : this.cursorX;
+		// gotta flip it before we snap it, then flip back smh TODO fix the math
+		const y = this.height - (this.snapY ? this.snapToGridY(this.cursorY) : this.cursorY) + this.pxPerTone;
+
 		ctx.beginPath();
 		ctx.strokeStyle = jodColors.cursorLine;
 		ctx.moveTo(x, 0);
 		ctx.lineTo(x, this.height - this.timeLine.rect.h);
 		ctx.stroke();
+
+		ctx.fillStyle = jodColors.cursorHighlight;
+		ctx.fillRect(0, y, this.width, -this.pxPerTone);
+
+		if (this.clickedNote || this.hoveredNote) return;
+
+		ctx.strokeStyle = jodColors.selectArea;
+		ctx.strokeRect(x, y, this.newNoteDuration * this.pxPerBeat, -this.pxPerTone);
+	};
+
+	this.drawToneHighlights = (tones) => {
+		const ctx = this.ctx;
+
+		tones.forEach((t) => {
+			const y = this.toneToY(t);
+			ctx.fillStyle = jodColors.cursorHighlight;
+			ctx.fillRect(0, y, this.width, this.pxPerTone);
+		})
 	};
 
 	this.setTimeDisplay = (time) => {
 		if (this.displaySeconds) time = beatsToSeconds(time, noteManager.bpm);
 		const beats = Math.floor(time);
 		const decimals = (time - beats) * 100;
-		this.timeDisplay.innerHTML = beats.toString().padStart(2, '0');
+
+		if (this.displaySeconds) {
+			const minutes = Math.floor(beats / 60);
+			const seconds = beats % 60;
+			const min = minutes ? minutes.toString() + ':' : '';
+			this.timeDisplay.innerHTML = min + seconds.toString().padStart(2, '0');
+		} else {
+			this.timeDisplay.innerHTML = beats.toString().padStart(2, '0');
+		}
 		this.timeDecimalsDisplay.innerHTML = decimals.toString().slice(0, 2).replace('.', '').padStart(2, '0');
 		if (!jodConfiguration.animations) return;
 		const invTime = 1 - decimals * 0.01;
@@ -1608,7 +1828,7 @@ function NoteManagerUI(noteManager) {
 		const caretPos = this.timeToX(time);
 		this.caretPos = caretPos;
 		this.caretTime = time;
-		
+
 		if (this.autoScrollOnPlayback) this.scrollX = -time * this.pxPerBeat + this.width * 0.25;
 		this.renderFn();
 		this.drawCaret(caretPos);
@@ -1641,7 +1861,7 @@ function NoteManagerUI(noteManager) {
 		if (!jodConfiguration.animations) return;
 		const element = this.getTrackElement(trackIndex);
 		playTrackAnimation(element, startsIn, duration, track.active);
-		if (track.screenFlash) this.screenFlasher.start();
+		if (track.screenFlash) this.screenFlasher.start(undefined, undefined, getRandomColor(120));
 		if (track.screenShake) this.screenShaker.start();
 	};
 

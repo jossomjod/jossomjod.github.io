@@ -46,7 +46,7 @@ function envelopeToAutomation(env, bpm, duration, valueMultiplier = 1) {
 	return arr;
 	if (!arr.length) return arr;
 	if (arr.length < 2) return arr; // TODO: handle better
-	
+
 	const penult = arr.at(-2);
 	const release = arr.at(-1).time - penult.time;
 
@@ -82,8 +82,8 @@ function envelopeToAutomation(env, bpm, duration, valueMultiplier = 1) {
 
 function getAutomationFromSynth(synth, bpm, duration) {
 	return synth.oscillators.map((o) => {
-		const gain = envelopeToAutomation(o.gainEnvelope, bpm, duration);
-		const pitch = envelopeToAutomation(o.pitchEnvelope, bpm, duration, 12);
+		const gain = [];//envelopeToAutomation(o.gainEnvelope, bpm, duration);
+		const pitch = [];//envelopeToAutomation(o.pitchEnvelope, bpm, duration, 12);
 		const pan = [];
 		return { gain, pitch, pan };
 	});
@@ -94,7 +94,7 @@ function getAutomationFromSynth(synth, bpm, duration) {
  * @param {AudioNode} output
  */
 function NoteManager(ac, output) {
-	this.version = 0;
+	this.version = 4;
 	this.bpm = 140;
 	this.lookaheadBeats = 0.09
 	this.intervalMs = 18;
@@ -124,7 +124,7 @@ function NoteManager(ac, output) {
 	this.addNote = (startTime, tone, duration) => {
 		const synth = this.getSelectedTrack().synth;
 		if (startTime < 0) startTime = 0;
-		const newNote = new Note(tone, startTime, duration, 1, getAutomationFromSynth(synth, this.bpm, duration));
+		const newNote = new Note(tone, startTime, duration, 1);
 		this.getSelectedTrack().notes.push(newNote);
 		return newNote;
 	};
@@ -185,6 +185,15 @@ function NoteManager(ac, output) {
 		});
 	};
 
+	this.playNote = (note) => {
+		const track = this.getSelectedTrack();
+		const automations = !track.disableNoteAutomation ? note.automations : null;
+		const startTime = ac.currentTime;
+		const duration = beatsToSeconds(note.duration, this.bpm);
+		const freq = toneToFreq(note.tone);
+		track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
+	}
+
 	// For use in the playback loop
 	this.scheduleTrackNotesPlayback = (track, trackIndex, currentBeats, loopEnd, beatsPastEnd, latestTime) => {
 		const ns = track.notes;
@@ -212,7 +221,7 @@ function NoteManager(ac, output) {
 			const duration = beatsToSeconds(durationBeats, this.bpm);
 			const freq = toneToFreq(n.tone);
 			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
-			
+
 			const delay = (startTime - ac.currentTime) * 1000;
 			this.onNoteScheduled(trackIndex, delay, duration * 1000, track);
 		}
@@ -223,7 +232,7 @@ function NoteManager(ac, output) {
 		this.intervalBeats = secondsToBeats(0.001 * this.intervalMs, this.bpm);
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
 		this.latestNoteStartTime = -0.00001;
-		
+
 		if (this.isPlaying) return;
 		this.isPlaying = true;
 
@@ -271,16 +280,17 @@ function NoteManager(ac, output) {
 		this.playbackStartTime = ac.currentTime - beatsToSeconds(currentBeats, this.bpm);
 	};
 
-	this.createTrack = () => {
+	this.createTrack = (basedOn) => {
 		const index = this.tracks.length + 1;
 		const track = {
-			notes: [],
-			name: 'Track ' + index,
+			notes: basedOn?.notes ?? [],
+			name: basedOn?.name ?? 'Track ' + index,
 			active: true,
 			muted: false,
 			solo: false,
-			monoPitch: false,
+			monoPitch: true,
 			gain: 1,
+			color: colorManager.predefinedColors.default,
 			id: ++this.trackIdCounter,
 			disableNoteAutomation: false,
 		};
@@ -296,7 +306,7 @@ function NoteManager(ac, output) {
 
 		const index = this.tracks.findIndex((t) => t.id === track.id);
 		let selectedIdx = this.tracks.findIndex((t) => t.id === this.selectedTrackId);
-		
+
 		this.tracks.splice(index, 1);
 		if (index <= selectedIdx) selectedIdx = Math.max(0, selectedIdx - 1);
 		this.selectTrackByIndex(selectedIdx);
@@ -335,25 +345,158 @@ function NoteManager(ac, output) {
 		return this.tracks[this.selectedTrack];
 	};
 
+	this.purgeDeprecatedNoteProperties = (track) => {
+		track.notes.forEach((n, i) => track.notes[i] = new Note(n.tone, n.startTime, n.duration, n.gain, n.automations));
+		console.log('Purged deprecated props from every note in track ' + track.name);
+	};
+
+	this.clearAutomationFromTrack = (track) => {
+		track.notes.forEach((n) => delete n.automations);
+		console.log('Yeeted all automation on every note in track ' + track.name);
+	};
+
+	this.clearAutomationFromNotes = (notes) => {
+		notes.forEach((n) => delete n.automations);
+		console.log('Yeeted all automation on every selected note');
+	};
+
+	this.clearGainAutomationFromNotes = (notes) => {
+		notes.forEach((n) => n.automations?.forEach((a) => delete a.gain));
+		console.log('Yeeted all gain automation on every selected note');
+	};
+
+	this.fixCorruptDataInTrack = (track) => {
+		track.notes.filter((n) => n.automations).forEach((n) => n.automations = n.automations.filter((a) => a));
+		console.log('Fixed corrupt data in track ' + track.name);
+	};
+
+	this.optimizeTrackForStorage = (track) => {
+		track.notes.forEach((n) => {
+			let hasAutomations = false;
+			n.startTime = +n.startTime.toFixed(10);
+			n.duration = +n.duration.toFixed(10);
+			n.automations?.forEach((a) => {
+				a.gain?.forEach((g) => {
+					g.time = +g.time.toFixed(10);
+					g.value = +g.value.toFixed(10);
+				});
+				a.pitch?.forEach((g) => {
+					g.time = +g.time.toFixed(10);
+					g.value = +g.value.toFixed(10);
+				});
+				a.pan?.forEach((g) => {
+					g.time = +g.time.toFixed(10);
+					g.value = +g.value.toFixed(10);
+				});
+				if (!a.gain?.length) delete a.gain;
+				if (!a.pitch?.length) delete a.pitch;
+				if (!a.pan?.length) delete a.pan;
+				if (a.gain || a.pitch || a.pan) hasAutomations = true;
+			});
+			if (!hasAutomations) delete n.automations;
+		});
+	};
+
+	this.propNameLookup = {
+		a: 'automations',
+		b: 'notes',
+		c: 'color',
+		d: 'duration',
+		e: 'active',
+		f: 'faded',
+		g: 'gain',
+		h: 'highlight',
+		i: 'disabled',
+		j: 'detune',
+		k: 'type',
+		l: 'fadedActive',
+		m: 'main',
+		n: 'pan',
+		o: 'tone',
+		p: 'pitch',
+		q: 'points',
+		r: 'version',
+		s: 'startTime',
+		t: 'time',
+		u: 'synth',
+		v: 'value',
+		w: 'tracks',
+		y: 'bpm',
+		A: 'monoPitch',
+		B: 'muted',
+		C: 'customWave',
+		D: 'disableNoteAutomation',
+		E: 'isLFO',
+		F: 'fixedFreq',
+		G: 'gainEnvelope',
+		H: 'rndGain',
+		I: 'rndPitch',
+		J: 'mod1',
+		K: 'mod2',
+		L: 'mod3',
+		M: 'multiplier',
+		N: 'modType',
+		O: 'oscillators',
+		P: 'pitchEnvelope',
+		Q: 'name',
+		R: 'phase',
+		S: 'solo',
+		T: 'type',
+		W: 'customWaveform',
+	};
+
+	this.shortNameLookup = Object.entries(this.propNameLookup).reduce((prev, [short, long]) => {
+		prev[long] = short;
+		return prev;
+	}, {});
+
+	// Should only be used on stringable data
+	this.shortenNames = (input) => {
+		if (!input) return input;
+		if (Array.isArray(input)) return input.map((i) => this.shortenNames(i));
+		else if (typeof input === 'object') return Object.entries(input).reduce((prev, [key, val]) => {
+			key = this.shortNameLookup[key] ?? key;
+			prev[key] = this.shortenNames(val);
+			return prev;
+		}, {});
+		return input;
+	};
+
+	this.expandNames = (input) => {
+		if (!input) return input;
+		if (Array.isArray(input)) return input.map((i) => this.expandNames(i));
+		else if (typeof input === 'object') return Object.entries(input).reduce((prev, [key, val]) => {
+			key = this.propNameLookup[key] ?? key;
+			prev[key] = this.expandNames(val);
+			return prev;
+		}, {});
+		return input;
+	};
+
 	this.getStringableTracks = () => {
-		return this.tracks.map((t) => ({ ...t, synth: t.synth.save(), fx: t.fx.save() }));
+		return this.tracks.map((t) => {
+			this.optimizeTrackForStorage(t);
+			return { ...t, synth: t.synth.save(), fx: t.fx.save() };
+		});
 	};
 
 	this.save = () => {
 		return {
-			version: this.version,
-			bpm: this.bpm,
-			tracks: this.getStringableTracks(),
+			r: this.version,
+			y: this.bpm,
+			w: this.shortenNames(this.getStringableTracks()),
 		};
 	};
 
 	this.load = (data) => {
 		this.toggleLooping(false);
-		if (data.version !== this.version) {
+		if (data.r !== this.version) {
 			console.warn('Version mismatch');
 		}
-		this.bpm = data.bpm ?? 140;
-		this.loadTracks(data.tracks);
+		const trx = data.w ?? data.tracks;
+		const tracks = (data.r ?? data.version) >= 2 ? this.expandNames(trx) : trx;
+		this.bpm = data.y ?? data.bpm ?? 140;
+		this.loadTracks(tracks);
 	};
 
 	this.loadTracks = (tracks) => {
@@ -374,6 +517,7 @@ function NoteManager(ac, output) {
 			const track = t;
 			track.fx = new FxManager(ac, output, t.fx, t.gain);
 			track.synth = new Synth(ac, track.fx.input, t.synth);
+			if (!track.color?.main) track.color = colorManager.predefinedColors.default;
 			if (track.id > this.trackIdCounter) this.trackIdCounter = track.id;
 			else if (!track.id) track.id = ++this.trackIdCounter;
 			return track;

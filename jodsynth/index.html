@@ -13,6 +13,7 @@
 		<link rel="stylesheet" href="stylesheets/jodroll.css" />
 		<link rel="icon"  type="image/png" href="../images/favicon.png">
 		<script src="scripts/utils.js"></script>
+		<script src="scripts/colors.js"></script>
 		<script src="scripts/save-manager.js"></script>
 		<script src="scripts/templates.js"></script>
 		<script src="scripts/vfx.js"></script>
@@ -24,6 +25,7 @@
 		<script src="scripts/fx-manager-ui.js"></script>
 		<script src="scripts/note-manager.js"></script>
 		<script src="scripts/note-manager-ui.js"></script>
+		<script src="scripts/midi-manager.js"></script>
 		<title>JODDAW</title>
 	</head>
 	<body>
@@ -33,30 +35,42 @@
 				<button onclick="noteManagerUi.toggleVisible()">TRACKER</button>
 				<div class="save-form">
 					<input id="saveNameInput" class="text-input" placeholder="Save name">
-					<button onclick="saveAll()">Save</button>
-					<button onclick="loadAll()">Load</button>
+					<button onclick="saveAss()">Save file</button>
+					<button onclick="loadFile()">Load file</button>
+					<button onclick="saveAll()">Save local</button>
 					<div class="select-box">
-						<label for="saveSelect">Load project</label>
+						<label for="saveSelect">Load local</label>
 						<select id="saveSelect" placeholder="Select project..."></select>
 					</div>
 					<select id="templateSelect">
 						<option value="0">Template: Empty</option>
-						<option value="1">Template: Trek 2</option>
-						<option value="2">Template: Bengagoro</option>
-						<option value="3">Template: Doku Dish</option>
-						<option value="4">Template: Jurobit</option>
-						<option value="5">Template: Salmon</option>
-						<option value="6">Template: Par</option>
-						<option value="7">Template: Tøffel</option>
-						<option value="8">Template: Terrencer</option>
+						<option value="1">Trek 2</option>
+						<option value="2">Doku Dish</option>
+						<option value="3">Jurobit</option>
+						<option value="4">Salmon</option>
+						<option value="5">Template: Thrivin</option>
+						<option value="6">Hummingbird</option>
+						<option value="7">Tøffel</option>
+						<option value="8">Terrencer</option>
+						<option value="9">Patervais</option>
+						<option value="10">Superfluish</option>
+						<option value="11">Krill</option>
+						<option value="12">Jurobit 2</option>
+						<option value="13">Drrroy</option>
+						<option value="14">4 chords 2 rule</option>
+						<option value="15">Protoquasi</option>
 					</select>
+					<button onclick="exportUrl()">Copy URL</button>
 				</div>
-				<div>
-					<label for="bpmUi">BPM</label>
-					<input class="detune" id="bpmUi" type="number">
+				<div class="select-box">
+					<label for="midiFileInput">Import MIDI (WIP)</label>
+					<input id="midiFileInput" type="file" accept=".mid,audio/midi">
 				</div>
 				<div>
 					<div onclick="toggleHelp()" class="circle clickable help-icon end">?</div>
+				</div>
+				<div>
+					<button class="hidden" id="context-menu-opener-btn" onclick="noteManagerUi.openSelectedNotesContextMenu()">Notes...</button>
 				</div>
 			</div>
 
@@ -87,6 +101,10 @@
 							</div>
 						</div>
 						<div class="jodroll-transport-right">
+							<div>
+								<label for="bpmUi">BPM</label>
+								<input class="detune" id="bpmUi" type="number">
+							</div>
 							<button id="jodrollBtnLoop">Loop</button>
 							<button id="jodrollBtnAutoScroll">Auto-scroll</button>
 							<!-- <button id="jodrollBtnSnapH">SnapH</button>
@@ -138,14 +156,14 @@
 
 <template id="fx-template">
 	<div class="fx-contents">
-		
+
 	</div>
 </template>
 
 <template id="oscillator-template">
 	<div class="oscillator-container">
 		<p id="oscillator-name" class="ocillator-name">Oscillator</p>
-		
+
 		<div class="controls-container">
 			<div class="control">
 				<label for="oscWaveform">Waveform</label>
@@ -154,18 +172,21 @@
 					<option value="sine">Sine</option>
 					<option value="sawtooth">Sawtooth</option>
 					<option value="triangle">Triangle</option>
+					<!--<option value="custom">Custom</option>-->
 				</select>
+				<button id="oscWaveformEditBtn" class="hidden">Edit</button>
+				<dialog id="oscWaveformEditorDialog" class="waveform-editor-panel">
+					<canvas id="waveform-preview"></canvas>
+					<div class="waveform-editor-controls">
+					</div>
+				</dialog>
 			</div>
 
 			<div class="control">
-				<label for="oscModulateSelect">Modulate</label>
-				<select name="oscModulateSelect" id="oscModulateSelect">
-					<option value="none">None</option>
-					<option value="0">Oscillator 1</option>
-					<option value="1">Oscillator 2</option>
-					<option value="2">Oscillator 3</option>
-					<option value="3">Oscillator 4</option>
-				</select>
+				<label for="oscModulate1">Modulate</label>
+				<input class="detune" type="number" id="oscModulate1" name="oscModulate1" min="0" max="4" step="1">
+				<input class="detune" type="number" id="oscModulate2" name="oscModulate2" min="0" max="4" step="1">
+				<input class="detune" type="number" id="oscModulate3" name="oscModulate3" min="0" max="4" step="1">
 			</div>
 
 			<div class="control">
@@ -185,12 +206,12 @@
 				<label for="oscCoarse">Coarse</label>
 				<input class="detune" type="number" id="oscCoarse" name="oscCoarse" min="-1200" max="1200" step="1.0">
 				<label for="oscDetune">Detune</label>
-				<input class="detune" type="number" id="oscDetune" name="oscDetune" min="-100" max="100" step="1.0">
+				<jod-numb class="detune" id="oscDetune" name="oscDetune" min="-100" max="100" speed="0.1"></jod-numb>
 			</div>
 
 			<div class="control">
 				<label for="oscPhase">Phase</label>
-				<input class="phase" type="number" id="oscPhase" name="oscPhase" min="-10" max="10" step="0.01">
+				<jod-numb class="phase" id="oscPhase" name="oscPhase" min="-10" max="10" speed="0.01"></jod-numb>
 			</div>
 
 			<div class="control">
@@ -202,7 +223,7 @@
 
 			<div class="control">
 				<label for="oscPan">Pan</label>
-				<jod-numb  name="oscPan" id="oscPan" min="-1" max="1" step="0.01"></jod-numb>
+				<jod-numb  name="oscPan" id="oscPan" min="-1" max="1" speed="0.1"></jod-numb>
 			</div>
 		</div>
 		<div>Gainvelope</div>
@@ -356,13 +377,29 @@
 		<div class="help-box-section" id="helpBoxSection4">
 			<div>
 				<p>
-					The save system is currently a bit experimental and unconventional.<br>
-					Clicking "Save" stores the current tracks and synths locally on your device under the name specified in the text input.<br>
-					This will also copy the saved data to the clipboard so you can paste it into a text file.<br>
-					To load the saved data, type in the name you saved it under and click "Load", or just select it from the project list.<br>
-					Alternatively, you can paste the saved data directly into the save name field and click "Load".<br>
-					You can also quick-save / quick-load with <span class="key">F8</span> / <span class="key">F9</span> or <span class="key">Ctrl</span> + <span class="key">S</span> / <span class="key">Ctrl</span> + <span class="key">Z</span><br>
-					Quick-saving overwrites the previous quick-save, and is not a reliable means of long-term storage.
+					The save system is still a bit experimental and unconventional.<br>
+					And no, you can't mix down to an audio file yet.
+				</p>
+				<p>
+					Clicking "Save" stores the current project locally on your device under the name specified in the text input.<br>
+					To load the saved data, select it from the project list.<br>
+					Click "as..." to save the project locally as a file. Does not work in Firefox.<br>
+					<span class="key">Ctrl</span> + <span class="key">S</span> to save over the most recently saved/loaded file.<br><br>
+					Project files are currently saved as plain JSON (good for testing), but will later be compressed binary data. The save system will remain backwards-compatible.
+				</p>
+				<!-- <p>
+					You can also quick-save / quick-load with <span class="key">F8</span> / <span class="key">F9</span><br>
+					Quick-saving overwrites the previous quick-save, and is not reliable for long-term storage.
+					</p> -->
+			</div>
+		</div>
+		<h2 class="help-header" onclick="toggleHelpSection('#helpBoxSection7')">MIDI (Work In Progress)</h2>
+		<div class="help-box-section" id="helpBoxSection7">
+			<div>
+				<p>
+					MIDI import is half-assed and cursed. It works for some MIDI files, but not all.<br>
+					MIDI input should work quite well. Just make sure your MIDI device is plugged in and turned on. Refresh the page if necessary.<br>
+					The pitch wheel works, but is hardcoded to max ±2 semitones. The modulation wheel is not currently in use.
 				</p>
 			</div>
 		</div>
