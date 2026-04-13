@@ -293,10 +293,12 @@ templateSelect.addEventListener('change', () => {
 	if (!tracks) throw 'No template found for index' + index;
 
 	activeFileHandle = null;
-	noteManager.load(SaveManager.parseTrackData(tracks));
-	noteManagerUi.renderAll();
-	saveNameInput.value = saveSelect.value = null;
-	document.activeElement.blur();
+	SaveManager.parseTrackData(tracks).then((parsed) => {
+		noteManager.load(parsed);
+		noteManagerUi.renderAll();
+		saveNameInput.value = saveSelect.value = null;
+		document.activeElement.blur();
+	});
 });
 
 function quickSave() {

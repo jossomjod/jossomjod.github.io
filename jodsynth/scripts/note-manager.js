@@ -497,7 +497,6 @@ function NoteManager(ac, output) {
 		const tracks = (data.r ?? data.version) >= 2 ? this.expandNames(trx) : trx;
 		this.bpm = data.y ?? data.bpm ?? 140;
 		this.loadTracks(tracks);
-		console.log(data, tracks);
 	};
 
 	this.loadTracks = (tracks) => {
