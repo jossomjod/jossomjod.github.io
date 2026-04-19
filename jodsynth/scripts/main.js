@@ -2,6 +2,8 @@ console.log('Is secure context:', window.isSecureContext);
 
 
 const ac = new (window.AudioContext || window.webkitAudioContext);
+//ac.audioWorklet.addModule('audio-nodes/jod-osc.js'); // TODO
+
 var clipboard = {
 	notes: '',
 	synth: '',

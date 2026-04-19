@@ -187,10 +187,25 @@ function createCompressorFxUi(fx, parent, rmCallback, titleText) {
 	return fxUi;
 }
 
+function createDelayFxUi(fx, parent, rmCallback, titleText) {
+	const fxUi = new FxUi(fx.params, parent, rmCallback, titleText);
+	const controls = [
+		createParamJodnumb({ label: 'Time', param: 'time', value: fx.params.time, min: 0, max: 1, step: 0.01 }, fx.setParam),
+		createParamJodnumb({ label: 'Wet', param: 'wet', value: fx.params.wet, min: 0, max: 1, step: 0.01 }, fx.setParam),
+		createParamJodnumb({ label: 'Dry', param: 'dry', value: fx.params.dry, min: 0, max: 1, step: 0.01 }, fx.setParam),
+		createParamJodnumb({ label: 'Feedback', param: 'feedback', value: fx.params.feedback, min: 0, max: 0.98, step: 0.01 }, fx.setParam),
+		createParamCheckbox({ label: 'Bypass', param: 'bypass', value: fx.params.bypass }, fx.setParam),
+	];
+	fxUi.setControls(controls);
+	return fxUi;
+}
+
 function createFxUi(fx, parent, rmCallback) {
 	switch (fx.fxType) {
 		case 'filter':
 			return createFilterFxUi(fx, parent, rmCallback, 'Filter');
+		case 'delay':
+			return createDelayFxUi(fx, parent, rmCallback, 'Delay');
 		case 'reverb':
 			return createReverbFxUi(fx, parent, rmCallback, 'Reverb');
 		case 'compressor':
@@ -200,7 +215,7 @@ function createFxUi(fx, parent, rmCallback) {
 	}
 }
 
-const fxTypes = ['filter', 'reverb', 'compressor'];
+const fxTypes = ['filter', 'reverb', 'compressor', 'delay'];
 
 function FxManagerUi(fxManager) {
 	this.container = document.querySelector('.fx-container');

@@ -9,7 +9,7 @@ class BaseEffect { // TODO
 	destination;
 
 	/**
-	 * @param {AudioContext} ac 
+	 * @param {AudioContext} ac
 	 */
 	constructor(ac, params) {
 		this.ac = ac;
@@ -86,7 +86,7 @@ function createNoiseBuffer(ac, time) {
 
 
 /**
- * @param {AudioContext} ac 
+ * @param {AudioContext} ac
  */
 function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.01, wet: 0.5, dry: 0.5 }) {
 	this.fxType = 'reverb';
@@ -186,7 +186,7 @@ function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.0
 
 
 /**
- * @param {AudioContext} ac 
+ * @param {AudioContext} ac
  */
 function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
 	this.fxType = 'filter';
@@ -252,7 +252,7 @@ class CompressorEffect {
 	destination;
 
 	/**
-	 * @param {AudioContext} ac 
+	 * @param {AudioContext} ac
 	 */
 	constructor(
 		ac, params = {
@@ -314,6 +314,91 @@ class CompressorEffect {
 }
 
 
+class DelayEffect {
+	ac;
+	fxType = 'delay';
+	params;
+	input;
+	delay;
+	wet;
+	dry;
+	feedback;
+	destination;
+
+	/**
+	 * @param {AudioContext} ac
+	 */
+	constructor(
+		ac, params = {
+			bypass: false,
+			time: 0.25,
+			wet: 0.5,
+			dry: 1,
+			feedback: 0.3,
+		}
+	) {
+		this.ac = ac;
+		this.params = params;
+		this.input = new GainNode(ac, { gain: 1 });
+		this.delay = new DelayNode(ac, { delayTime: this.params.time });
+		this.wet = new GainNode(ac, { gain: this.params.wet });
+		this.dry = new GainNode(ac, { gain: this.params.dry });
+		this.feedback = new GainNode(ac, { gain: this.params.feedback });
+	}
+
+	connect(destination) {
+		this.destination = destination;
+
+		if (this.params.bypass) {
+			this.input.connect(destination);
+			return destination;
+		}
+		this.input
+			.connect(this.delay)
+			.connect(this.wet)
+			.connect(destination);
+		this.input
+			.connect(this.dry)
+			.connect(destination);
+		this.wet.connect(this.feedback)
+		this.feedback.connect(this.delay);
+		return destination;
+	}
+
+	disconnect() {
+		this.input.disconnect();
+		this.delay.disconnect();
+		this.wet.disconnect();
+		this.dry.disconnect();
+		this.feedback.disconnect();
+	}
+
+	refreshConnection() {
+		this.disconnect();
+		this.connect(this.destination);
+	}
+
+	setParam = (param, value) => {
+		if (param === 'bypass') {
+			this.params.bypass = value;
+			this.refreshConnection();
+			return;
+		}
+		this.params[param] = value;
+		if (param === 'time') this.delay.delayTime.setValueAtTime(value, ac.currentTime);
+		else this[param].gain.setValueAtTime(value, this.ac.currentTime);
+	};
+
+	save() {
+		return { params: this.params, fxType: this.fxType };
+	}
+	load(params){
+		this.params = params;
+		Object.entries(this.params).forEach(([key, value]) => this.setParam(key, value));
+	}
+}
+
+
 function effectFromType(ac, type, params) {
 	switch (type) {
 		case 'filter':
@@ -322,6 +407,8 @@ function effectFromType(ac, type, params) {
 			return new ReverbEffect(ac, params);
 		case 'compressor':
 			return new CompressorEffect(ac, params);
+		case 'delay':
+			return new DelayEffect(ac, params);
 		default:
 			throw `No effect exists with type ${type}`;
 	}
