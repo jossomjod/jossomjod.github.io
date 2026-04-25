@@ -414,8 +414,11 @@ function Synth(ac, output, fromObject) {
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			} else {
 				t.gain.connect(this.gain);
 			}
@@ -424,16 +427,22 @@ function Synth(ac, output, fromObject) {
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			}
 
 			mod = this.oscillators[i].mod3;
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			}
 		});
 
@@ -463,8 +472,11 @@ function Synth(ac, output, fromObject) {
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			} else {
 				t.gain.connect(this.gain);
 			}
@@ -473,16 +485,22 @@ function Synth(ac, output, fromObject) {
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			}
 
 			mod = this.oscillators[i].mod3;
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			}
 		});
 
@@ -532,8 +550,11 @@ function Synth(ac, output, fromObject) {
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			} else {
 				t.gain.connect(this.gain);
 			}
@@ -542,16 +563,22 @@ function Synth(ac, output, fromObject) {
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			}
 
 			mod = this.oscillators[i].mod3;
 			if (mod) {
 				mod--;
 				const modType = this.oscillators[i].modType;
-				if (modType === 1) t.gain.connect(oscs[mod].gain.gain);
-				else t.gain.connect(oscs[mod].oscillator.frequency);
+				switch (modType) {
+					case 1: t.gain.connect(oscs[mod].gain.gain); break;
+					case 2: t.gain.connect(oscs[mod].gain); break;
+					default: t.gain.connect(oscs[mod].oscillator.frequency); break;
+				}
 			}
 		});
 		return oscs;
