@@ -28,7 +28,8 @@
 	background-color: var(--color-active);
 	color: var(--color-active-contrast);
 	text-shadow: 1px 1px #01040f;
-	box-shadow: 0 0 7px 1px #fff;
+	box-shadow: 0 0 7px 2px #fff;
+	border: 1px solid #fff;
 }
 
 .note-container {
