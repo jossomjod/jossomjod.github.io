@@ -1860,7 +1860,7 @@ function NoteManagerUI(noteManager) {
 	this.onNoteScheduled = (trackIndex, startsIn, duration, track) => {
 		if (!jodConfiguration.animations) return;
 		const element = this.getTrackElement(trackIndex);
-		playTrackAnimation(element, startsIn, duration, track.active);
+		playTrackAnimation(element, startsIn, duration, track);
 		if (track.screenFlash) this.screenFlasher.start(undefined, undefined, getRandomColor(120));
 		if (track.screenShake) this.screenShaker.start();
 	};

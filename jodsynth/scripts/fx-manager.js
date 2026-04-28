@@ -441,7 +441,7 @@ function FxManager(ac, output, fromArray, gain = 1) {
 	this.removeFx = (index, newDestination) => {
 		this.fxChain[index].disconnect();
 		this.gain.disconnect();
-		Object.values(this.fxChain[index]).forEach((v) => delete v);
+		Object.values(this.fxChain[index]).forEach((_v, i) => delete this.fxChain[index][i]);
 		delete this.fxChain[index];
 		this.fxChain.splice(index, 1);
 		this.connect(newDestination ?? this.output);

@@ -1,15 +1,16 @@
-const playTrackAnimationFrames = [
-	{ backgroundColor: '#bbbbbb', scale: '1.02' },
-	{ backgroundColor: '#376cf3', scale: '1' },
-];
-const playSelectedTrackAnimationFrames = [
-	{ backgroundColor: '#ffffff', scale: '1.05' },
-	{ backgroundColor: '#77b5ff', scale: '1' },
-];
+function playTrackAnimation(trackElement, delay, duration, track) {
+	const { active, color } = track;
 
-function playTrackAnimation(trackElement, delay, duration, selectedTrack = false) {
+	const playTrackAnimationFrames = !active ? [
+		{ backgroundColor: '#dddddd', scale: '1.02' },
+		{ backgroundColor: color.main, scale: '1' },
+	] : [
+		{ backgroundColor: '#ffffff', scale: '1.05' },
+		{ backgroundColor: color.active, scale: '1' },
+	];
+
 	trackElement.animate(
-		selectedTrack ? playSelectedTrackAnimationFrames : playTrackAnimationFrames,
+		playTrackAnimationFrames,
 		{
 			delay,
 			duration,
@@ -130,7 +131,7 @@ function createTrackEntryUi(track, trackHandler) {
 	gainAndBtnRowContainer.append(gain, btnRow);
 	btnColumn.append(soloBtn, muteBtn, automationBtn);
 	div.append(nameEditor, label, gainAndBtnRowContainer, btnColumn);
-	
+
 	div.id = 'track-entry-' + track.id;
 	div.classList.add('jodroll-track');
 	updateColor();
@@ -152,7 +153,7 @@ function createTrackEntryUi(track, trackHandler) {
 			{ name: 'Delete', callback: () => trackHandler.deleteTrack(track) },
 		]);
 	});
-	
+
 	label.classList.add('track-label');
 	label.innerHTML = track.name;
 
