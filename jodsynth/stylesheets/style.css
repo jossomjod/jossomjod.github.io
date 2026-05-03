@@ -52,7 +52,7 @@ body {
 	margin: 2px;
 }
 
-.text-input { 
+.text-input {
 	background-color: #02081f;
   color: #fff;
   text-shadow: 0 0 5px #cfeaff;
@@ -73,6 +73,7 @@ body {
 .main-panel {
 	display: flex;
 	flex-direction: column;
+	width: 100%;
 }
 
 .fx-container, .global-fx-container {

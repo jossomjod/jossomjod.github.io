@@ -101,13 +101,13 @@ class ColorManager {
 	};
 
 	createCustomColor(baseColor) {
-		const active = fadeColor(baseColor, '#ffffff', 0.6);
+		const active = fadeColor(baseColor, '#ffffff', 0.2);
 		const color = {
 			main: baseColor,
 			active,
 			disabled: jodColors.mutedNote,
 			faded: setHexAlpha(baseColor, '40'),
-			highlight: fadeColor(baseColor, '#ffffff', 0.3),
+			highlight: fadeColor(baseColor, '#ffffff', 0.1),
 			fadedActive: setHexAlpha(active, '50'),
 		};
 		return color;

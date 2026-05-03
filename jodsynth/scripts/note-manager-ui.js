@@ -225,7 +225,7 @@ function NoteManagerUI(noteManager) {
 
 	this.pxPerBeat = 50;
 	this.pxPerTone = 10;
-	this.width = this.trackerContainer.width = window.innerWidth - 222;
+	this.width = 0; // set on canvas resize. must match canvas width
 	this.height = this.canvas.height = this.trackerContainer.height = 700;
 	this.canvas.width = this.width;
 	this.scrollX = 0;
@@ -252,7 +252,7 @@ function NoteManagerUI(noteManager) {
 
 	this.clickedNote = null;
 	this.hoveredNote = null;
-	this.noteMinDuration = 0.25;
+	this.noteMinDuration = 0.03125; // 1/(2**5)
 	this.previewNoteId = null;
 	this.isResizing = false;
 	this.resizeTriggerSize = 10;
@@ -284,6 +284,14 @@ function NoteManagerUI(noteManager) {
 	this.timeLineClicked = false;
 
 	this.mouseMovedSinceLastMouseDown = false;
+
+
+	this.resizeObs = new ResizeObserver((entries) => {
+		this.width = this.canvas.width = entries[0].contentRect.width;
+		this.timeLine.rect.w = this.width;
+		this.render();
+	});
+	this.resizeObs.observe(this.canvas);
 
 
 	this.trackerContainer.addEventListener('mousedown', (e) => {
@@ -667,7 +675,7 @@ function NoteManagerUI(noteManager) {
 				this.render();
 				break;
 			case this.timeLineAction | this.primaryAction:
-				if (this.clickedNote) break;
+				if (this.isSelectingArea || this.isSelectingAllTracks || this.clickedNote || this.clickedNode) break;
 				if (this.timeLine.isSelecting) {
 					this.timeLine.updateSelection(realX);
 					this.drawTimeLine();
@@ -709,7 +717,19 @@ function NoteManagerUI(noteManager) {
 				this.pxPerBeat = Math.max(3, Math.min(600, this.pxPerBeat));
 				//this.gridSizeX = this.pxPerBeat;
 				this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
-				//console.log('zoom:', this.gridSizeX, this.gridSizeTime, this.width / this.pxPerBeat);
+
+
+				// TODO: snap only to displayed grid
+				/* const minPxPerCell = 16;
+				const isk = minPxPerCell / this.pxPerBeat;
+				const kek = Math.floor(this.pxPerBeat / minPxPerCell);
+				const cellTime = Math.round(16 / (2 ** isk));
+				const cellPx = this.timeToX(cellTime); */
+
+				//this.newNoteDuration = cellTime;
+
+
+				//console.log('zoom:', isk, this.gridSizeX, this.gridSizeTime, kek, cellPx);
 		}
 		this.render();
 	});
@@ -1444,7 +1464,6 @@ function NoteManagerUI(noteManager) {
 		note,
 		color = jodColors.note,
 		resizeColor = jodColors.resizeHandle,
-		hoverColor = jodColors.hoveredNote,
 		shouldAnimate = false,
 		selected = false
 	) => {
@@ -1580,14 +1599,11 @@ function NoteManagerUI(noteManager) {
 	this.drawNotes = ({ notes, active, muted, solo, color }) => {
 		const shouldAnimate = this.isPlaying() && jodConfiguration.animations && !muted && (!noteManager.soloTrack || solo);
 		let mainColor = color.main ?? jodColors.note;
-		const hoverColor = color.highlight;
 		let resizeColor = jodColors.resizeHandle;
-		let selectedColor = color.active;
 
 		if (!active) {
 			mainColor = color.faded ?? jodColors.fadedNote;
 			resizeColor = jodColors.fadedResizeHandle;
-			selectedColor = color.fadedActive;
 		}
 
 		notes.forEach((n) => {
@@ -1598,26 +1614,26 @@ function NoteManagerUI(noteManager) {
 
 			switch (this.mode) {
 				case EModes.pitchAutomation:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate, true);
-					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, shouldAnimate, true);
+					else this.drawNote(n, mainColor, resizeColor, shouldAnimate);
 					if (!active) this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					else this.drawPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				case EModes.automation:
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty]);
-					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
+					else this.drawNote(n, mainColor, resizeColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				case EModes.panAutomation:
 					if (this.selectedNotes.some((s) => s === n))
 						this.drawNoteAutomation(n, n.automations?.[this.selectedOsc]?.[this.automationProperty], true);
-					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
+					else this.drawNote(n, mainColor, resizeColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 				default:
-					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate, true);
-					else this.drawNote(n, mainColor, resizeColor, hoverColor, shouldAnimate);
+					if (this.selectedNotes.some((s) => s === n)) this.drawNote(n, mainColor, resizeColor, shouldAnimate, true);
+					else this.drawNote(n, mainColor, resizeColor, shouldAnimate);
 					this.drawFadedPitchAutomation(n, n.automations?.[this.selectedOsc]?.pitch);
 					break;
 			}
@@ -1868,7 +1884,6 @@ function NoteManagerUI(noteManager) {
 	this.visible = false;
 	this.toggleVisible = (visible = !this.visible) => {
 		this.visible = visible;
-		this.trackerContainer.setAttribute('style', `width: ${this.width}px`);
 		this.trackerContainer.classList.toggle('invisible', !visible);
 	};
 	this.toggleVisible();

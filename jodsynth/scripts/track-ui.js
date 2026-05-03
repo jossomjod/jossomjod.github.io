@@ -134,6 +134,7 @@ function createTrackEntryUi(track, trackHandler) {
 
 	div.id = 'track-entry-' + track.id;
 	div.classList.add('jodroll-track');
+	if (track.active) div.classList.add('active');
 	updateColor();
 	div.updateColor = updateColor;
 
