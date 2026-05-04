@@ -299,7 +299,7 @@
 					Place notes by clicking in the grid. Resize notes with the handle on the right.<br>
 					Remove notes by right-clicking on them.<br>
 					Hold down the middle mouse button (the mouse wheel) and move the mouse to pan. Scroll to zoom.<br>
-					If you don't have a middle mouse button, or if it just doesn't work, you can use <span class="key">Alt</span> instead.<br>
+					If you don't have a middle mouse button you can use <span class="key">Alt</span> for panning.<br>
 					<br>
 					Each track has its own synth and notes.<br>
 					You can add new tracks and switch between them from the panel on the left.
@@ -320,6 +320,42 @@
 					<span class="key">Shift</span> + right-click to place a loop end point<br>
 					Toggle looping with <span class="key">Ctrl</span> + <span class="key">L</span>, or by clicking the loop-button.<br>
 					When looping is enabled, the song will play only between the loop points.
+				</p>
+			</div>
+		</div>
+		<h2 class="help-header" onclick="toggleHelpSection('#helpBoxSection8')">Advanced Mouse Controls</h2>
+		<div class="help-box-section" id="helpBoxSection8">
+			<div>
+				<p>
+					Left-click to add notes, right-click to remove, middle-click to pan.<br>
+					But we don't need to do all of those things at the same time, so in many cases we can use one of the buttons as a modifier.
+				</p>
+				<p>
+					Holding first the right mouse button, then the left (while still holding the right), then moving the mouse will draw a box to select an area. Once you have started selecting an area you no longer need to keep holding the right mouse button.
+				</p>
+				<p>
+					While selecting an area you can click the right mouse button to toggle between selecting just a regular area, or an infinitely wide area.
+				</p>
+				<p>
+					While grabbing a note (left-clicking on it and holding the button down), hold the right mouse button and move the mouse to resize the note.
+				</p>
+				<p>
+					While holding the middle mouse button, left-click to copy all selected notes, or right-click to paste.
+				</p>
+				<p>
+					Middle-click on a note twice without moving the mouse to play that note with automation.
+				</p>
+				<p>
+					Scrolling while holding the right mouse button will change the length of the next note you place.
+				</p>
+				<p>
+					If your mouse has a couple of extra buttons on the side (for navigating forwards/backwards in web browsers or file explorers), you can use the forwards button in the same way as <span class="key">Shift</span>, and the backwards button in the same way as <span class="key">Ctrl</span>
+				</p>
+				<p>
+					Hold <span class="key">Ctrl</span> (or the "navigate backwards" button, if your mouse has it) and right-click to remove all selected notes.
+				</p>
+				<p>
+					This funky thing? <jod-numb class="inline" id="jodNumbExample" name="jodNumbExample" min="-100" max="100" speed="1"></jod-numb><br> It's due for a redesign, but for now: Click and drag up/down to adjust the number. The further horizontally you move the mouse, the faster the number changes. Hold <span class="key">Shift</span> to massively increase the rate of change, hold <span class="key">Ctrl</span> for fine-tuning.
 				</p>
 			</div>
 		</div>
