@@ -1,12 +1,13 @@
 /**
  * @param {ArrayEnvelope} envelope
- * @param {HTMLElement} container 
+ * @param {HTMLElement} container
  */
-function EnvelopeUI(envelope, container, zeroCentered = false) {
+function EnvelopeUI(envelope, container, zeroCentered = false, freeRelease = () => false) {
 	this.nodes = [];
 	this.envelope = envelope;
 	this.container = container;
 	this.zeroCentered = zeroCentered;
+	this.freeRelease = freeRelease;
 	this.canvas = this.container.querySelector('#oscEnvCanvas');
 	this.ctx = this.canvas.getContext('2d');
 	this.dragData = null;
@@ -43,7 +44,7 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 	};
 	this.toggleTooltip = (hidden) => this.tooltip.classList.toggle('invisible', hidden);
 
-	
+
 	this.elements2Points = (elements) => {
 		return elements.map((el) => {
 			const pos = { x: el.offsetLeft, y: el.offsetTop };
@@ -79,7 +80,7 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		if (top < -r) top = -r;
 		else if (top > this.rect.h - r) top = this.rect.h - r;
 
-		if (!this.zeroCentered && this.isRelease(element)) top = this.rect.h - r;
+		if (!this.freeRelease() && !this.zeroCentered && this.isRelease(element)) top = this.rect.h - r;
 
 		element.style.left = left + 'px';
 		element.style.top = top + 'px';
@@ -106,7 +107,7 @@ function EnvelopeUI(envelope, container, zeroCentered = false) {
 		let left = e.clientX - this.dragData.offsetX;
 		let top = e.clientY - this.dragData.offsetY;
 		this.putNode(left, top);
-		
+
 		this.dragData = null;
 	});
 
@@ -221,7 +222,8 @@ function ControlUI(param, control) {
 }
 
 
-function OscillatorUi(oscillator, container, name) {
+function OscillatorUi(synth, oscillator, container, name) {
+	this.synth = synth;
 	this.oscillator = oscillator;
 	this.container = container;
 	this.template = document.querySelector('#oscillator-template');
@@ -231,7 +233,7 @@ function OscillatorUi(oscillator, container, name) {
 	this.nameElement = this.oscUi.querySelector('#oscillator-name');
 	if (this.nameElement) this.nameElement.textContent = this.name;
 
-	
+
 	this.oscWaveformUI = this.oscUi.querySelector('#oscWaveform');
 
 	this.oscWaveformUI.value = this.oscillator.type;
@@ -301,7 +303,7 @@ function OscillatorUi(oscillator, container, name) {
 	this.oscCoarseUI.value = coarse;
 	this.oscDetuneUI.value = this.oscillator.detune - coarse * 100;
 	this.oscDetuneUI.setAttribute('value', this.oscDetuneUI.value + '');
-	
+
 	this.oscDetuneInput = () => {
 		this.oscillator.detune = +this.oscCoarseUI.value * 100 + +this.oscDetuneUI.value;
 	}
@@ -343,27 +345,34 @@ function OscillatorUi(oscillator, container, name) {
 
 	this.oscGainEnvelope = this.oscUi.querySelector('#oscGainEnvelope');
 	this.oscPitchEnvelope = this.oscUi.querySelector('#oscPitchEnvelope');
-	
+
 	this.container.appendChild(this.oscUi);
 
 	// GAIN ENVELOPE
-	this.oscGainEnvelopeUI = new EnvelopeUI(this.oscillator.gainEnvelope, this.oscGainEnvelope);
+	this.oscGainEnvelopeUI = new EnvelopeUI(
+		this.oscillator.gainEnvelope,
+		this.oscGainEnvelope,
+		false,
+		this.oscillator.getFreeRelease,
+	);
 	this.oscPitchEnvelopeUI = new EnvelopeUI(this.oscillator.pitchEnvelope, this.oscPitchEnvelope, true);
 
-	
+	this.setGainRange = () => {
+		const { mod1, mod2, mod3 } = this.oscillator;
+		const fn = (m) => m && !this.synth.oscillators[m - 1]?.mod1;
 
-	this.setGainRange = () => { // TODO: prevent hearing damage without compromising functionality
-		if (!this.oscillator.mod1 /* || this.oscillator.modType > 0 */) {
-			this.oscillator.gain = this.oscillator.gain < 1.0 ? this.oscillator.gain : 1.0;
-			this.oscGainControl.max = 1.0;
-			this.oscGainControl.speed = 1.0;
+		if (!mod1 || ((fn(mod1) || fn(mod2) || fn(mod3)) && this.oscillator.modType > 0)) {
+			this.oscillator.gain = this.oscillator.gain < 2.0 ? this.oscillator.gain : 2.0;
+			this.oscGainControl.value = this.oscillator.gain;
+			this.oscGainControl.max = 2.0;
+			this.oscGainControl.speed = 0.1;
 		} else {
 			this.oscGainControl.max = 100000000.0;
 			this.oscGainControl.speed = 100.0;
 		}
 	};
 
-	
+
 	// INIT
 	this.setGainRange();
 }
@@ -389,7 +398,7 @@ function SynthUi(synth) {
 		this.container.replaceChildren();
 		this.init();
 	};
-	
+
 	this.controls.save.onclick = () => {
 		const input = document.createElement('input');
 		input.classList.add('name-editor', 'text-input');
@@ -421,8 +430,8 @@ function SynthUi(synth) {
 	this.addOsc = () => {
 		const len = this.synth.addOsc();
 		const osc = this.synth.oscillators[len-1];
-		const newOscUi = new OscillatorUi(osc, this.container, `Oscillator ${len}`);
-		
+		const newOscUi = new OscillatorUi(this.synth, osc, this.container, `Oscillator ${len}`);
+
 		this.oscillators.push(newOscUi);
 		this.updateModulateOptions();
 	}
@@ -452,7 +461,7 @@ function SynthUi(synth) {
 
 	this.init = () => {
 		this.oscillators = this.synth.oscillators.map((osc, i) => {
-			return new OscillatorUi(osc, this.container, `Oscillator ${i+1}`);
+			return new OscillatorUi(this.synth, osc, this.container, `Oscillator ${i+1}`);
 		});
 		this.updateModulateOptions();
 		this.setPresetOptions();

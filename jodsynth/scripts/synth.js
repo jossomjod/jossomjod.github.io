@@ -213,6 +213,8 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return freq + Math.random() * this.rndPitch * freq;
 	};
 
+	this.getFreeRelease = () => this.mod1 > 0;
+
 	this.start = (frequency, gainNode, panner, onset = 1) => {
 		const time = ac.currentTime;
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
@@ -270,7 +272,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.stop(ac.currentTime);
 	}
 
-	this.schedulePlayback = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1) => {
+	this.schedulePlayback = (ac, frequency, gainNode, panner, startTime = ac.currentTime, duration = 1) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
 		const gain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
@@ -289,7 +291,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		return osc;
 	}
 
-	this.schedulePlaybackWithAutomation = (frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
+	this.schedulePlaybackWithAutomation = (ac, frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
 		const gain = this.getGain();
 		const osc = new OscillatorNode(ac, { detune: this.detune, frequency: freq });
@@ -371,10 +373,78 @@ const pitchPoints = [
 ];
 
 
-function Synth(ac, output, fromObject) {
+// TODO: move to separate file
+
+class Automation {
+	/** @type {number} */
+	time;
+	/** @type {number} */
+	number;
+}
+
+class SynthFx {
+	/** @type {AudioNode} */
+	destination;
+	/** @type {AudioNode} */
+	source;
+	properties = {};
+	constructor(properties, destination, source) {
+		this.properties = properties;
+		this.destination = destination;
+		this.source = source;
+	}
+	/**
+ * @param {AudioContext} ac
+ * @param {number} time
+ * @param {{ [string]: Automation[] }} automations
+ */
+	start(ac, time, automations) {}
+	/**
+ * @param {AudioContext} ac
+ * @param {number} time
+ */
+	stop(ac, time) {}
+	/**
+ * @param {string} name
+ * @param {string | number} value
+ */
+	setProperty(name, value) {
+		this.properties[name] = value;
+	}
+}
+
+const synthFilterObjectPool = {
+	available: 0,
+	pool: [],
+	get: (props) => {
+		if (!available) {
+			pool.push(new BiquadFilterNode(props));
+			return pool.at(-1);
+		}
+		Object.assign(pool[0], props);
+		return pool[0];
+	}
+}
+
+class SynthFxFilter extends SynthFx {
+
+	start(ac, time, automations) {
+		const fx = new BiquadFilterNode(ac, this.properties); // TODO: object pool maybe?
+		Object.entries(automations).forEach(([key, automation]) => {
+			automation.forEach((a) => {
+				fx[key].linearRampToValueAtTime(a.value, time + a.time);
+			});
+		});
+		this.source.connect(fx).connect(this.destination);
+	}
+}
+
+
+function Synth(acc, output, fromObject) {
 	this.playing = false;
-	this.gain = new GainNode(ac, { value: 1 });
+	this.gain = new GainNode(acc, { value: 1 });
 	this.oscillators = [];
+	this.effects = []; // TODO
 	this.preset;// = 'phase_saws';// 'supersaw';
 
 	this.connect = (audioNode) => {
@@ -388,14 +458,14 @@ function Synth(ac, output, fromObject) {
 				break;
 			case 'phase_saws':
 				this.oscillators = [
-					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, -0.1),
-					new Oscillator(ac, 'sawtooth', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 0.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, 0.2),
+					new Oscillator(acc, 'sawtooth', 0.0, new ArrayEnvelope(acc, oscarGainPoints, 1.0), new ArrayEnvelope(acc, pitchPoints, 600.0), null, -0.1),
+					new Oscillator(acc, 'sawtooth', 0.0, new ArrayEnvelope(acc, oscarGainPoints, 0.0), new ArrayEnvelope(acc, pitchPoints, 600.0), null, 0.2),
 				];
 				break;
 			default:
 				this.oscillators = [
-					new Oscillator(ac, 'square', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), null, 0.0),
-					new Oscillator(ac, 'sine', 0.0, new ArrayEnvelope(ac, oscarGainPoints, 1.0), new ArrayEnvelope(ac, pitchPoints, 600.0), 0, 0.0),
+					new Oscillator(acc, 'square', 0.0, new ArrayEnvelope(acc, oscarGainPoints, 1.0), new ArrayEnvelope(acc, pitchPoints, 600.0), null, 0.0),
+					new Oscillator(acc, 'sine', 0.0, new ArrayEnvelope(acc, oscarGainPoints, 1.0), new ArrayEnvelope(acc, pitchPoints, 600.0), 0, 0.0),
 				];
 		}
 	}
@@ -403,8 +473,8 @@ function Synth(ac, output, fromObject) {
 
 	this.start = (freq, onset = 1) => {
 		const oscs = this.oscillators.map((osc) => {
-			const gain = ac.createGain();
-			const pan = new StereoPannerNode(ac, { pan: osc.pan });
+			const gain = acc.createGain();
+			const pan = new StereoPannerNode(acc, { pan: osc.pan });
 			const oscillator = osc.start(freq, gain, pan, !osc.mod1 ? onset : undefined);
 			return { gain, oscillator };
 		});
@@ -461,8 +531,8 @@ function Synth(ac, output, fromObject) {
 
 	this.startWithFixedProperties = (frequency, properties) => {
 		const oscs = this.oscillators.map((osc, i) => {
-			const gainNode = ac.createGain();
-			const panner = new StereoPannerNode(ac, { pan: osc.pan });
+			const gainNode = acc.createGain();
+			const panner = new StereoPannerNode(acc, { pan: osc.pan });
 			const oscillator = osc.startWithFixedProperties({ frequency, gainNode, panner, ...properties[i] });
 			return { gain: gainNode, oscillator, panner };
 		});
@@ -522,10 +592,11 @@ function Synth(ac, output, fromObject) {
 		});
 	};
 
-	this.schedulePlayback = ({ startTime, duration, freq, automations, bpm, monoPitch }) => {
+	this.schedulePlayback = ({ context, startTime, duration, freq, automations, bpm, monoPitch }) => {
+		const aco = context ?? acc;
 		const oscs = this.oscillators.map((osc, i) => {
-			const gain = ac.createGain();
-			const pan = new StereoPannerNode(ac, { pan: osc.pan });
+			const gain = aco.createGain();
+			const pan = new StereoPannerNode(aco, { pan: osc.pan });
 			let automation = automations?.[i];
 			let oscillator;
 
@@ -538,9 +609,9 @@ function Synth(ac, output, fromObject) {
 				}
 			}
 			if (automation) {
-				oscillator = osc.schedulePlaybackWithAutomation(freq, gain, pan, startTime, duration, automation, bpm);
+				oscillator = osc.schedulePlaybackWithAutomation(aco, freq, gain, pan, startTime, duration, automation, bpm);
 			} else {
-				oscillator = osc.schedulePlayback(freq, gain, pan, startTime, duration);
+				oscillator = osc.schedulePlayback(aco, freq, gain, pan, startTime, duration);
 			}
 			return { gain, oscillator };
 		});
@@ -586,11 +657,11 @@ function Synth(ac, output, fromObject) {
 
 	this.addOsc = () => {
 		return this.oscillators.push(new Oscillator(
-			ac,
+			acc,
 			'sine',
 			0.0,
-			new ArrayEnvelope(ac, oscarGainPoints, 0.0),
-			new ArrayEnvelope(ac, pitchPoints, 600.0),
+			new ArrayEnvelope(acc, oscarGainPoints, 0.0),
+			new ArrayEnvelope(acc, pitchPoints, 600.0),
 			null,
 			0.0
 		));
@@ -603,11 +674,11 @@ function Synth(ac, output, fromObject) {
 			const detune = mul * mul * spread;
 			const phase = mul * mul + mul < 0 ? -0.01 : 0.03;
 			oscs.push(new Oscillator(
-				ac,
+				acc,
 				'sawtooth',
 				detune,
-				new ArrayEnvelope(ac, oscarGainPoints, 0.0),
-				new ArrayEnvelope(ac, pitchPoints, 600.0),
+				new ArrayEnvelope(acc, oscarGainPoints, 0.0),
+				new ArrayEnvelope(acc, pitchPoints, 600.0),
 				null,
 				phase
 			));
@@ -616,7 +687,7 @@ function Synth(ac, output, fromObject) {
 	}
 
 	this.createOscillatorFromObject = (obj) => {
-		const osc = new Oscillator(ac);
+		const osc = new Oscillator(acc);
 		return osc.load(obj);
 	};
 
@@ -625,6 +696,7 @@ function Synth(ac, output, fromObject) {
 	};
 	this.load = (data) => {
 		this.oscillators = data.oscillators.map((o) => this.createOscillatorFromObject(o));
+		this.effects = data.effects ?? [];
 	};
 
 	if (fromObject) {

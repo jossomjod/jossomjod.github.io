@@ -11,7 +11,7 @@ function FxParam() {
 }
 
 /**
- * @param {FxParam} param 
+ * @param {FxParam} param
  */
 function createParamControl(param, setParam) {
 	const container = document.createElement('div');
@@ -38,7 +38,7 @@ function createParamControl(param, setParam) {
 }
 
 /**
- * @param {FxParam} param 
+ * @param {FxParam} param
  */
 function createParamJodnumb(param, setParam) {
 	const container = document.createElement('div');
@@ -92,7 +92,7 @@ function createParamSelect(param) {
 }
 
 /**
- * @param {FxParam} param 
+ * @param {FxParam} param
  */
 function createParamCheckbox(param, setParam) {
 	const container = document.createElement('div');
@@ -240,6 +240,11 @@ function FxManagerUi(fxManager) {
 		this.fxManager.removeFx(index);
 		this.container.replaceChildren();
 		this.setFxManager(this.fxManager);
+	};
+
+	this.drawAutomation = (ctx, rect, scrollX, pxPerBeat, endTime, tracks) => {
+		// TODO: draw faded box, draw circles on automation nodes, draw lines between them
+		// ignores scrollY
 	};
 
 	this.setFxManager = (fxMan) => {

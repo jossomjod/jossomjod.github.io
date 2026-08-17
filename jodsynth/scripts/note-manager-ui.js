@@ -29,6 +29,10 @@ class TimelineUI {
 	isSelecting = 0; // 1: ctrl, 2: ctrl + shift
 	selectionColor = '#31426f53';
 
+	loopRange = { start: 0, end: 0 };
+	isLooping = false;
+	loopColor = '#0fff3f33';
+
 	/** @param {Rect} rect  */
 	constructor(rect, noteManager) {
 		this.rect = rect;
@@ -54,6 +58,23 @@ class TimelineUI {
 		this.isSelecting = 0;
 		this.selectionRange.end = posX / this.rect.w;
 	}
+
+
+	startLooping(posX) {
+		this.isLooping = true;
+		this.loopRange.start = posX / this.rect.w;
+		this.loopRange.end = this.loopRange.start;
+	}
+
+	updateLoop(posX) {
+		this.loopRange.end = posX / this.rect.w;
+	}
+
+	endLooping(posX) {
+		this.isLooping = false;
+		this.loopRange.end = posX / this.rect.w;
+	}
+
 
 	/** @param {CanvasRenderingContext2D} ctx  */
 	draw(ctx, scrollX, pxPerBeat, endTime, tracks, isPlaying, caretTime) {
@@ -106,6 +127,7 @@ class TimelineUI {
 			})
 		});
 
+		if (this.isLooping) this.drawLoopBox(ctx);
 		if (this.isSelecting) this.drawSelectionBox(ctx);
 	}
 
@@ -140,6 +162,14 @@ class TimelineUI {
 		const { y, w, h } = this.rect;
 		const { start, end } = this.selectionRange;
 		ctx.fillStyle = this.selectionColor;
+		ctx.fillRect(w * start, y, w * (end - start), h);
+	}
+
+	/** @param {CanvasRenderingContext2D} ctx  */
+	drawLoopBox(ctx) {
+		const { y, w, h } = this.rect;
+		const { start, end } = this.loopRange;
+		ctx.fillStyle = this.loopColor;
 		ctx.fillRect(w * start, y, w * (end - start), h);
 	}
 }
@@ -337,6 +367,10 @@ function NoteManagerUI(noteManager) {
 					this.deleteAutomationNode(nodeArray, node2);
 					this.render();
 					break;
+				case this.scrollAction:
+					const note3 = this.getNoteAtPos(realX, realY);
+					if (note3) noteManager.playNote(note3);
+					break;
 			}
 			return;
 		}
@@ -386,6 +420,10 @@ function NoteManagerUI(noteManager) {
 					this.updateNoteAndAutomation(note2, nodeArray);
 					this.render();
 					break;
+				case this.scrollAction:
+					const note3 = this.getNoteAutomationAtPos(realX, unFlippedY) ?? this.getNoteAtPos(realX, realY);
+					if (note3) noteManager.playNote(note3);
+					break;
 			}
 			return;
 		}
@@ -395,7 +433,7 @@ function NoteManagerUI(noteManager) {
 				if (this.clickedNote) this.previewNote(false);
 				if (this.timeLineClicked) {
 					if (mod1) {
-						this.timeLine.startSelecting(realX, e.shiftKey);
+						this.timeLine.startSelecting(realX, mod2);
 						break;
 					}
 					this.scrollToAbsolute(realX);
@@ -471,6 +509,10 @@ function NoteManagerUI(noteManager) {
 				if (index > -1) this.deleteNote(index);
 				break;
 			case this.scrollAction:
+				if (this.timeLineClicked) {
+					this.timeLine.startLooping(realX);
+					break;
+				}
 				if (this.mouseMovedSinceLastMouseDown) {
 					this.mouseMovedSinceLastMouseDown = false;
 					break;
@@ -507,6 +549,8 @@ function NoteManagerUI(noteManager) {
 		e.preventDefault();
 		e.stopPropagation();
 		if (e.button === 3 || e.button === 4) return;
+		const mod1 = e.ctrlKey || e.buttons & this.mod1Action;
+		const mod2 = e.shiftKey || e.buttons & this.mod2Action;
 		const buttons = e.buttons & ~this.mod1Action & ~this.mod2Action;
 
 		const rect = this.canvas.getBoundingClientRect();
@@ -542,6 +586,25 @@ function NoteManagerUI(noteManager) {
 				const func = allTracks ? this.getAllNotesInAABB : this.getNotesInAABB;
 				this.selectedNotes = func(ax, -9999, bx, 9999);
 				this.onSelectionChanged();
+				this.render();
+			}
+			else if (this.timeLine.isLooping) {
+				this.timeLine.endLooping(this.cursorX);
+
+				const { start, end } = this.timeLine.loopRange;
+				let max = Math.max(start, end) * this.endTime;
+				let min = Math.min(start, end) * this.endTime;
+				max = Math.round(max / this.beatsPerBar) * this.beatsPerBar;
+				min = Math.round(min / this.beatsPerBar) * this.beatsPerBar;
+				if (max === min) {
+					this.toggleLooping();
+					this.render();
+					return;
+				}
+				noteManager.setLoopEnd(max);
+				noteManager.setLoopStart(min);
+
+				if (!noteManager.loop.active) this.toggleLooping();
 				this.render();
 			}
 			else if (this.clickedNote) {
@@ -670,6 +733,11 @@ function NoteManagerUI(noteManager) {
 				break;
 			case this.scrollAction:
 			case this.scrollAction | this.timeLineAction:
+				if (this.timeLine.isLooping) {
+					this.timeLine.updateLoop(realX);
+					this.drawTimeLine();
+					break;
+				}
 				this.scrollX += e.movementX;
 				this.scrollY -= e.movementY;
 				this.render();
@@ -699,7 +767,7 @@ function NoteManagerUI(noteManager) {
 	});
 
 
-	this.trackerContainer.addEventListener('wheel', (e) => {
+	this.onZoom = (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 
@@ -714,7 +782,7 @@ function NoteManagerUI(noteManager) {
 			default:
 				const cursorTime = this.xToTime(this.cursorX);
 				this.pxPerBeat -= Math.sign(e.deltaY) * this.pxPerBeat * 0.2;
-				this.pxPerBeat = Math.max(3, Math.min(600, this.pxPerBeat));
+				this.pxPerBeat = Math.max(3, Math.min(1200, this.pxPerBeat));
 				//this.gridSizeX = this.pxPerBeat;
 				this.scrollX = -cursorTime * this.pxPerBeat + this.cursorX;
 
@@ -732,7 +800,8 @@ function NoteManagerUI(noteManager) {
 				//console.log('zoom:', isk, this.gridSizeX, this.gridSizeTime, kek, cellPx);
 		}
 		this.render();
-	});
+	};
+	this.trackerContainer.addEventListener('wheel', this.onZoom);
 
 	this.trackerContainer.appendChild(this.jodroll);
 
@@ -1115,6 +1184,7 @@ function NoteManagerUI(noteManager) {
 		noteManager.getSelectedTrack().notes.splice(index, 1);
 		this.selectedNotes = [];
 		this.onSelectionChanged();
+		this.updateEndTime();
 		this.render();
 	};
 
@@ -1122,6 +1192,7 @@ function NoteManagerUI(noteManager) {
 		noteManager.tracks.forEach((t) => t.notes = t.notes.filter((n) => !this.selectedNotes.find((s) => s === n)));
 		this.selectedNotes = [];
 		this.onSelectionChanged();
+		this.updateEndTime();
 		this.render();
 	};
 
@@ -1131,7 +1202,7 @@ function NoteManagerUI(noteManager) {
 	};
 
 	this.copyNotes = (notes = this.selectedNotes) => {
-		const tracks = noteManager.tracks.map((t) => t.notes.filter((tn) => notes?.find((sn) => tn === sn)));
+		const tracks = noteManager.tracks.map((t) => t.muted ? [] : t.notes.filter((tn) => notes?.find((sn) => tn === sn)));
 		const selectedTrack = noteManager.getSelectedTrack();
 		const selectedTrackIndex = noteManager.tracks.findIndex((t) => t === selectedTrack);
 		const copyData = { tracks, selectedTrackIndex };
@@ -1665,6 +1736,7 @@ function NoteManagerUI(noteManager) {
 		this.drawClear();
 		this.drawGrid();
 		this.drawAllTracks();
+		if (this.fxAutomationMode) this.drawFxAutomation(); // TODO
 		if (this.isSelectingArea || this.isSelectingAllTracks) {
 			const aabb = this.isSelectingRow ? { ...this.areaSelectAABB, ax: 0, bx: this.width } : this.areaSelectAABB;
 			this.drawAABB(aabb);
@@ -1684,9 +1756,14 @@ function NoteManagerUI(noteManager) {
 
 
 
+
+	this.drawFxAutomation = () => {
+		this.currentFxUi?.drawAutomation(this.ctx,this.rect, this.scrollX, this.pxPerBeat, this.endTime, noteManager.tracks);
+	};
+
 	this.drawTimeLine = () => {
 		this.timeLine.draw(this.ctx, this.scrollX, this.pxPerBeat, this.endTime, noteManager.tracks, this.isPlaying(), this.caretTime);
-		if (!noteManager.loop.active) return;
+		if (!noteManager.loop.active && !this.timeLine.isLooping) return;
 		const start = noteManager.loop.start / this.endTime;
 		const end = noteManager.loop.end / this.endTime;
 		this.timeLine.drawLoopLines(this.ctx, start, end);

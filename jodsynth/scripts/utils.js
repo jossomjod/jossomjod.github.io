@@ -29,3 +29,16 @@ function makeSerializable(obj) {
 			return prev;
 		}, {});
 }
+
+function audioBufferToF32Planar(buffer) {
+	const arr = new Float32Array(buffer.length * buffer.numberOfChannels);
+	let offset = 0;
+
+  for (let i = 0; i < buffer.numberOfChannels; i++) {
+    const data = buffer.getChannelData(i);
+    arr.set(data, offset);
+    offset = data.length;
+	}
+
+  return arr;
+}

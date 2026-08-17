@@ -7,14 +7,16 @@ class BaseEffect { // TODO
 	input;
 	effectNode;
 	destination;
+	/** @type {{[string]: { time: number, value: number }[]}} */
+	automations = {};
 
 	/**
-	 * @param {AudioContext} ac
+	 * @param {AudioContext} context
 	 */
-	constructor(ac, params) {
-		this.ac = ac;
+	constructor(context, params) {
+		this.ac = context;
 		this.params = params;
-		this.input = new GainNode(ac, { gain: 1 });
+		this.input = new GainNode(context, { gain: 1 });
 	}
 
 	connect(destination) {
@@ -47,7 +49,7 @@ class BaseEffect { // TODO
 			return;
 		}
 		this.params[param] = value;
-		this.effectNode[param].setValueAtTime(value, ac.currentTime);
+		this.effectNode[param].setValueAtTime(value, this.ac.currentTime);
 	};
 
 	save() {
@@ -60,20 +62,20 @@ class BaseEffect { // TODO
 }
 
 
-function ReverbManager2(ac, input, output, reverb) {
-	this.reverbGain = ac.createGain();
+function ReverbManager2(context, input, output, reverb) {
+	this.reverbGain = context.createGain();
 	this.reverbGain.gain.value = reverb;
-	this.reverb = ac.createConvolver();
-	this.reverb.buffer = createNoiseBuffer2(ac);
+	this.reverb = context.createConvolver();
+	this.reverb.buffer = createNoiseBuffer(context);
 
 	input.connect(output);
 	input.connect(this.reverb).connect(this.reverbGain).connect(output);
 }
 
 
-function createNoiseBuffer(ac, time) {
-	const bufferSize = ac.sampleRate * time;
-	const buford = ac.createBuffer(2, bufferSize, ac.sampleRate);
+function createNoiseBuffer(context, time) {
+	const bufferSize = context.sampleRate * time;
+	const buford = context.createBuffer(2, bufferSize, context.sampleRate);
 	const bufL = buford.getChannelData(0);
 	const bufR = buford.getChannelData(1);
 	for (let i = 0; i < bufferSize; i++) {
@@ -86,16 +88,16 @@ function createNoiseBuffer(ac, time) {
 
 
 /**
- * @param {AudioContext} ac
+ * @param {AudioContext} context
  */
-function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.01, wet: 0.5, dry: 0.5 }) {
+function ReverbEffect(context, params = { bypass: false, reverbTime: 2, preDelay: 0.01, wet: 0.5, dry: 0.5 }) {
 	this.fxType = 'reverb';
 	this.params = params;
-	this.reverb = ac.createConvolver();
-	this.wet = ac.createGain();
-	this.dry = ac.createGain();
-	this.preDelay = ac.createDelay(1);
-	this.input = new GainNode(ac, { gain: 1 });
+	this.reverb = context.createConvolver();
+	this.wet = context.createGain();
+	this.dry = context.createGain();
+	this.preDelay = context.createDelay(1);
+	this.input = new GainNode(context, { gain: 1 });
 	this.timeOutId;
 	this.destination;
 
@@ -136,13 +138,13 @@ function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.0
 				this.refreshConnection();
 				break;
 			case 'preDelay':
-				this.preDelay.delayTime.setValueAtTime(this.params.preDelay, ac.currentTime);
+				this.preDelay.delayTime.setValueAtTime(this.params.preDelay, context.currentTime);
 				break;
 			case 'wet':
-				this.wet.gain.setValueAtTime(this.params.wet, ac.currentTime);
+				this.wet.gain.setValueAtTime(this.params.wet, context.currentTime);
 				break;
 			case 'dry':
-				this.dry.gain.setValueAtTime(this.params.dry, ac.currentTime);
+				this.dry.gain.setValueAtTime(this.params.dry, context.currentTime);
 				break;
 			default:
 				clearTimeout(this.timeOutId);
@@ -155,7 +157,7 @@ function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.0
 
 	this.renderTail = () => {
 		const reverbTime = this.params.reverbTime;
-		const tailAc = new OfflineAudioContext(2, ac.sampleRate * reverbTime, ac.sampleRate);
+		const tailAc = new OfflineAudioContext(2, context.sampleRate * reverbTime, context.sampleRate);
 		const tailSource = new AudioBufferSourceNode(tailAc, {
 			buffer: createNoiseBuffer(tailAc, reverbTime),
 		});
@@ -174,9 +176,9 @@ function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.0
 	this.save = () => ({ params: this.params, fxType: this.fxType });
 	this.load = (_params) => {
 		this.params = _params;
-		this.wet.gain.setValueAtTime(this.params.wet, ac.currentTime);
-		this.dry.gain.setValueAtTime(this.params.dry, ac.currentTime);
-		this.preDelay.delayTime.setValueAtTime(this.params.preDelay, ac.currentTime);
+		this.wet.gain.setValueAtTime(this.params.wet, context.currentTime);
+		this.dry.gain.setValueAtTime(this.params.dry, context.currentTime);
+		this.preDelay.delayTime.setValueAtTime(this.params.preDelay, context.currentTime);
 		this.renderTail();
 	};
 	this.load(params);
@@ -186,13 +188,13 @@ function ReverbEffect(ac, params = { bypass: false, reverbTime: 2, preDelay: 0.0
 
 
 /**
- * @param {AudioContext} ac
+ * @param {AudioContext} context
  */
-function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
+function FilterEffect(context, params = { bypass: false, frequency: 11025.0, detune: 0.0, Q: 1, gain: 0, type: 'lowpass' }) {
 	this.fxType = 'filter';
 	this.params = params;
-	this.input = new GainNode(ac, { gain: 1 });
-	this.filter = new BiquadFilterNode(ac, params);
+	this.input = new GainNode(context, { gain: 1 });
+	this.filter = new BiquadFilterNode(context, params);
 	this.destination;
 	this.automation = {};
 
@@ -226,7 +228,7 @@ function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 
 			return;
 		}
 		this.params[param] = value;
-		this.filter[param].setValueAtTime(value, ac.currentTime);
+		this.filter[param].setValueAtTime(value, context.currentTime);
 	};
 
 	this.setType = (type) => {
@@ -237,7 +239,7 @@ function FilterEffect(ac, params = { bypass: false, frequency: 11025.0, detune: 
 	this.save = () => ({ params: this.params, fxType: this.fxType, automation: this.automation });
 	this.load = (_params) => {
 		this.params = _params;
-		Object.entries(this.params).forEach(([key, value]) => this.filter[key].setValueAtTime?.(value, ac.currentTime));
+		Object.entries(this.params).forEach(([key, value]) => this.filter[key].setValueAtTime?.(value, context.currentTime));
 		this.filter.type = _params.type;
 	};
 }
@@ -252,10 +254,10 @@ class CompressorEffect {
 	destination;
 
 	/**
-	 * @param {AudioContext} ac
+	 * @param {AudioContext} context
 	 */
 	constructor(
-		ac, params = {
+		context, params = {
 			bypass: false,
 			threshold: -24,  // -100-0 dB
 			knee: 30,        // 0-40 dB
@@ -264,10 +266,10 @@ class CompressorEffect {
 			release: 0.25 ,  // 0-1 s
 		}
 	) {
-		this.ac = ac;
+		this.ac = context;
 		this.params = params;
-		this.input = new GainNode(ac, { gain: 1 });
-		this.compressor = new DynamicsCompressorNode(ac, params);
+		this.input = new GainNode(context, { gain: 1 });
+		this.compressor = new DynamicsCompressorNode(context, params);
 	}
 
 	connect(destination) {
@@ -300,7 +302,7 @@ class CompressorEffect {
 			return;
 		}
 		this.params[param] = value;
-		this.compressor[param].setValueAtTime(value, ac.currentTime);
+		this.compressor[param].setValueAtTime(value, this.ac.currentTime);
 	};
 
 	save() {
@@ -326,10 +328,10 @@ class DelayEffect {
 	destination;
 
 	/**
-	 * @param {AudioContext} ac
+	 * @param {AudioContext} context
 	 */
 	constructor(
-		ac, params = {
+		context, params = {
 			bypass: false,
 			time: 0.25,
 			wet: 0.5,
@@ -337,13 +339,13 @@ class DelayEffect {
 			feedback: 0.3,
 		}
 	) {
-		this.ac = ac;
+		this.ac = context;
 		this.params = params;
-		this.input = new GainNode(ac, { gain: 1 });
-		this.delay = new DelayNode(ac, { delayTime: this.params.time });
-		this.wet = new GainNode(ac, { gain: this.params.wet });
-		this.dry = new GainNode(ac, { gain: this.params.dry });
-		this.feedback = new GainNode(ac, { gain: this.params.feedback });
+		this.input = new GainNode(context, { gain: 1 });
+		this.delay = new DelayNode(context, { delayTime: this.params.time });
+		this.wet = new GainNode(context, { gain: this.params.wet });
+		this.dry = new GainNode(context, { gain: this.params.dry });
+		this.feedback = new GainNode(context, { gain: this.params.feedback });
 	}
 
 	connect(destination) {
@@ -385,7 +387,7 @@ class DelayEffect {
 			return;
 		}
 		this.params[param] = value;
-		if (param === 'time') this.delay.delayTime.setValueAtTime(value, ac.currentTime);
+		if (param === 'time') this.delay.delayTime.setValueAtTime(value, this.ac.currentTime);
 		else this[param].gain.setValueAtTime(value, this.ac.currentTime);
 	};
 
@@ -399,24 +401,24 @@ class DelayEffect {
 }
 
 
-function effectFromType(ac, type, params) {
+function effectFromType(context, type, params) {
 	switch (type) {
 		case 'filter':
-			return new FilterEffect(ac, params);
+			return new FilterEffect(context, params);
 		case 'reverb':
-			return new ReverbEffect(ac, params);
+			return new ReverbEffect(context, params);
 		case 'compressor':
-			return new CompressorEffect(ac, params);
+			return new CompressorEffect(context, params);
 		case 'delay':
-			return new DelayEffect(ac, params);
+			return new DelayEffect(context, params);
 		default:
 			throw `No effect exists with type ${type}`;
 	}
 }
 
-function FxManager(ac, output, fromArray, gain = 1) {
-	this.input = new GainNode(ac, { gain: 1 });
-	this.gain = new GainNode(ac, { gain });
+function FxManager(context, output, fromArray, gain = 1) {
+	this.input = new GainNode(context, { gain: 1 });
+	this.gain = new GainNode(context, { gain });
 	this.output = output;
 	this.fxChain = [];
 
@@ -432,7 +434,7 @@ function FxManager(ac, output, fromArray, gain = 1) {
 	};
 
 	this.addFx = (type, params) => {
-		const fx = effectFromType(ac, type, params);
+		const fx = effectFromType(context, type, params);
 		this.fxChain.push(fx);
 		this.connect(this.output);
 		return { fx, index: this.fxChain.length - 1 };
@@ -451,7 +453,7 @@ function FxManager(ac, output, fromArray, gain = 1) {
 
 	this.load = (arr) => {
 		this.fxChain = arr.map(({fxType, params, automation}) => {
-			const fx = effectFromType(ac, fxType, params);
+			const fx = effectFromType(context, fxType, params);
 			fx.automation = automation ?? {};
 			return fx;
 		});

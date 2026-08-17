@@ -161,6 +161,7 @@ function onMIDIMessage(event) {
 
 var midiMessageTypes = {
 	noteOn: 144,
+	noteOff: 128,
 	sustainOrMod: 176,
 	pitchWheel: 224,
 };
@@ -180,6 +181,14 @@ function toggleMIDIKeys(e) {
 
 	switch (type) {
 		case 176:
+			switch (keyId) {
+				case 115:
+					if (gain) noteManagerUi.togglePlayback();
+					break;
+				case 114:
+					if (gain && noteManager.isPlaying) noteManagerUi.togglePlayback();
+					break;
+			}
 			if (keyId === 64) toggleSustain(!!gain);
 			else if (keyId === 1) setModulation(gain);
 			else if (100 > keyId && keyId > 1) setMidiGain(gain);
@@ -189,7 +198,7 @@ function toggleMIDIKeys(e) {
 			break;
 	}
 
-	if (type !== midiMessageTypes.noteOn) return;
+	if (type !== midiMessageTypes.noteOn && type !== midiMessageTypes.noteOff) return;
 
 	const key = (midiKeys[keyId] ??= { keyId });
 
@@ -259,6 +268,7 @@ var templateSelect = document.querySelector('#templateSelect');
 var saveSelect = document.querySelector('#saveSelect');
 
 var activeFileHandle = null;
+var activeExportFileHandle = null;
 
 
 saveSelect.addEventListener('change', () => {
@@ -346,6 +356,21 @@ async function loadFromClipboard() {
 		noteManager.load(data);
 		noteManagerUi.renderAll();
 	}
+}
+
+async function exportSong() {
+	const suggestedName = saveNameInput.value + '.ogg';
+	const startIn = activeExportFileHandle || 'music';
+	const types = [{ accept: { 'audio/ogg': ['.ogg'] } }];
+	const options = { id: 'jod-save-file-picker-id', startIn, suggestedName, types };
+	const fileHandle = await window.showSaveFilePicker(options);
+	console.log('exporting. this may take several minutes...');
+	const data = await noteManager.renderToFile();
+	const writable = await fileHandle.createWritable();
+  await writable.write(data);
+  await writable.close();
+	activeExportFileHandle = fileHandle;
+	console.log('DONE', data);
 }
 
 async function exportUrl() {
