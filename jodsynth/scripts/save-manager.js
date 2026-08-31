@@ -45,12 +45,25 @@ class SaveManager {
 		return config && JSON.parse(config);
 	}
 
+	static extractDataFromUrl(url) {
+		const idx = url.indexOf('project=');
+		if (idx === -1) return url;
+
+		const nextParamIdx = url.indexOf('&', idx + 8);
+		const k = nextParamIdx === -1 ? undefined : nextParamIdx;
+		return url.slice(idx + 8, k);
+	}
+
+	static async parseDataStringOrUrl(d) {
+		d = this.extractDataFromUrl(d);
+		if (d.startsWith('H4sIAAAAAAAAA')) d = await this.decompressBase64(d);
+		return d;
+	}
+
 	static async parseTrackData(data) {
 		console.log(`Parsing data of size: ${data.length / 1000} kB`);
 		let d = data;
-		if (typeof d === 'string' && d.startsWith('H4sIAAAAAAAAA')) {
-			d = await this.decompressBase64(d);
-		}
+		if (typeof d === 'string') d = await this.parseDataStringOrUrl(d);
 		const parsed = JSON.parse(d);
 		return (parsed.w ?? parsed.tracks) ? parsed : { bpm: 140, tracks: parsed }; // for backwards compatibility
 	}

@@ -365,8 +365,12 @@ async function exportSong() {
 	const options = { id: 'jod-save-file-picker-id', startIn, suggestedName, types };
 	const fileHandle = await window.showSaveFilePicker(options);
 	console.log('exporting. this may take several minutes...');
-	const data = await noteManager.renderToFile();
 	const writable = await fileHandle.createWritable();
+	if (!writable) return;
+
+	const data = await noteManager.renderToFile();
+	if (!data) return;
+
   await writable.write(data);
   await writable.close();
 	activeExportFileHandle = fileHandle;

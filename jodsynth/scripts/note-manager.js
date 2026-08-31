@@ -299,6 +299,7 @@ function NoteManager(ac, output) {
 	this.renderToFile = async () => {
 		const startTime = this.loop.active ? this.loop.start : 0;
 		const endTime = this.loop.active ? this.loop.end : this.loopEnd;
+		const duration = beatsToSeconds(endTime - startTime, this.bpm);
 		const buffer = await this.renderToAudioBuffer(startTime, endTime);
 		const source = new AudioBufferSourceNode(ac, { buffer });
 		const destination = new MediaStreamAudioDestinationNode(ac);
@@ -315,11 +316,10 @@ function NoteManager(ac, output) {
 		setTimeout(() => {
 			recorder.stop();
 			source.stop();
-		}, beatsToSeconds(endTime - startTime, this.bpm) * 1000 + 20);
+		}, duration * 1000 + 20);
 
 		const bob = await new Promise((res) => {
 			recorder.onstop = () => {
-				console.log('on recorder stop');
 				const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
 				res(blob);
 			}
