@@ -287,11 +287,66 @@ button.active {
 	animation: epilepsy 420ms ease-in-out 0s infinite;
 }
 
+.dire-warning {
+	display: inline-block;
+	padding: 6.9px;
+	font-weight: 666;
+	text-shadow: 0 0 7px #fff;
+	transition: font-size 2s, animation-duration 2s;
+	/* animation: direness 1000ms ease-in-out 0s infinite; */
+	animation-name: direness;
+	animation-timing-function: ease-in-out;
+	animation-iteration-count: infinite;
+	animation-duration: 900ms;
+}
+
+.dire-warning:hover {
+	font-size: 2em;
+	animation-duration: 300ms;
+	transition: font-size 0.3s, animation-duration 1s;
+}
+
 @media (prefers-reduced-motion) {
-	.epilepsy-warning {
+	.epilepsy-warning, .dire-warning {
 		animation: unset;
+		animation-name: unset;
 	}
 }
+
+
+@keyframes direness {
+	from {
+		translate: 0 0;
+		rotate: 0;
+		color: #fff;
+	}
+	20% {
+		translate: -0.05em -0.1em;
+		rotate: 1deg;
+		color: #f11;
+	}
+	40% {
+		translate: 0.1em -0.01em;
+		rotate: -1deg;
+		color: #ff1;
+	}
+	60% {
+		translate: -0.1em -0.01em;
+		rotate: 1deg;
+		color: #f1f;
+	}
+	80% {
+		translate: 0.05em -0.1em;
+		rotate: -1deg;
+		color: #8ff;
+	}
+	to {
+		translate: 0 0;
+		rotate: 0;
+		color: #fff;
+	}
+}
+
 
 
 @keyframes epilepsy {

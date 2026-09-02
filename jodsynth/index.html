@@ -377,7 +377,7 @@
 		<h2 class="help-header" onclick="toggleHelpSection('#helpBoxSection5')">Tracks</h2>
 		<div class="help-box-section" id="helpBoxSection5">
 			<div>
-				<p class="epilepsy-warning">EPILEPSY WARNING!!!</p>
+				<p class="epilepsy-warning">EPILEPSY WARNING</p>
 				<p>
 					If Screen-Flash (<span class="sandwich-btn enabled">SF</span>) is enabled for any track,
 					the entire screen will flash brightly every time a note in that track plays.
@@ -430,8 +430,7 @@
 		<div class="help-box-section" id="helpBoxSection4">
 			<div>
 				<p>
-					The save system is still a bit experimental and unconventional.<br>
-					And no, you can't mix down to an audio file yet.
+					The save system is still a bit experimental and unconventional.
 				</p>
 				<p>
 					Clicking "Save local" stores the current project locally on your device under the name specified in the text input. This is a special kind of storage specific to the web browser, called Local Storage. This kind of save will not be preserved in a private window, and is removed when you clear the browser's local storage. Saving as a file is more reliable in the long term.<br>
@@ -446,12 +445,27 @@
 					</p> -->
 			</div>
 		</div>
+		<h2 class="help-header" onclick="toggleHelpSection('#helpBoxSection9')">Exporting</h2>
+		<div class="help-box-section" id="helpBoxSection9">
+			<div>
+				<p>
+					Click Export to export the current project as an Ogg file.<br>
+					Exporting takes about as long as it takes to play the entire track.<br>
+				</p>
+				<span class="dire-warning">DO NOT REFRESH OR LEAVE THE PAGE WHILE EXPORTING</span>
+				<p>
+					You can also click Copy URL to copy a link to the JODDAW web page with the current project.<br>
+					The link itself contains all the data from your project. Because of this, links to large projects might be too long for your browser to open.<br>
+					But fret not! Simply click Paste to load the project you copied, and all shall be well.
+				</p>
+			</div>
+		</div>
 		<h2 class="help-header" onclick="toggleHelpSection('#helpBoxSection7')">MIDI (Work In Progress)</h2>
 		<div class="help-box-section" id="helpBoxSection7">
 			<div>
 				<p>
 					MIDI import is half-assed and cursed. It works for some MIDI files, but not all.<br>
-					MIDI input should work quite well. Just make sure your MIDI device is plugged in and turned on. Refresh the page if necessary.<br>
+					MIDI input should work well enough. Just make sure your MIDI device is plugged in and turned on. Refresh the page if necessary.<br>
 					The pitch wheel works, but is hardcoded to max ±2 semitones. The modulation wheel is not currently in use.
 				</p>
 			</div>
