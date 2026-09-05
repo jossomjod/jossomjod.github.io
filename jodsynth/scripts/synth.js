@@ -39,7 +39,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		prop.setValueAtTime(base, startTime);
 
 		const endTime = startTime + duration;
-		const endValue = base + this.points.at(-1).value * this.multiplier;
+		const endValue = base + this.points.at(-1).value * mult;
 
 		let prevVal = base;
 
