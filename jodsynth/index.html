@@ -18,6 +18,7 @@
 		<script src="scripts/templates.js"></script>
 		<script src="scripts/vfx.js"></script>
 		<script src="custom-elements/jod-numb.element.js"></script>
+		<script src="scripts/export-ui-manager.js"></script>
 		<script src="scripts/synth.js"></script>
 		<script src="scripts/synth-ui.js"></script>
 		<script src="scripts/track-ui.js"></script>
@@ -62,7 +63,7 @@
 					</select>
 					<button onclick="exportUrl()">Copy URL</button>
 					<button onclick="loadFromClipboard()">Paste</button>
-					<button onclick="exportSong()">Export</button>
+					<button onclick="exportSong()" class="export-btn">Export</button>
 				</div>
 				<div class="select-box">
 					<label for="midiFileInput">Import MIDI (WIP)</label>
@@ -450,9 +451,13 @@
 			<div>
 				<p>
 					Click Export to export the current project as an Ogg file.<br>
-					Exporting takes about as long as it takes to play the entire track.<br>
+					Exporting takes at least as long as it takes to play the entire track.<br>
+					NOTE: For large projects, exporting can take a very long time.
 				</p>
 				<span class="dire-warning">DO NOT REFRESH OR LEAVE THE PAGE WHILE EXPORTING</span>
+				<p>
+					You can load a different project and work on that while you wait, it won't affect the export. Just don't leave the page. That will result in a corrupt file.
+				</p>
 				<p>
 					You can also click Copy URL to copy a link to the JODDAW web page with the current project.<br>
 					The link itself contains all the data from your project. Because of this, links to large projects might be too long for your browser to open.<br>

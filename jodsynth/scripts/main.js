@@ -47,6 +47,14 @@ generateKeyDict();
 
 
 
+// UI MANAGERS
+
+const exportUiManager = new ExportUiManager();
+
+
+
+
+
 
 // CONFIGURATION
 
@@ -270,6 +278,8 @@ var saveSelect = document.querySelector('#saveSelect');
 var activeFileHandle = null;
 var activeExportFileHandle = null;
 
+var exportInProgress = false;
+
 
 saveSelect.addEventListener('change', () => {
 	let name = saveSelect.value;
@@ -368,12 +378,17 @@ async function exportSong() {
 	const writable = await fileHandle.createWritable();
 	if (!writable) return;
 
+	exportInProgress = true;
 	const data = await noteManager.renderToFile();
-	if (!data) return;
+	if (!data) {
+		exportInProgress = false;
+		return;
+	}
 
   await writable.write(data);
   await writable.close();
 	activeExportFileHandle = fileHandle;
+	exportInProgress = false;
 	console.log('DONE', data);
 }
 
@@ -529,8 +544,13 @@ window.onload = () => {
 window.onbeforeunload = (e) => {
 	if (SaveManager.hasUnsavedChanges) {
 		e.preventDefault();
-		e.returnValue = false;
+		e.returnValue = 'unsaved changes are unsaved, oh no, how terrible';
 		return 'unsaved changes are unsaved, oh no, how terrible';
+	}
+	else if (exportInProgress) {
+		e.preventDefault();
+		e.returnValue = 'EXPORT IN PROGRESS! Leaving the page will corrupt the file';
+		return 'EXPORT IN PROGRESS! Leaving the page will corrupt the file';
 	}
 	//SaveManager.autoSave(noteManager.save());
 };

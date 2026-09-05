@@ -297,6 +297,7 @@ function NoteManager(ac, output) {
 	};
 
 	this.renderToFile = async () => {
+		exportUiManager.startRendering();
 		const startTime = this.loop.active ? this.loop.start : 0;
 		const endTime = this.loop.active ? this.loop.end : this.loopEnd;
 		const duration = beatsToSeconds(endTime - startTime, this.bpm);
@@ -311,11 +312,13 @@ function NoteManager(ac, output) {
 
 		recorder.start();
 		source.connect(destination);
-		source.start(); // TODO: display progress
+		source.start();
+		exportUiManager.startEncoding(duration);
 
 		setTimeout(() => {
 			recorder.stop();
 			source.stop();
+			exportUiManager.stop();
 		}, duration * 1000 + 20);
 
 		const bob = await new Promise((res) => {

@@ -280,6 +280,39 @@ button.active {
 	color: var(--color-active-contrast);
 }
 
+.export-btn.active {
+	position: relative;
+	min-width: 9em;
+	text-align: left;
+	text-shadow: 0 0 2px #fff;
+	animation: in-progress 1000ms ease-in-out 0s infinite;
+}
+
+@keyframes in-progress {
+	from {
+		background-color: var(--color-button-disabled);
+	}
+	20% {
+		background-color: var(--color-button-disabled);
+		scale: 1;
+	}
+	40% {
+		background-color: #f53;
+		scale: 1.03;
+	}
+	60% {
+		background-color: #f53;
+		scale: 1.03;
+	}
+	80% {
+		background-color: var(--color-button-disabled);
+		scale: 1;
+	}
+	to {
+		background-color: var(--color-button-disabled);
+	}
+}
+
 .epilepsy-warning {
 	display: inline-block;
 	padding: 6.9px;
@@ -307,7 +340,7 @@ button.active {
 }
 
 @media (prefers-reduced-motion) {
-	.epilepsy-warning, .dire-warning {
+	.epilepsy-warning, .dire-warning, .export-btn {
 		animation: unset;
 		animation-name: unset;
 	}
