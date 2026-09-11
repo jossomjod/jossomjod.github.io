@@ -147,7 +147,8 @@ function createTrackEntryUi(track, trackHandler) {
 		e.stopPropagation();
 		e.preventDefault();
 		openContextMenu(div, [
-			{ name: 'Select all', callback: () => trackHandler.selectAllNotesInTrack(track) },
+			{ name: 'Duplicate track', callback: () => trackHandler.duplicateTrack(track) },
+			{ name: 'Select all notes', callback: () => trackHandler.selectAllNotesInTrack(track) },
 			{ name: 'Clear automation', callback: () => trackHandler.clearAutomationFromTrack(track) },
 			{ name: 'Fix corrupt data', callback: () => trackHandler.fixCorruptDataInTrack(track) },
 			{ name: 'Purge deprecated props', callback: () => trackHandler.purgeDeprecatedNoteProperties(track) },

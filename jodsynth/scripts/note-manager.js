@@ -394,14 +394,14 @@ function NoteManager(ac, output) {
 			active: true,
 			muted: false,
 			solo: false,
-			monoPitch: true,
-			gain: 1,
-			color: colorManager.predefinedColors.default,
+			monoPitch: basedOn?.monopitch ?? true,
+			gain: basedOn?.gain ?? 1,
+			color: basedOn?.color ?? colorManager.predefinedColors.default,
 			id: ++this.trackIdCounter,
-			disableNoteAutomation: false,
+			disableNoteAutomation: basedOn?.disableNoteAutomation ?? false,
 		};
-		track.fx = new FxManager(ac, output);
-		track.synth = new Synth(ac, track.fx.input);
+		track.fx = new FxManager(ac, output, basedOn?.fx, basedOn?.gain);
+		track.synth = new Synth(ac, track.fx.input, basedOn?.synth);
 		this.tracks.push(track);
 		return track;
 	};
@@ -417,6 +417,13 @@ function NoteManager(ac, output) {
 		if (index <= selectedIdx) selectedIdx = Math.max(0, selectedIdx - 1);
 		this.selectTrackByIndex(selectedIdx);
 		return this.tracks[selectedIdx];
+	};
+
+	this.duplicateTrack = (track) => {
+		const stringable = this.getStringableTrack(track);
+		const stringified = JSON.stringify(stringable);
+		const parsed = JSON.parse(stringified);
+		return this.createTrack(parsed);
 	};
 
 	this.selectTrack = (track) => {
@@ -579,11 +586,13 @@ function NoteManager(ac, output) {
 		return input;
 	};
 
+	this.getStringableTrack = (track) => {
+		this.optimizeTrackForStorage(track);
+		return { ...track, synth: track.synth.save(), fx: track.fx.save() };
+	};
+
 	this.getStringableTracks = () => {
-		return this.tracks.map((t) => {
-			this.optimizeTrackForStorage(t);
-			return { ...t, synth: t.synth.save(), fx: t.fx.save() };
-		});
+		return this.tracks.map(this.getStringableTrack);
 	};
 
 	this.save = () => {
@@ -605,6 +614,20 @@ function NoteManager(ac, output) {
 		this.loadTracks(tracks);
 	};
 
+	this.loadTrack = (track, i) => {
+		if (track.active) {
+			this.selectedTrack = i;
+			this.selectedTrackId = track.id;
+		}
+
+		track.fx = new FxManager(ac, output, track.fx, track.gain);
+		track.synth = new Synth(ac, track.fx.input, track.synth);
+		if (!track.color?.main) track.color = colorManager.predefinedColors.default;
+		if (track.id > this.trackIdCounter) this.trackIdCounter = track.id;
+		else if (!track.id) track.id = ++this.trackIdCounter;
+		return track;
+	};
+
 	this.loadTracks = (tracks) => {
 		this.trackIdCounter = 0;
 
@@ -614,20 +637,7 @@ function NoteManager(ac, output) {
 			this.selectedTrack = 0;
 			return;
 		}
-		this.tracks = tracks.map((t, i) => {
-			if (t.active) {
-				this.selectedTrack = i;
-				this.selectedTrackId = t.id;
-			}
-
-			const track = t;
-			track.fx = new FxManager(ac, output, t.fx, t.gain);
-			track.synth = new Synth(ac, track.fx.input, t.synth);
-			if (!track.color?.main) track.color = colorManager.predefinedColors.default;
-			if (track.id > this.trackIdCounter) this.trackIdCounter = track.id;
-			else if (!track.id) track.id = ++this.trackIdCounter;
-			return track;
-		});
+		this.tracks = tracks.map(this.loadTrack);
 		this.soloTrack = this.tracks.some((t) => t.solo);
 	};
 

@@ -604,7 +604,7 @@ function Synth(acc, output, fromObject) {
 				if (automation) {
 					automation.pitch = automations[0].pitch;
 					if (osc.mod1 === 0) automation.gain = automations[0].gain;
-				} else {
+				} else if (!osc.isLFO) {
 					automation = automations?.[0];
 				}
 			}

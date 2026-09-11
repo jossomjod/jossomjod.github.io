@@ -1458,6 +1458,11 @@ function NoteManagerUI(noteManager) {
 		this.render();
 	};
 
+		this.duplicateTrack = (track) => {
+			noteManager.duplicateTrack(track);
+			this.renderAll();
+		};
+
 	this.setTrackGain = (track, gain) => {
 		track.gain = gain;
 		track.fx.gain.gain.value = gain;
