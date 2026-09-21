@@ -283,7 +283,7 @@ function NoteManager(ac, output) {
 		}
 	};
 
-	this.renderToAudioBuffer = (startTime = 0, endTime = this.getEndTime()) => {
+	this.renderToAudioBuffer = (startTime = 0, endTime = this.loopEnd) => {
 		const context = new OfflineAudioContext(2, 44100 * endTime, 44100);
 		const gain = context.createGain();
 		gain.gain.value = masterGain.gain.value;
@@ -319,7 +319,7 @@ function NoteManager(ac, output) {
 			recorder.stop();
 			source.stop();
 			exportUiManager.stop();
-		}, duration * 1000 + 20);
+		}, duration * 1000 + duration * 1.4);
 
 		const bob = await new Promise((res) => {
 			recorder.onstop = () => {

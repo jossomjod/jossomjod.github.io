@@ -62,7 +62,7 @@ function ArrayEnvelope(ac, points = [], multiplier = 1.0) {
 		};
 		const sustain = this.points.at(-2);
 		if (sustain.time < duration) {
-			prop.linearRampToValueAtTime(base + sustain.value, endTime);
+			prop.linearRampToValueAtTime(base + sustain.value * mult, endTime);
 		}
 		prop.linearRampToValueAtTime(endValue, endTime + this.getRelease());
 	};
@@ -600,12 +600,12 @@ function Synth(acc, output, fromObject) {
 			let automation = automations?.[i];
 			let oscillator;
 
-			if (monoPitch) {
+			if (monoPitch && automations?.[0]) {
 				if (automation) {
 					automation.pitch = automations[0].pitch;
 					if (osc.mod1 === 0) automation.gain = automations[0].gain;
 				} else if (!osc.isLFO) {
-					automation = automations?.[0];
+					automation = automations[0];
 				}
 			}
 			if (automation) {

@@ -298,7 +298,7 @@ saveSelect.addEventListener('change', () => {
 
 function generateSaveSelectOptions(selectValue) {
 	const value = selectValue ?? saveSelect.value;
-	const optionNodes = SaveManager.getSaveNames().map((n) => {
+	const optionNodes = SaveManager.getSaveNames().sort().map((n) => {
 		const option = document.createElement('option');
 		option.value = n;
 		option.innerText = n;
