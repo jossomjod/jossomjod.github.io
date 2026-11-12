@@ -5,3 +5,13 @@ html, body {
 p {
 	display: none;
 }
+
+.top-bar {
+	position: absolute;
+	opacity: 0;
+	z-index: 999;
+}
+
+.top-bar:hover, .top-bar.visible {
+	opacity: 1;
+}

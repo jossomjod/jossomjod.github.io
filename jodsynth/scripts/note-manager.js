@@ -122,7 +122,6 @@ function NoteManager(ac, output) {
 	this.onNoteScheduled = (currentTrackIndex, startsIn, duration, track) => null; // set in UI
 
 	this.addNote = (startTime, tone, duration) => {
-		const synth = this.getSelectedTrack().synth;
 		if (startTime < 0) startTime = 0;
 		const newNote = new Note(tone, startTime, duration, 1);
 		this.getSelectedTrack().notes.push(newNote);
@@ -196,6 +195,7 @@ function NoteManager(ac, output) {
 
 	// For use in the playback loop
 	this.scheduleTrackNotesPlayback = (track, trackIndex, currentBeats, loopEnd, beatsPastEnd, latestTime) => {
+		const tim = Temporal.Now.instant().epochMilliseconds;
 		const ns = track.notes;
 		const startBeats = this.getStartTime();
 		const pastEnd = beatsPastEnd > 0;
@@ -220,18 +220,21 @@ function NoteManager(ac, output) {
 			if (durationBeats <= 0.00001) continue;
 			const duration = beatsToSeconds(durationBeats, this.bpm);
 			const freq = toneToFreq(n.tone);
-			track.synth.schedulePlayback({ startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
+			track.synth.schedulePlayback({ context: ac, startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
 
 			const delay = (startTime - ac.currentTime) * 1000;
 			this.onNoteScheduled(trackIndex, delay, duration * 1000, track);
 		}
+		const kek = Temporal.Now.instant().epochMilliseconds - tim;
+		if (kek > 55) console.log('scheduleTrackNotesPlayback took a long time:', kek, latestTime);
 		return pastEnd ? boie : latestTime;
 	};
 
 	this.playbackLoop = (startTimeBeats = this.getStartTime()) => {
 		this.intervalBeats = secondsToBeats(0.001 * this.intervalMs, this.bpm);
-		this.playbackStartTime = ac.currentTime - beatsToSeconds(startTimeBeats, this.bpm);
-		this.latestNoteStartTime = -0.00001;
+		const startTime = beatsToSeconds(startTimeBeats, this.bpm);
+		this.playbackStartTime = ac.currentTime - startTime;
+		this.latestNoteStartTime = startTime - 0.00001;
 
 		if (this.isPlaying) return;
 		this.isPlaying = true;
@@ -251,8 +254,9 @@ function NoteManager(ac, output) {
 			this.latestNoteStartTime = latestTime;
 
 			if (this.isPlaying && beatsPastEnd >= 0) {
+				const startTime = beatsToSeconds(this.getStartTime(), this.bpm);
 				this.playbackStartTime = ac.currentTime - beatsToSeconds(this.getStartTime() + beatsPastEnd, this.bpm);
-				this.latestNoteStartTime = -0.00001;
+				this.latestNoteStartTime = startTime - 0.00001;
 			}
 		}, this.intervalMs);
 	}
@@ -260,6 +264,108 @@ function NoteManager(ac, output) {
 	this.stopPlaybackLoop = () => {
 		this.isPlaying = false;
 		clearInterval(this.intervalId);
+	};
+
+	this.scheduleTrackNotesForRendering = (context, track, loopStart = 0, loopEnd) => {
+		const ns = track.notes;
+
+		for (let i = 0; i < ns.length; i++) {
+			const n = ns[i];
+			const automations = !track.disableNoteAutomation ? n.automations : null;
+
+			const startTime = beatsToSeconds(n.startTime - loopStart, this.bpm);
+			if (startTime < 0) continue;
+			const durationBeats = Math.min(loopEnd - n.startTime, n.duration);
+			if (durationBeats <= 0.00001) continue;
+			const duration = beatsToSeconds(durationBeats, this.bpm);
+			const freq = toneToFreq(n.tone);
+			track.synth.schedulePlayback({ context, startTime, duration, freq, automations, bpm: this.bpm, monoPitch: track.monoPitch });
+		}
+	};
+
+	this.renderToAudioBuffer = (startTime = 0, endTime = this.loopEnd) => {
+		const context = new OfflineAudioContext(2, 44100 * endTime, 44100);
+		const gain = context.createGain();
+		gain.gain.value = masterGain.gain.value;
+		gain.connect(context.destination);
+		const tracks = this.getTracksForRendering(context, gain);
+		tracks.forEach((t) => {
+			if (t.muted || (this.soloTrack && !t.solo)) return;
+			this.scheduleTrackNotesForRendering(context, t, startTime, endTime);
+		});
+		return context.startRendering();
+	};
+
+	this.renderToFile = async () => {
+		exportUiManager.startRendering();
+		const startTime = this.loop.active ? this.loop.start : 0;
+		const endTime = this.loop.active ? this.loop.end : this.loopEnd;
+		const duration = beatsToSeconds(endTime - startTime, this.bpm);
+		const buffer = await this.renderToAudioBuffer(startTime, endTime);
+		const source = new AudioBufferSourceNode(ac, { buffer });
+		const destination = new MediaStreamAudioDestinationNode(ac);
+		const recorder = new MediaRecorder(destination.stream);
+		const chunks = [];
+
+		recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+		source.onended = () => { recorder.stop(); };
+
+		recorder.start();
+		source.connect(destination);
+		source.start();
+		exportUiManager.startEncoding(duration);
+
+		setTimeout(() => {
+			recorder.stop();
+			source.stop();
+			exportUiManager.stop();
+		}, duration * 1000 + duration * 1.4);
+
+		const bob = await new Promise((res) => {
+			recorder.onstop = () => {
+				const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+				res(blob);
+			}
+		});
+		return bob;
+	}
+
+	// TODO: wait for better encoding support in chrome
+	this.renderToFile2 = async () => {
+		const arry = [];
+		const output = (chonk) => {
+			const ab = new ArrayBuffer(chonk.byteLength);
+			chonk.copyTo(ab);
+			arry.push(ab);
+			console.log(chonk, ab);
+		};
+		const encoder = new AudioEncoder({ output, error: console.error });
+		encoder.configure({
+		  codec: 'opus',
+		  sampleRate: 44100,
+			numberOfChannels: 2,
+		});
+
+		const buffer = await this.renderToAudioBuffer();
+		const data = audioBufferToF32Planar(buffer);
+		console.log('DATA', data.buffer);
+		const audioData = new AudioData({
+	    format: 'f32-planar',
+	    sampleRate: buffer.sampleRate,
+	    numberOfChannels: buffer.numberOfChannels,
+	    numberOfFrames: buffer.length,
+	    timestamp: 0,
+	    data,
+	  });
+		encoder.encode(audioData);
+		await encoder.flush();
+
+		const bob = new Blob(arry, { type: 'audio/ogg;codecs=opus' });
+		encoder.close();
+		audioData.close();
+		const byts = await bob.bytes();
+		console.log('flushed', byts);
+		return bob;
 	};
 
 	this.getCurrentTime = () => secondsToBeats(ac.currentTime - this.playbackStartTime, this.bpm);
@@ -288,14 +394,14 @@ function NoteManager(ac, output) {
 			active: true,
 			muted: false,
 			solo: false,
-			monoPitch: true,
-			gain: 1,
-			color: colorManager.predefinedColors.default,
+			monoPitch: basedOn?.monopitch ?? true,
+			gain: basedOn?.gain ?? 1,
+			color: basedOn?.color ?? colorManager.predefinedColors.default,
 			id: ++this.trackIdCounter,
-			disableNoteAutomation: false,
+			disableNoteAutomation: basedOn?.disableNoteAutomation ?? false,
 		};
-		track.fx = new FxManager(ac, output);
-		track.synth = new Synth(ac, track.fx.input);
+		track.fx = new FxManager(ac, output, basedOn?.fx, basedOn?.gain);
+		track.synth = new Synth(ac, track.fx.input, basedOn?.synth);
 		this.tracks.push(track);
 		return track;
 	};
@@ -311,6 +417,13 @@ function NoteManager(ac, output) {
 		if (index <= selectedIdx) selectedIdx = Math.max(0, selectedIdx - 1);
 		this.selectTrackByIndex(selectedIdx);
 		return this.tracks[selectedIdx];
+	};
+
+	this.duplicateTrack = (track) => {
+		const stringable = this.getStringableTrack(track);
+		const stringified = JSON.stringify(stringable);
+		const parsed = JSON.parse(stringified);
+		return this.createTrack(parsed);
 	};
 
 	this.selectTrack = (track) => {
@@ -473,11 +586,13 @@ function NoteManager(ac, output) {
 		return input;
 	};
 
+	this.getStringableTrack = (track) => {
+		this.optimizeTrackForStorage(track);
+		return { ...track, synth: track.synth.save(), fx: track.fx.save() };
+	};
+
 	this.getStringableTracks = () => {
-		return this.tracks.map((t) => {
-			this.optimizeTrackForStorage(t);
-			return { ...t, synth: t.synth.save(), fx: t.fx.save() };
-		});
+		return this.tracks.map(this.getStringableTrack);
 	};
 
 	this.save = () => {
@@ -499,6 +614,20 @@ function NoteManager(ac, output) {
 		this.loadTracks(tracks);
 	};
 
+	this.loadTrack = (track, i) => {
+		if (track.active) {
+			this.selectedTrack = i;
+			this.selectedTrackId = track.id;
+		}
+
+		track.fx = new FxManager(ac, output, track.fx, track.gain);
+		track.synth = new Synth(ac, track.fx.input, track.synth);
+		if (!track.color?.main) track.color = colorManager.predefinedColors.default;
+		if (track.id > this.trackIdCounter) this.trackIdCounter = track.id;
+		else if (!track.id) track.id = ++this.trackIdCounter;
+		return track;
+	};
+
 	this.loadTracks = (tracks) => {
 		this.trackIdCounter = 0;
 
@@ -508,21 +637,21 @@ function NoteManager(ac, output) {
 			this.selectedTrack = 0;
 			return;
 		}
-		this.tracks = tracks.map((t, i) => {
-			if (t.active) {
-				this.selectedTrack = i;
-				this.selectedTrackId = t.id;
-			}
+		this.tracks = tracks.map(this.loadTrack);
+		this.soloTrack = this.tracks.some((t) => t.solo);
+	};
 
+	this.getTracksForRendering = (context, destination) => {
+		let trackIdCounter = 0;
+		return this.getStringableTracks().map((t, i) => {
 			const track = t;
-			track.fx = new FxManager(ac, output, t.fx, t.gain);
-			track.synth = new Synth(ac, track.fx.input, t.synth);
+			track.fx = new FxManager(context, destination, t.fx, t.gain);
+			track.synth = new Synth(context, track.fx.input, t.synth);
 			if (!track.color?.main) track.color = colorManager.predefinedColors.default;
-			if (track.id > this.trackIdCounter) this.trackIdCounter = track.id;
-			else if (!track.id) track.id = ++this.trackIdCounter;
+			if (track.id > trackIdCounter) trackIdCounter = track.id;
+			else if (!track.id) track.id = ++trackIdCounter;
 			return track;
 		});
-		this.soloTrack = this.tracks.some((t) => t.solo);
 	};
 }
 

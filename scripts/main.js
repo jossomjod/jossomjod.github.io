@@ -26,7 +26,6 @@ for (let i = 0; i < buttons.length; i++) {
 var WIDTH = canvas.width = window.innerWidth;
 var HEIGHT = canvas.height = window.innerHeight;
 let bounds = new Vector2(WIDTH, HEIGHT);
-
 gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
 
@@ -63,7 +62,7 @@ let currentProgramIndex = startIndex;
 function changeProgram(index) {
 	const isSimple = index < 4;
 	currentProgramIndex = index;
-	
+
 	programInfo.program = shaderPrograms[index];
 	programInfo.attribLocations.vertexPosition =
 		gl.getAttribLocation(shaderPrograms[index], 'aVertexPosition');
@@ -71,7 +70,7 @@ function changeProgram(index) {
 	programInfo.uniformLocations.bounds = gl.getUniformLocation(shaderPrograms[index], 'bounds');
 	programInfo.uniformLocations.mPos =
 		!isSimple ? gl.getUniformLocation(shaderPrograms[index], 'mPos') : null;
-	
+
 	programInfo.uniformLocations.LMB =
 		!isSimple ? gl.getUniformLocation(shaderPrograms[index], 'LMB') : null;
 }
@@ -119,19 +118,19 @@ let then  = 0.0;
 let modTime = 1.0;
 
 function mainLoop(time) {
-	
+
 	now = time;
 	dt  = now - then;
 	LMBDown = lerp(LMBDown, +leftMouseDown, dt * 0.003);
 	modTime += dt + LMBDown * 5.0;
-	
+
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 	gl.clearDepth(1.0);                 // Clear everything
-	
+
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
+
 	drawScene(gl, programInfo, buffers, modTime * 0.001);
-	
+
 	then = now;
 	requestAnimationFrame(mainLoop);
 }
@@ -150,7 +149,7 @@ function drawScene(gl, programInfo, buffers, time) {
 		const stride = 0;         // how many bytes to get from one set of values to the next
 		                          // 0 = use type and numComponents above
 		const offset = 0;         // how many bytes inside the buffer to start from
-		
+
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
 		gl.vertexAttribPointer(
 			programInfo.attribLocations.vertexPosition,
@@ -164,19 +163,19 @@ function drawScene(gl, programInfo, buffers, time) {
 			programInfo.attribLocations.vertexPosition
 		);
 	}
-	
-	
+
+
 	gl.useProgram(programInfo.program);
-	
-	
+
+
 	gl.uniform1f(programInfo.uniformLocations.TIME, time);
 	gl.uniform2f(programInfo.uniformLocations.bounds, WIDTH, HEIGHT);
-	
+
 	if (currentProgramIndex >= 4) {
 		gl.uniform2f(programInfo.uniformLocations.mPos, mPos.x, HEIGHT - mPos.y);
 		gl.uniform1f(programInfo.uniformLocations.LMB, smoothStartStop(LMBDown));
 	}
-	
+
 	{
 		const offset = 0;
 		const vertexCount = 4;
@@ -194,12 +193,19 @@ window.oncontextmenu = (e) => {
   //e.preventDefault();
 };
 
+window.addEventListener('resize', () => {
+	WIDTH = canvas.width = window.innerWidth;
+	HEIGHT = canvas.height = window.innerHeight;
+	bounds = new Vector2(WIDTH, HEIGHT);
+	gl.viewport(0, 0, WIDTH, HEIGHT);
+});
+
 
 // MOUSE STUFF
 
 function getTrueCanvasPos(e) {
 	let rect = canvas.getBoundingClientRect();
-	
+
 	mPos.x = e.x - rect.left;
 	mPos.y = e.y - rect.top;
 }
@@ -222,6 +228,11 @@ document.body.onmousemove = function(e) {
 	getTrueCanvasPos(e);
 }
 
+const topBar = document.querySelector('.top-bar');
+topBar?.addEventListener('mouseenter', () => {
+	//TODO
+});
+
 
 
 
@@ -229,10 +240,10 @@ document.body.onmousemove = function(e) {
 
 document.body.onkeydown = function(e) {
 	e.preventDefault();
-	
+
 	switch (e.which) {
 		case 32:            // Space
-			
+
 			break;
 		case 71: // g
 			break;
@@ -268,7 +279,7 @@ document.body.onkeydown = function(e) {
 
 document.body.onkeyup = function(e) {
 	e.preventDefault();
-	
+
 	toggleKeys(e.which, false);
 };
 
@@ -287,7 +298,7 @@ function toggleKeys(key, bool) {
 			keys.down = bool;
 			break;
 		case 17:
-			keys.ctrl = bool;  // Ctrl (duh)
+			keys.ctrl = bool;
 			break;
 		default:
 			console.log(key);

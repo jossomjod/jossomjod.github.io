@@ -290,7 +290,7 @@ class MidiManager {
 		this.index = 0;
 
 		const headerChunkType = String.fromCharCode(...buffer.slice(0, 4));
-		if (headerChunkType !== 'MThd') throw new Error('File is not MIDI');
+		if (headerChunkType !== 'MThd') throw new Error('File is not MIDI. Header chunk type:', headerChunkType);
 
 		const headerLength = byteArrayToNumber(buffer.slice(4, 8));
 
