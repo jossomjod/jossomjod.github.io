@@ -230,22 +230,20 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		this.pitchEnvelope.start(osc.detune, this.detune, 1200.0, time);
 
 		return osc;
-	}
+	};
 
 	this.stop = (osc, gainNode) => {
 		const time = ac.currentTime;
 		this.gainEnvelope.stop(gainNode.gain, 0.0);
 		this.pitchEnvelope.stop(osc.detune, this.detune);
 		osc.stop(time + this.gainEnvelope.getRelease());
-	}
+	};
 
 	this.restart = ({ oscillator, gain }, onset = 1) => {
 		const time = ac.currentTime;
 		this.gainEnvelope.start(gain.gain, 0.0, this.getGain(onset * this.gain), time);
 		this.pitchEnvelope.start(oscillator.detune, this.detune, 1200.0, time);
-	}
-
-
+	};
 
 	this.startWithFixedProperties = ({ frequency, gainNode, panner, detune, gain, pan }) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
@@ -259,7 +257,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.start(ac.currentTime);
 
 		return osc;
-	}
+	};
 
 	this.updateFixedProperties = ({ osc, gainNode, panner, gain, pan, detune }) => {
 		const thisGain = this.gain;
@@ -270,7 +268,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 
 	this.stopWithFixedProperties = (osc) => {
 		osc.stop(ac.currentTime);
-	}
+	};
 
 	this.schedulePlayback = (ac, frequency, gainNode, panner, startTime = ac.currentTime, duration = 1) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
@@ -289,7 +287,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.stop(endTime + this.gainEnvelope.getRelease());
 
 		return osc;
-	}
+	};
 
 	this.schedulePlaybackWithAutomation = (ac, frequency, gainNode, panner, startTime = ac.currentTime, duration = 1, automation, bpm) => {
 		const freq = this.getFreq(this.isLFO ? this.fixedFreq : frequency);
@@ -331,7 +329,7 @@ function Oscillator(ac, type = 'square', detune = 0.0, gainEnvelope, pitchEnvelo
 		osc.stop(endTime);
 
 		return osc;
-	}
+	};
 
 	this.createEnvelopeFromObject = (obj) => {
 		if (!obj) return undefined;
